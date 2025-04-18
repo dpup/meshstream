@@ -1,0 +1,71 @@
+# Binaries and build artifacts
+/dist/
+/bin/
+
+# Go specific
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+
+# Protocol buffer generated files
+proto/tmp/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Dependency directories
+vendor/
+
+# Log files
+*.log
+
+# Testing
+/coverage.txt
+/profile.out
+
+# Environment files
+.env
+.envrc
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# direnv
+.direnv
+
+# Local development files
+*.local
+.air.toml
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Debug files
+debug
+debug.test
+
+# Temporary files
+tmp/
+temp/

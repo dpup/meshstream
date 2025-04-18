@@ -9,11 +9,12 @@ PROTOC_GEN_GO := $(TOOLS_DIR)/protoc-gen-go
 
 # Build the application
 build:
-	go build -o meshstream
+	mkdir -p dist
+	go build -o dist/meshstream
 
 # Run the application
 run: build
-	./meshstream
+	./dist/meshstream
 
 # Generate Go code from Protocol Buffers
 gen-proto: tools
@@ -26,7 +27,7 @@ gen-proto: tools
 
 # Clean generated files
 clean:
-	rm -f meshstream
+	rm -rf dist
 	rm -rf $(BIN_DIR)
 	find . -name "*.pb.go" -type f -delete
 
