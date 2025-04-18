@@ -18,17 +18,19 @@ const (
 
 // DecodedPacket contains information about a decoded packet
 type DecodedPacket struct {
-	Topic     string
-	Region    string
-	Channel   string
-	UserID    string
-	Type      PacketType
-	JSONData  map[string]interface{}
-	FromNode  string
-	ToNode    string
-	Text      string
-	RawData   []byte
-	Timestamp string
+	Topic       string
+	RegionPath  string
+	Version     string
+	Format      string
+	Channel     string
+	UserID      string
+	Type        PacketType
+	JSONData    map[string]interface{}
+	FromNode    string
+	ToNode      string
+	Text        string
+	RawData     []byte
+	Timestamp   string
 }
 
 // DecodePacket attempts to decode a packet from MQTT
@@ -39,89 +41,107 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 		JSONData: make(map[string]interface{}),
 	}
 
-	// Extract channel and other info from topic
-	// Format: msh/REGION/2/e/CHANNELNAME/USERID
-	// or:     msh/REGION/2/json/CHANNELNAME/USERID
+	// Extract topic components
+	// Format: msh/REGION_PATH/VERSION/FORMAT/CHANNELNAME/USERID
+	// Example: msh/US/CA/Motherlode/2/e/LongFast/!abcd1234
+	// Example: msh/US/CA/Motherlode/2/json/LongFast/!abcd1234
 	parts := strings.Split(topic, "/")
 	if len(parts) < 4 {
 		return packet, fmt.Errorf("invalid topic format: %s", topic)
 	}
 
-	// Set the region
-	if len(parts) >= 2 {
-		packet.Region = parts[1]
+	// Find protocol version and format indices by looking for "2" followed by "e", "c", or "json"
+	versionIndex := -1
+	formatIndex := -1
+	
+	for i := 1; i < len(parts)-1; i++ {
+		if parts[i] == "2" {
+			// Found the version
+			versionIndex = i
+			formatIndex = i + 1
+			break
+		}
 	}
+	
+	if versionIndex == -1 || formatIndex >= len(parts) {
+		// Could not find proper version/format markers
+		return packet, fmt.Errorf("invalid topic format, missing version/format: %s", topic)
+	}
+	
+	// Extract region path (all segments between "msh" and version)
+	if versionIndex > 1 {
+		packet.RegionPath = strings.Join(parts[1:versionIndex], "/")
+	}
+	
+	// Extract version and format
+	packet.Version = parts[versionIndex]
+	packet.Format = parts[formatIndex]
+	
+	// Process based on format type
+	channelIndex := formatIndex + 1
+	userIdIndex := channelIndex + 1
+	
+	if channelIndex < len(parts) {
+		packet.Channel = parts[channelIndex]
+	}
+	
+	if userIdIndex < len(parts) {
+		packet.UserID = parts[userIdIndex]
+	}
+	
+	// Process based on format type
+	if packet.Format == "e" || packet.Format == "c" {
+		// Binary protobuf packet
+		packet.Type = TypeBinary
+	} else if packet.Format == "json" {
+		// JSON format
+		packet.Type = TypeJSON
+		if err := json.Unmarshal(payload, &packet.JSONData); err != nil {
+			return packet, fmt.Errorf("failed to parse JSON: %v", err)
+		}
 
-	// Extract channel name - should be part 4 for binary or part 5 for JSON
-	if len(parts) >= 5 {
-		if parts[3] == "e" || parts[3] == "c" {
-			// Binary format: msh/REGION/2/e/CHANNELNAME/USERID
-			if len(parts) >= 5 {
-				packet.Channel = parts[4]
-			}
-			if len(parts) >= 6 {
-				packet.UserID = parts[5]
-			}
-			// This is a binary protobuf packet
-			packet.Type = TypeBinary
-		} else if parts[3] == "json" {
-			// JSON format: msh/REGION/2/json/CHANNELNAME/USERID
-			if len(parts) >= 5 {
-				packet.Channel = parts[4]
-			}
-			if len(parts) >= 6 {
-				packet.UserID = parts[5]
-			}
-			
-			// This is a JSON packet
+		// Extract common fields
+		if from, ok := packet.JSONData["from"].(string); ok {
+			packet.FromNode = from
+		}
+		if to, ok := packet.JSONData["to"].(string); ok {
+			packet.ToNode = to
+		}
+		if text, ok := packet.JSONData["payload"].(string); ok {
+			packet.Text = text
+		}
+		if ts, ok := packet.JSONData["timestamp"].(string); ok {
+			packet.Timestamp = ts
+		}
+	} else {
+		// Unknown format, try to infer from content
+		if len(payload) > 0 && payload[0] == '{' {
+			// Looks like JSON
 			packet.Type = TypeJSON
-			if err := json.Unmarshal(payload, &packet.JSONData); err != nil {
-				return packet, fmt.Errorf("failed to parse JSON: %v", err)
-			}
-
-			// Extract common fields
-			if from, ok := packet.JSONData["from"].(string); ok {
-				packet.FromNode = from
-			}
-			if to, ok := packet.JSONData["to"].(string); ok {
-				packet.ToNode = to
-			}
-			if text, ok := packet.JSONData["payload"].(string); ok {
-				packet.Text = text
-			}
-			if ts, ok := packet.JSONData["timestamp"].(string); ok {
-				packet.Timestamp = ts
-			}
-		} else {
-			// Unknown format, try to infer from content
-			if len(payload) > 0 && payload[0] == '{' {
-				// Looks like JSON
-				packet.Type = TypeJSON
-				if err := json.Unmarshal(payload, &packet.JSONData); err == nil {
-					// Successfully parsed as JSON
-					
-					// Extract common fields
-					if from, ok := packet.JSONData["from"].(string); ok {
-						packet.FromNode = from
-					}
-					if to, ok := packet.JSONData["to"].(string); ok {
-						packet.ToNode = to
-					}
-					if text, ok := packet.JSONData["payload"].(string); ok {
-						packet.Text = text
-					}
-					if ts, ok := packet.JSONData["timestamp"].(string); ok {
-						packet.Timestamp = ts
-					}
+			if err := json.Unmarshal(payload, &packet.JSONData); err == nil {
+				// Successfully parsed as JSON
+				
+				// Extract common fields
+				if from, ok := packet.JSONData["from"].(string); ok {
+					packet.FromNode = from
 				}
-			} else if utf8.Valid(payload) && !containsBinaryData(payload) {
-				// Probably text
-				packet.Type = TypeText
-				packet.Text = string(payload)
-			} else {
-				// Probably binary
-				packet.Type = TypeBinary
+				if to, ok := packet.JSONData["to"].(string); ok {
+					packet.ToNode = to
+				}
+				if text, ok := packet.JSONData["payload"].(string); ok {
+					packet.Text = text
+				}
+				if ts, ok := packet.JSONData["timestamp"].(string); ok {
+					packet.Timestamp = ts
+				}
 			}
+		} else if utf8.Valid(payload) && !containsBinaryData(payload) {
+			// Probably text
+			packet.Type = TypeText
+			packet.Text = string(payload)
+		} else {
+			// Probably binary
+			packet.Type = TypeBinary
 		}
 	}
 	
@@ -152,8 +172,16 @@ func FormatPacket(packet *DecodedPacket) string {
 	builder.WriteString(fmt.Sprintf("Topic: %s\n", packet.Topic))
 	
 	// Show basic topic structure
-	builder.WriteString(fmt.Sprintf("Region: %s\n", packet.Region))
-	builder.WriteString(fmt.Sprintf("Channel: %s\n", packet.Channel))
+	builder.WriteString(fmt.Sprintf("Region Path: %s\n", packet.RegionPath))
+	if packet.Version != "" {
+		builder.WriteString(fmt.Sprintf("Version: %s\n", packet.Version))
+	}
+	if packet.Format != "" {
+		builder.WriteString(fmt.Sprintf("Format: %s\n", packet.Format))
+	}
+	if packet.Channel != "" {
+		builder.WriteString(fmt.Sprintf("Channel: %s\n", packet.Channel))
+	}
 	if packet.UserID != "" {
 		builder.WriteString(fmt.Sprintf("User ID: %s\n", packet.UserID))
 	}

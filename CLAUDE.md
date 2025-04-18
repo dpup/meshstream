@@ -4,11 +4,11 @@
 
 The Meshtastic MQTT topic structure follows this pattern:
 ```
-msh/REGION/2/e/CHANNELNAME/USERID
+msh/REGION_PATH/2/e/CHANNELNAME/USERID
 ```
 
 - `msh`: Fixed prefix for all Meshtastic topics
-- `REGION`: Geographic region code (e.g., `US`, `EU`, `AU`)
+- `REGION_PATH`: Geographic region path which can include multiple segments (e.g., `US/CA/Motherlode`, `EU`, etc.)
 - `2`: Protocol version
 - `e`: Encrypted channel indicator (versions before 2.3.0 used `/c/` instead)
 - `CHANNELNAME`: The channel name used in the Meshtastic network
@@ -19,12 +19,12 @@ msh/REGION/2/e/CHANNELNAME/USERID
 ## Message Types
 
 ### Protobuf Messages (Binary)
-Topic pattern: `msh/REGION/2/e/CHANNELNAME/USERID`
+Topic pattern: `msh/REGION_PATH/2/e/CHANNELNAME/USERID`
 - Raw MeshPacket transmissions in protobuf format
 - Can be encrypted or unencrypted based on channel settings
 
 ### JSON Messages
-Topic pattern: `msh/REGION/2/json/CHANNELNAME/USERID`
+Topic pattern: `msh/REGION_PATH/2/json/CHANNELNAME/USERID`
 - Structured JSON payloads with fields like:
   - `id`: Message ID
   - `from`: Node ID of sender
@@ -35,7 +35,7 @@ Topic pattern: `msh/REGION/2/json/CHANNELNAME/USERID`
 Note: JSON format is not supported on nRF52 platform devices.
 
 ### Special Topics
-- MQTT Downlink: `msh/REGION/2/json/mqtt/`
+- MQTT Downlink: `msh/REGION_PATH/2/json/mqtt/`
   - Used for sending instructions to gateway nodes
 
 ## Important Notes
