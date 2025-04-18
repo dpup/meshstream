@@ -5,8 +5,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+
+	"meshstream/decoder"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
@@ -20,11 +23,19 @@ const (
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message from topic: %s\n", msg.Topic())
-	fmt.Printf("Raw payload: %v\n", msg.Payload())
 	
-	// TODO: When protobuf compilation is set up, we can decode the messages
-	// using the Meshtastic protocol definitions in the proto/ directory
-	// Example decoding logic will be added in a future update
+	// Decode the packet
+	packet, err := decoder.DecodePacket(msg.Topic(), msg.Payload())
+	if err != nil {
+		fmt.Printf("Error decoding packet: %v\n", err)
+		fmt.Printf("Raw payload: %s\n", msg.Payload())
+	} else {
+		// Format and print the packet
+		formattedOutput := decoder.FormatPacket(packet)
+		fmt.Println(formattedOutput)
+	}
+	
+	fmt.Println(strings.Repeat("-", 80))
 }
 
 var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
