@@ -67,7 +67,10 @@ func main() {
 		log.Fatalf("Error connecting to MQTT broker: %v", token.Error())
 	}
 
-	// Subscribe to topic
+	// Subscribe to all topics for this region
+	// This will capture:
+	// - msh/US/CA/Motherlode/2/e/# (binary protobuf data)
+	// - msh/US/CA/Motherlode/2/json/# (JSON formatted data)
 	topic := mqttTopicPrefix + "/#"
 	token := client.Subscribe(topic, 0, nil)
 	token.Wait()

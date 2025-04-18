@@ -19,7 +19,9 @@ const (
 // DecodedPacket contains information about a decoded packet
 type DecodedPacket struct {
 	Topic     string
+	Region    string
 	Channel   string
+	UserID    string
 	Type      PacketType
 	JSONData  map[string]interface{}
 	FromNode  string
@@ -38,20 +40,40 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 	}
 
 	// Extract channel and other info from topic
+	// Format: msh/REGION/2/e/CHANNELNAME/USERID
+	// or:     msh/REGION/2/json/CHANNELNAME/USERID
 	parts := strings.Split(topic, "/")
 	if len(parts) < 4 {
 		return packet, fmt.Errorf("invalid topic format: %s", topic)
 	}
 
-	// Set channel info (typically msh/REGION/STATE/NAME)
-	packet.Channel = strings.Join(parts[1:4], "/")
+	// Set the region
+	if len(parts) >= 2 {
+		packet.Region = parts[1]
+	}
 
-	// Try to determine type from topic structure
+	// Extract channel name - should be part 4 for binary or part 5 for JSON
 	if len(parts) >= 5 {
-		typeIndicator := parts[4]
-		
-		switch typeIndicator {
-		case "json":
+		if parts[3] == "e" || parts[3] == "c" {
+			// Binary format: msh/REGION/2/e/CHANNELNAME/USERID
+			if len(parts) >= 5 {
+				packet.Channel = parts[4]
+			}
+			if len(parts) >= 6 {
+				packet.UserID = parts[5]
+			}
+			// This is a binary protobuf packet
+			packet.Type = TypeBinary
+		} else if parts[3] == "json" {
+			// JSON format: msh/REGION/2/json/CHANNELNAME/USERID
+			if len(parts) >= 5 {
+				packet.Channel = parts[4]
+			}
+			if len(parts) >= 6 {
+				packet.UserID = parts[5]
+			}
+			
+			// This is a JSON packet
 			packet.Type = TypeJSON
 			if err := json.Unmarshal(payload, &packet.JSONData); err != nil {
 				return packet, fmt.Errorf("failed to parse JSON: %v", err)
@@ -70,19 +92,8 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 			if ts, ok := packet.JSONData["timestamp"].(string); ok {
 				packet.Timestamp = ts
 			}
-			
-		case "binary":
-			// Binary protobuf payload
-			packet.Type = TypeBinary
-			// Note: Actual protobuf decoding would be done here
-			
-		case "text":
-			// Plain text payload
-			packet.Type = TypeText
-			packet.Text = string(payload)
-			
-		default:
-			// Try to infer type from payload
+		} else {
+			// Unknown format, try to infer from content
 			if len(payload) > 0 && payload[0] == '{' {
 				// Looks like JSON
 				packet.Type = TypeJSON
@@ -113,7 +124,7 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 			}
 		}
 	}
-
+	
 	return packet, nil
 }
 
@@ -139,7 +150,13 @@ func FormatPacket(packet *DecodedPacket) string {
 	var builder strings.Builder
 	
 	builder.WriteString(fmt.Sprintf("Topic: %s\n", packet.Topic))
+	
+	// Show basic topic structure
+	builder.WriteString(fmt.Sprintf("Region: %s\n", packet.Region))
 	builder.WriteString(fmt.Sprintf("Channel: %s\n", packet.Channel))
+	if packet.UserID != "" {
+		builder.WriteString(fmt.Sprintf("User ID: %s\n", packet.UserID))
+	}
 	
 	switch packet.Type {
 	case TypeJSON:
