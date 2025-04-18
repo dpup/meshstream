@@ -10,7 +10,7 @@ msh/REGION_PATH/2/e/CHANNELNAME/USERID
 - `msh`: Fixed prefix for all Meshtastic topics
 - `REGION_PATH`: Geographic region path which can include multiple segments (e.g., `US/CA/Motherlode`, `EU`, etc.)
 - `2`: Protocol version
-- `e`: Encrypted channel indicator (versions before 2.3.0 used `/c/` instead)
+- `e`: Encoded packet format (formerly used `c` for channel in versions before 2.3.0)
 - `CHANNELNAME`: The channel name used in the Meshtastic network
 - `USERID`: Unique identifier for the device, formats include:
   - `!` followed by hex characters for MAC address based IDs
@@ -18,10 +18,13 @@ msh/REGION_PATH/2/e/CHANNELNAME/USERID
 
 ## Message Types
 
-### Protobuf Messages (Binary)
+### Encoded Messages (ServiceEnvelope)
 Topic pattern: `msh/REGION_PATH/2/e/CHANNELNAME/USERID`
-- Raw MeshPacket transmissions in protobuf format
-- Can be encrypted or unencrypted based on channel settings
+- ServiceEnvelope protobuf messages
+- Contains:
+  - A MeshPacket (can be encrypted or unencrypted)
+  - channel_id: The global channel ID it was sent on
+  - gateway_id: Node ID of the gateway that relayed the message
 
 ### JSON Messages
 Topic pattern: `msh/REGION_PATH/2/json/CHANNELNAME/USERID`

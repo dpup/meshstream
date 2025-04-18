@@ -11,13 +11,14 @@ import (
 type PacketType string
 
 const (
-	TypeJSON   PacketType = "json"
-	TypeBinary PacketType = "binary"
-	TypeText   PacketType = "text"
+	TypeJSON    PacketType = "json"
+	TypeEncoded PacketType = "encoded"
+	TypeText    PacketType = "text"
 )
 
 // DecodedPacket contains information about a decoded packet
 type DecodedPacket struct {
+	// Topic structure fields
 	Topic       string
 	RegionPath  string
 	Version     string
@@ -25,12 +26,21 @@ type DecodedPacket struct {
 	Channel     string
 	UserID      string
 	Type        PacketType
+	
+	// JSON message fields
 	JSONData    map[string]interface{}
 	FromNode    string
 	ToNode      string
 	Text        string
-	RawData     []byte
 	Timestamp   string
+	
+	// Encoded message fields
+	ChannelID   string
+	GatewayID   string
+	PacketID    string
+	
+	// Raw data
+	RawData     []byte
 }
 
 // DecodePacket attempts to decode a packet from MQTT
@@ -90,9 +100,51 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 	}
 	
 	// Process based on format type
-	if packet.Format == "e" || packet.Format == "c" {
-		// Binary protobuf packet
-		packet.Type = TypeBinary
+	if packet.Format == "e" {
+		// Encoded protobuf packet (using ServiceEnvelope)
+		packet.Type = TypeEncoded
+		
+		// For encoded packets, try to parse if the payload looks like a JSON ServiceEnvelope
+		// (Some gateways present ServiceEnvelope in JSON format)
+		if len(payload) > 0 && payload[0] == '{' {
+			var serviceEnvelope map[string]interface{}
+			if err := json.Unmarshal(payload, &serviceEnvelope); err == nil {
+				// Successfully parsed as JSON ServiceEnvelope
+				packet.JSONData = serviceEnvelope
+				
+				// Extract ServiceEnvelope metadata fields
+				if channelId, ok := serviceEnvelope["channel_id"].(string); ok {
+					packet.ChannelID = channelId
+				}
+				if gatewayId, ok := serviceEnvelope["gateway_id"].(string); ok {
+					packet.GatewayID = gatewayId
+				}
+				
+				// Try to extract data from the packet field
+				if packetData, ok := serviceEnvelope["packet"].(map[string]interface{}); ok {
+					if id, ok := packetData["id"].(float64); ok {
+						packet.PacketID = fmt.Sprintf("%d", int(id))
+					}
+					if from, ok := packetData["from"].(float64); ok {
+						packet.FromNode = fmt.Sprintf("%d", int(from))
+					}
+					if to, ok := packetData["to"].(float64); ok {
+						packet.ToNode = fmt.Sprintf("%d", int(to))
+					}
+					
+					// Try to extract decoded payload if available
+					if decoded, ok := packetData["decoded"].(map[string]interface{}); ok {
+						if payload, ok := decoded["payload"].(string); ok {
+							packet.Text = payload
+						}
+					}
+				}
+			}
+		}
+		
+		// Note: For binary protocol buffer decoding we would need to use the generated protobuf code,
+		// but we'll defer that for now and just track that this is an encoded packet.
+		
 	} else if packet.Format == "json" {
 		// JSON format
 		packet.Type = TypeJSON
@@ -140,8 +192,8 @@ func DecodePacket(topic string, payload []byte) (*DecodedPacket, error) {
 			packet.Type = TypeText
 			packet.Text = string(payload)
 		} else {
-			// Probably binary
-			packet.Type = TypeBinary
+			// Encoded but not in JSON format
+			packet.Type = TypeEncoded
 		}
 	}
 	
@@ -206,9 +258,37 @@ func FormatPacket(packet *DecodedPacket) string {
 		jsonBytes, _ := json.MarshalIndent(packet.JSONData, "", "  ")
 		builder.WriteString(fmt.Sprintf("Data: %s\n", jsonBytes))
 		
-	case TypeBinary:
-		builder.WriteString("Type: Binary\n")
-		builder.WriteString(fmt.Sprintf("Hex: %x\n", packet.RawData))
+	case TypeEncoded:
+		builder.WriteString("Type: Encoded (ServiceEnvelope)\n")
+		
+		// Display ServiceEnvelope metadata if available
+		if packet.ChannelID != "" {
+			builder.WriteString(fmt.Sprintf("Channel ID: %s\n", packet.ChannelID))
+		}
+		if packet.GatewayID != "" {
+			builder.WriteString(fmt.Sprintf("Gateway ID: %s\n", packet.GatewayID))
+		}
+		if packet.PacketID != "" {
+			builder.WriteString(fmt.Sprintf("Packet ID: %s\n", packet.PacketID))
+		}
+		if packet.FromNode != "" {
+			builder.WriteString(fmt.Sprintf("From Node: %s\n", packet.FromNode))
+		}
+		if packet.ToNode != "" {
+			builder.WriteString(fmt.Sprintf("To Node: %s\n", packet.ToNode))
+		}
+		if packet.Text != "" {
+			builder.WriteString(fmt.Sprintf("Payload: %s\n", packet.Text))
+		}
+		
+		// If we were able to parse as JSON, show the data
+		if len(packet.JSONData) > 0 {
+			jsonBytes, _ := json.MarshalIndent(packet.JSONData, "", "  ")
+			builder.WriteString(fmt.Sprintf("Service Envelope: %s\n", jsonBytes))
+		} else {
+			// Show raw binary data
+			builder.WriteString(fmt.Sprintf("Raw Data (%d bytes): %x\n", len(packet.RawData), packet.RawData))
+		}
 		
 	case TypeText:
 		builder.WriteString("Type: Text\n")
