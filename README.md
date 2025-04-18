@@ -19,20 +19,36 @@ go run main.go
 
 ## Decoding Meshtastic Packets
 
-This project includes the Meshtastic protocol buffer definitions in the `proto/` directory. To decode the packets:
+This project includes the Meshtastic protocol buffer definitions in the `proto/` directory and a decoder for parsing MQTT packets. The application will automatically decode JSON messages and extract key information from binary messages.
 
-1. Install protoc (Protocol Buffer Compiler):
-   - Visit https://github.com/protocolbuffers/protobuf/releases and download the appropriate version
-   - Install the Go protobuf plugin: `go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`
+### Protocol Buffer Compilation
 
-2. Generate Go code from protocol buffer definitions:
-   ```
-   protoc --go_out=. --go_opt=paths=source_relative proto/meshtastic/*.proto proto/nanopb.proto
-   ```
+To regenerate the protocol buffer Go code:
 
-3. Implement packet decoding in the application
+```
+make gen-proto
+```
 
-Note: The current version only logs raw packets to the terminal. Future updates will include full packet decoding functionality.
+This will:
+1. Install the required protoc-gen-go compiler plugin in a local bin/ directory
+2. Generate Go code from the protocol buffer definitions
+3. Place the generated code in the proto/generated/ directory
+
+### Packet Decoding
+
+The application currently decodes packets in these formats:
+
+1. JSON messages (from topics containing '/json/')
+   - Extracts common fields like sender, receiver, and payload
+   - Pretty-prints the JSON content
+
+2. Binary messages (from topics containing '/binary/')
+   - Shows basic topic information and a hex dump of the binary data
+
+3. Text messages (from topics containing '/text/')
+   - Displays the plain text content
+
+The decoder is implemented in the `decoder` package.
 
 ## MQTT Configuration
 
