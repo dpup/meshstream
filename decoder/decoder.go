@@ -12,6 +12,45 @@ import (
 	pb "meshstream/proto/generated/meshtastic"
 )
 
+// DecodedPacket provides a simplified structure for decoded Meshtastic packets
+type DecodedPacket struct {
+	// From Service Envelope
+	ChannelID string
+	GatewayID string
+	
+	// From Mesh Packet
+	ID       uint32
+	From     uint32
+	To       uint32
+	HopLimit uint32
+	HopStart uint32
+	WantACK  bool
+	Priority string
+	ViaMQTT  bool
+	NextHop  uint32
+	RelayNode uint32
+	
+	// From Data
+	PortNum pb.PortNum
+	Payload interface{}
+	
+	// Additional Data fields
+	RequestID uint32
+	ReplyID   uint32
+	Emoji     uint32
+	Dest      uint32
+	Source    uint32
+	WantResponse bool
+	
+	// Raw message objects (for advanced use)
+	RawEnvelope *pb.ServiceEnvelope
+	RawPacket   *pb.MeshPacket
+	RawData     *pb.Data
+	
+	// Error tracking
+	DecodeError error
+}
+
 // TopicInfo contains parsed information about a Meshtastic MQTT topic
 type TopicInfo struct {
 	FullTopic   string
@@ -87,6 +126,161 @@ func DecodeEncodedMessage(payload []byte) (*pb.ServiceEnvelope, error) {
 	return &serviceEnvelope, nil
 }
 
+// DecodeMessage creates a DecodedPacket from a binary encoded message
+func DecodeMessage(payload []byte, topicInfo *TopicInfo) *DecodedPacket {
+	decoded := &DecodedPacket{}
+	
+	// First decode the envelope
+	envelope, err := DecodeEncodedMessage(payload)
+	if err != nil {
+		decoded.DecodeError = err
+		return decoded
+	}
+	
+	// Store raw envelope
+	decoded.RawEnvelope = envelope
+	
+	// Extract envelope fields
+	decoded.ChannelID = envelope.GetChannelId()
+	decoded.GatewayID = envelope.GetGatewayId()
+	
+	// Extract mesh packet fields if available
+	packet := envelope.GetPacket()
+	if packet == nil {
+		decoded.DecodeError = fmt.Errorf("no mesh packet in envelope")
+		return decoded
+	}
+	
+	// Store raw packet
+	decoded.RawPacket = packet
+	
+	// Extract mesh packet fields
+	decoded.ID = packet.GetId()
+	decoded.From = packet.GetFrom()
+	decoded.To = packet.GetTo()
+	decoded.HopLimit = packet.GetHopLimit()
+	decoded.HopStart = packet.GetHopStart()
+	decoded.WantACK = packet.GetWantAck()
+	decoded.Priority = packet.GetPriority().String()
+	decoded.ViaMQTT = packet.GetViaMqtt()
+	decoded.NextHop = packet.GetNextHop()
+	decoded.RelayNode = packet.GetRelayNode()
+	
+	// Process the payload
+	if packet.GetDecoded() != nil {
+		// Packet has already been decoded
+		decodeDataPayload(decoded, packet.GetDecoded())
+	} else if packet.GetEncrypted() != nil {
+		// Packet is encrypted, try to decrypt it
+		decodeEncryptedPayload(decoded, packet.GetEncrypted(), envelope.GetChannelId(), packet.GetId(), packet.GetFrom())
+	} else {
+		decoded.DecodeError = fmt.Errorf("packet has no payload")
+	}
+	
+	return decoded
+}
+
+// decodeDataPayload extracts information from a Data message
+func decodeDataPayload(decoded *DecodedPacket, data *pb.Data) {
+	// Store raw data
+	decoded.RawData = data
+	
+	// Extract data fields
+	decoded.PortNum = data.GetPortnum()
+	decoded.RequestID = data.GetRequestId()
+	decoded.ReplyID = data.GetReplyId()
+	decoded.Emoji = data.GetEmoji()
+	decoded.Dest = data.GetDest()
+	decoded.Source = data.GetSource()
+	decoded.WantResponse = data.GetWantResponse()
+	
+	// Process the payload based on port type
+	payload := data.GetPayload()
+	
+	switch data.GetPortnum() {
+	case pb.PortNum_TEXT_MESSAGE_APP:
+		// Text message - just use the string
+		decoded.Payload = string(payload)
+		
+	case pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP:
+		// Compressed text - just store the raw bytes for now
+		// TODO: Add decompression support
+		decoded.Payload = payload
+		
+	case pb.PortNum_POSITION_APP:
+		// Position data
+		var position pb.Position
+		if err := proto.Unmarshal(payload, &position); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal Position data: %v", err)
+		} else {
+			decoded.Payload = &position
+		}
+		
+	case pb.PortNum_NODEINFO_APP:
+		// Node information
+		var user pb.User
+		if err := proto.Unmarshal(payload, &user); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal User data: %v", err)
+		} else {
+			decoded.Payload = &user
+		}
+		
+	case pb.PortNum_TELEMETRY_APP:
+		// Telemetry data
+		var telemetry pb.Telemetry
+		if err := proto.Unmarshal(payload, &telemetry); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal Telemetry data: %v", err)
+		} else {
+			decoded.Payload = &telemetry
+		}
+		
+	case pb.PortNum_WAYPOINT_APP:
+		// Waypoint data
+		var waypoint pb.Waypoint
+		if err := proto.Unmarshal(payload, &waypoint); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal Waypoint data: %v", err)
+		} else {
+			decoded.Payload = &waypoint
+		}
+		
+	default:
+		// For other types, just store the raw bytes
+		decoded.Payload = payload
+	}
+}
+
+// decodeEncryptedPayload tries to decrypt and decode encrypted payloads
+func decodeEncryptedPayload(decoded *DecodedPacket, encrypted []byte, channelId string, packetId, fromNode uint32) {
+	// Attempt to decrypt the payload using the channel key
+	if channelId == "" {
+		decoded.DecodeError = fmt.Errorf("encrypted packet has no channel ID")
+		return
+	}
+	
+	channelKey := GetChannelKey(channelId)
+	decrypted, err := XOR(encrypted, channelKey, packetId, fromNode)
+	if err != nil {
+		decoded.DecodeError = fmt.Errorf("failed to decrypt payload: %v", err)
+		return
+	}
+	
+	// Try to parse as a Data message
+	var data pb.Data
+	if err := proto.Unmarshal(decrypted, &data); err != nil {
+		// If we can't parse as Data, check if it's ASCII text
+		if IsASCII(decrypted) {
+			decoded.PortNum = pb.PortNum_TEXT_MESSAGE_APP
+			decoded.Payload = string(decrypted)
+		} else {
+			decoded.DecodeError = fmt.Errorf("failed to parse decrypted data: %v", err)
+			decoded.Payload = decrypted // Store raw bytes anyway
+		}
+	} else {
+		// Successfully decoded the payload
+		decodeDataPayload(decoded, &data)
+	}
+}
+
 // DecodeJSONMessage decodes a JSON message (format "json")
 func DecodeJSONMessage(payload []byte) (map[string]interface{}, error) {
 	var jsonData map[string]interface{}
@@ -108,12 +302,11 @@ func IsASCII(data []byte) bool {
 }
 
 // FormatTelemetryMessage formats a Telemetry message
-func FormatTelemetryMessage(payload []byte) string {
+func FormatTelemetryMessage(telemetry *pb.Telemetry) string {
 	var builder strings.Builder
-	var telemetry pb.Telemetry
 	
-	if err := proto.Unmarshal(payload, &telemetry); err != nil {
-		return fmt.Sprintf("Failed to unmarshal telemetry data: %v\nRaw: %x", err, payload)
+	if telemetry == nil {
+		return "Error: nil telemetry data"
 	}
 
 	builder.WriteString("Telemetry Data:\n")
@@ -322,7 +515,7 @@ func FormatTelemetryMessage(payload []byte) string {
 	}
 
 	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(&telemetry)
+	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telemetry)
 	if err == nil {
 		builder.WriteString("\nFull Telemetry Structure:\n")
 		builder.WriteString(string(jsonBytes))
@@ -332,12 +525,11 @@ func FormatTelemetryMessage(payload []byte) string {
 }
 
 // FormatPositionMessage formats a Position message
-func FormatPositionMessage(payload []byte) string {
+func FormatPositionMessage(position *pb.Position) string {
 	var builder strings.Builder
-	var position pb.Position
 	
-	if err := proto.Unmarshal(payload, &position); err != nil {
-		return fmt.Sprintf("Failed to unmarshal position data: %v\nRaw: %x", err, payload)
+	if position == nil {
+		return "Error: nil position data"
 	}
 
 	builder.WriteString("Position Data:\n")
@@ -412,7 +604,7 @@ func FormatPositionMessage(payload []byte) string {
 	}
 
 	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(&position)
+	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(position)
 	if err == nil {
 		builder.WriteString("\nFull Position Structure:\n")
 		builder.WriteString(string(jsonBytes))
@@ -422,12 +614,11 @@ func FormatPositionMessage(payload []byte) string {
 }
 
 // FormatNodeInfoMessage formats a User message (used by the NODEINFO_APP port)
-func FormatNodeInfoMessage(payload []byte) string {
+func FormatNodeInfoMessage(user *pb.User) string {
 	var builder strings.Builder
-	var user pb.User
 	
-	if err := proto.Unmarshal(payload, &user); err != nil {
-		return fmt.Sprintf("Failed to unmarshal node info data: %v\nRaw: %x", err, payload)
+	if user == nil {
+		return "Error: nil user data"
 	}
 
 	builder.WriteString("Node Information:\n")
@@ -461,7 +652,7 @@ func FormatNodeInfoMessage(payload []byte) string {
 	}
 
 	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(&user)
+	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(user)
 	if err == nil {
 		builder.WriteString("\nFull User Structure:\n")
 		builder.WriteString(string(jsonBytes))
@@ -471,12 +662,11 @@ func FormatNodeInfoMessage(payload []byte) string {
 }
 
 // FormatWaypointMessage formats a Waypoint message
-func FormatWaypointMessage(payload []byte) string {
+func FormatWaypointMessage(waypoint *pb.Waypoint) string {
 	var builder strings.Builder
-	var waypoint pb.Waypoint
 	
-	if err := proto.Unmarshal(payload, &waypoint); err != nil {
-		return fmt.Sprintf("Failed to unmarshal waypoint data: %v\nRaw: %x", err, payload)
+	if waypoint == nil {
+		return "Error: nil waypoint data"
 	}
 
 	builder.WriteString("Waypoint:\n")
@@ -520,7 +710,7 @@ func FormatWaypointMessage(payload []byte) string {
 	}
 
 	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(&waypoint)
+	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(waypoint)
 	if err == nil {
 		builder.WriteString("\nFull Waypoint Structure:\n")
 		builder.WriteString(string(jsonBytes))
@@ -529,52 +719,64 @@ func FormatWaypointMessage(payload []byte) string {
 	return builder.String()
 }
 
-// FormatData formats a Data message based on its port number
+// FormatData formats a Data message (deprecated - use FormatPayload instead)
 func FormatData(data *pb.Data) string {
-	var builder strings.Builder
+	if data == nil {
+		return "Error: nil data"
+	}
 	
-	builder.WriteString(fmt.Sprintf("Data (Port: %s):\n", data.GetPortnum()))
+	decoded := &DecodedPacket{
+		PortNum: data.GetPortnum(),
+		RequestID: data.GetRequestId(),
+		ReplyID: data.GetReplyId(),
+		Emoji: data.GetEmoji(),
+		Dest: data.GetDest(),
+		Source: data.GetSource(),
+		WantResponse: data.GetWantResponse(),
+		RawData: data,
+	}
 	
-	// Format the payload based on the port number (application type)
+	// Process payload based on type
+	payload := data.GetPayload()
 	switch data.GetPortnum() {
 	case pb.PortNum_TEXT_MESSAGE_APP:
-		// Text messages are just plain text
-		builder.WriteString(fmt.Sprintf("  Text Message: %s\n", string(data.GetPayload())))
-		
-	case pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP:
-		// Compressed text - ideally we'd decompress it
-		builder.WriteString(fmt.Sprintf("  Compressed Text Message (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
-		// If we had a decompressor: builder.WriteString(fmt.Sprintf("  Decompressed: %s\n", Decompress(data.GetPayload())))
-		
+		decoded.Payload = string(payload)
 	case pb.PortNum_TELEMETRY_APP:
-		// Telemetry data
-		builder.WriteString(FormatTelemetryMessage(data.GetPayload()))
-		
-	case pb.PortNum_POSITION_APP:
-		// Position data
-		builder.WriteString(FormatPositionMessage(data.GetPayload()))
-		
-	case pb.PortNum_NODEINFO_APP:
-		// Node information
-		builder.WriteString(FormatNodeInfoMessage(data.GetPayload()))
-		
-	case pb.PortNum_WAYPOINT_APP:
-		// Waypoint data
-		builder.WriteString(FormatWaypointMessage(data.GetPayload()))
-		
-	default:
-		// For other message types, just print the payload as hex
-		if len(data.GetPayload()) > 0 {
-			builder.WriteString(fmt.Sprintf("  Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
-			
-			// Try to display as text if it seems to be ASCII
-			if IsASCII(data.GetPayload()) {
-				builder.WriteString(fmt.Sprintf("  As text: %s\n", string(data.GetPayload())))
-			}
+		var telemetry pb.Telemetry
+		if err := proto.Unmarshal(payload, &telemetry); err == nil {
+			decoded.Payload = &telemetry
 		} else {
-			builder.WriteString("  No payload\n")
+			decoded.Payload = payload
 		}
+	case pb.PortNum_POSITION_APP:
+		var position pb.Position
+		if err := proto.Unmarshal(payload, &position); err == nil {
+			decoded.Payload = &position
+		} else {
+			decoded.Payload = payload
+		}
+	case pb.PortNum_NODEINFO_APP:
+		var user pb.User
+		if err := proto.Unmarshal(payload, &user); err == nil {
+			decoded.Payload = &user
+		} else {
+			decoded.Payload = payload
+		}
+	case pb.PortNum_WAYPOINT_APP:
+		var waypoint pb.Waypoint
+		if err := proto.Unmarshal(payload, &waypoint); err == nil {
+			decoded.Payload = &waypoint
+		} else {
+			decoded.Payload = payload
+		}
+	default:
+		decoded.Payload = payload
 	}
+	
+	// Format with our new formatter
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("Data (Port: %s):\n", data.GetPortnum()))
+	builder.WriteString(FormatPayload(decoded.Payload, decoded.PortNum))
 	
 	// Show additional Data fields
 	if data.GetRequestId() != 0 {
@@ -595,6 +797,140 @@ func FormatData(data *pb.Data) string {
 	if data.GetWantResponse() {
 		builder.WriteString("  Wants Response: Yes\n")
 	}
+	
+	return builder.String()
+}
+
+// FormatPayload formats a payload based on its type and port number
+func FormatPayload(payload interface{}, portNum pb.PortNum) string {
+	if payload == nil {
+		return "  No payload data\n"
+	}
+	
+	switch portNum {
+	case pb.PortNum_TEXT_MESSAGE_APP:
+		// Text message
+		if text, ok := payload.(string); ok {
+			return fmt.Sprintf("  Text Message: %s\n", text)
+		}
+		
+	case pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP:
+		// Compressed text
+		if data, ok := payload.([]byte); ok {
+			return fmt.Sprintf("  Compressed Text Message (%d bytes): %x\n", len(data), data)
+			// TODO: Add decompression support
+		}
+		
+	case pb.PortNum_TELEMETRY_APP:
+		// Telemetry data
+		if telemetry, ok := payload.(*pb.Telemetry); ok {
+			return FormatTelemetryMessage(telemetry)
+		}
+		
+	case pb.PortNum_POSITION_APP:
+		// Position data
+		if position, ok := payload.(*pb.Position); ok {
+			return FormatPositionMessage(position)
+		}
+		
+	case pb.PortNum_NODEINFO_APP:
+		// Node information
+		if user, ok := payload.(*pb.User); ok {
+			return FormatNodeInfoMessage(user)
+		}
+		
+	case pb.PortNum_WAYPOINT_APP:
+		// Waypoint data
+		if waypoint, ok := payload.(*pb.Waypoint); ok {
+			return FormatWaypointMessage(waypoint)
+		}
+	}
+	
+	// Default formatting for unknown types
+	switch v := payload.(type) {
+	case string:
+		return fmt.Sprintf("  Text: %s\n", v)
+	case []byte:
+		result := fmt.Sprintf("  Binary (%d bytes): %x\n", len(v), v)
+		if IsASCII(v) {
+			result += fmt.Sprintf("  As text: %s\n", string(v))
+		}
+		return result
+	default:
+		return fmt.Sprintf("  Payload of type %T\n", payload)
+	}
+}
+
+// FormatDecodedPacket formats a DecodedPacket into a human-readable string
+func FormatDecodedPacket(packet *DecodedPacket) string {
+	var builder strings.Builder
+	
+	if packet == nil {
+		return "Error: nil packet"
+	}
+	
+	if packet.DecodeError != nil {
+		builder.WriteString(fmt.Sprintf("Error decoding packet: %v\n", packet.DecodeError))
+		return builder.String()
+	}
+	
+	// Envelope info
+	builder.WriteString("Packet:\n")
+	builder.WriteString(fmt.Sprintf("  Channel ID: %s\n", packet.ChannelID))
+	if packet.GatewayID != "" {
+		builder.WriteString(fmt.Sprintf("  Gateway ID: %s\n", packet.GatewayID))
+	}
+	
+	// Mesh packet info
+	builder.WriteString(fmt.Sprintf("  ID: %d\n", packet.ID))
+	builder.WriteString(fmt.Sprintf("  From: %d\n", packet.From))
+	builder.WriteString(fmt.Sprintf("  To: %d\n", packet.To))
+	
+	// Additional fields that might be interesting
+	builder.WriteString(fmt.Sprintf("  Port: %s\n", packet.PortNum))
+	
+	if packet.HopLimit != 0 {
+		builder.WriteString(fmt.Sprintf("  Hop Limit: %d\n", packet.HopLimit))
+	}
+	if packet.HopStart != 0 {
+		builder.WriteString(fmt.Sprintf("  Hop Start: %d\n", packet.HopStart))
+	}
+	if packet.WantACK {
+		builder.WriteString("  Wants ACK: Yes\n")
+	}
+	if packet.ViaMQTT {
+		builder.WriteString("  Via MQTT: Yes\n")
+	}
+	if packet.NextHop != 0 {
+		builder.WriteString(fmt.Sprintf("  Next Hop: %d\n", packet.NextHop))
+	}
+	if packet.RelayNode != 0 {
+		builder.WriteString(fmt.Sprintf("  Relay Node: %d\n", packet.RelayNode))
+	}
+	
+	// Additional data fields
+	if packet.RequestID != 0 {
+		builder.WriteString(fmt.Sprintf("  Request ID: %d\n", packet.RequestID))
+	}
+	if packet.ReplyID != 0 {
+		builder.WriteString(fmt.Sprintf("  Reply ID: %d\n", packet.ReplyID))
+	}
+	if packet.Emoji != 0 {
+		builder.WriteString(fmt.Sprintf("  Emoji: %d\n", packet.Emoji))
+	}
+	if packet.Dest != 0 {
+		builder.WriteString(fmt.Sprintf("  Destination Node: %d\n", packet.Dest))
+	}
+	if packet.Source != 0 {
+		builder.WriteString(fmt.Sprintf("  Source Node: %d\n", packet.Source))
+	}
+	if packet.WantResponse {
+		builder.WriteString("  Wants Response: Yes\n")
+	}
+	
+	// Format the payload
+	builder.WriteString("\n")
+	builder.WriteString(FormatPayload(packet.Payload, packet.PortNum))
 	
 	return builder.String()
 }
@@ -770,14 +1106,9 @@ func FormatMessage(topicInfo *TopicInfo, payload []byte) string {
 	
 	// Decode and format based on the format
 	if topicInfo.Format == "e" {
-		// Encoded protobuf message (ServiceEnvelope)
-		serviceEnvelope, err := DecodeEncodedMessage(payload)
-		if err != nil {
-			builder.WriteString(fmt.Sprintf("Error decoding encoded message: %v\n", err))
-			builder.WriteString(fmt.Sprintf("Raw Binary (%d bytes): %x\n", len(payload), payload))
-		} else {
-			builder.WriteString(FormatServiceEnvelope(serviceEnvelope))
-		}
+		// Encoded protobuf message - use our new decoder
+		decodedPacket := DecodeMessage(payload, topicInfo)
+		builder.WriteString(FormatDecodedPacket(decodedPacket))
 	} else if topicInfo.Format == "json" {
 		// JSON message
 		jsonData, err := DecodeJSONMessage(payload)
