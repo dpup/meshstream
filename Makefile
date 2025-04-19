@@ -23,7 +23,7 @@ gen-proto: tools
 		-I./proto \
 		--go_out=./proto/generated \
 		--go_opt=paths=source_relative \
-		./proto/meshtastic/*.proto ./proto/nanopb.proto
+		./proto/meshtastic/*.proto
 
 # Clean generated files
 clean:

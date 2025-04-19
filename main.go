@@ -24,14 +24,15 @@ const (
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message from topic: %s\n", msg.Topic())
 	
-	// Decode the packet
-	packet, err := decoder.DecodePacket(msg.Topic(), msg.Payload())
+	// Parse the topic structure
+	topicInfo, err := decoder.ParseTopic(msg.Topic())
 	if err != nil {
-		fmt.Printf("Error decoding packet: %v\n", err)
-		fmt.Printf("Raw payload: %s\n", msg.Payload())
+		fmt.Printf("Error parsing topic: %v\n", err)
+		fmt.Printf("Raw topic: %s\n", msg.Topic())
+		fmt.Printf("Raw payload: %x\n", msg.Payload())
 	} else {
-		// Format and print the packet
-		formattedOutput := decoder.FormatPacket(packet)
+		// Format and print the message
+		formattedOutput := decoder.FormatMessage(topicInfo, msg.Payload())
 		fmt.Println(formattedOutput)
 	}
 	
