@@ -112,24 +112,97 @@ func FormatServiceEnvelope(envelope *pb.ServiceEnvelope) string {
 		builder.WriteString(fmt.Sprintf("  From: %d\n", packet.GetFrom()))
 		builder.WriteString(fmt.Sprintf("  To: %d\n", packet.GetTo()))
 		
-		// Try to output hop info
+		// Output routing and hop information
 		builder.WriteString(fmt.Sprintf("  Hop Limit: %d\n", packet.GetHopLimit()))
 		builder.WriteString(fmt.Sprintf("  Hop Start: %d\n", packet.GetHopStart()))
+		builder.WriteString(fmt.Sprintf("  Want ACK: %v\n", packet.GetWantAck()))
+		builder.WriteString(fmt.Sprintf("  Priority: %s\n", packet.GetPriority()))
+		
+		// Output if the packet was delivered via MQTT
+		if packet.GetViaMqtt() {
+			builder.WriteString("  Via MQTT: Yes\n")
+		}
+		
+		// Relay and next hop info
+		if packet.GetNextHop() != 0 {
+			builder.WriteString(fmt.Sprintf("  Next Hop: %d\n", packet.GetNextHop()))
+		}
+		if packet.GetRelayNode() != 0 {
+			builder.WriteString(fmt.Sprintf("  Relay Node: %d\n", packet.GetRelayNode()))
+		}
+		
+		// Show public key information if available (for PKI-encrypted packets)
+		if len(packet.GetPublicKey()) > 0 {
+			builder.WriteString(fmt.Sprintf("  Public Key: %x\n", packet.GetPublicKey()))
+			builder.WriteString(fmt.Sprintf("  PKI Encrypted: %v\n", packet.GetPkiEncrypted()))
+		}
 		
 		// Determine payload type
 		if packet.GetDecoded() != nil {
 			data := packet.GetDecoded()
-			builder.WriteString(fmt.Sprintf("  Port Number: %s\n", data.GetPortnum()))
+			builder.WriteString(fmt.Sprintf("\n  Decoded Data (Port: %s):\n", data.GetPortnum()))
 			
-			// For text messages, print the text
-			if data.GetPortnum() == pb.PortNum_TEXT_MESSAGE_APP {
-				builder.WriteString(fmt.Sprintf("  Text Message: %s\n", string(data.GetPayload())))
-			} else {
+			// Output portnum-specific information
+			switch data.GetPortnum() {
+			case pb.PortNum_TEXT_MESSAGE_APP:
+				// Text message
+				builder.WriteString(fmt.Sprintf("    Text Message: %s\n", string(data.GetPayload())))
+			case pb.PortNum_TELEMETRY_APP:
+				// Try to decode telemetry data
+				builder.WriteString("    Telemetry Data\n")
+				builder.WriteString(fmt.Sprintf("    Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+			case pb.PortNum_NODEINFO_APP:
+				// Node information
+				builder.WriteString("    Node Information\n")
+				builder.WriteString(fmt.Sprintf("    Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+			case pb.PortNum_POSITION_APP:
+				// Position data
+				builder.WriteString("    Position Data\n")
+				builder.WriteString(fmt.Sprintf("    Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+			default:
 				// For other message types, print the payload as hex
-				builder.WriteString(fmt.Sprintf("  Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+				builder.WriteString(fmt.Sprintf("    Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
 			}
+			
+			// Show additional Data fields
+			if data.GetRequestId() != 0 {
+				builder.WriteString(fmt.Sprintf("    Request ID: %d\n", data.GetRequestId()))
+			}
+			if data.GetReplyId() != 0 {
+				builder.WriteString(fmt.Sprintf("    Reply ID: %d\n", data.GetReplyId()))
+			}
+			if data.GetEmoji() != 0 {
+				builder.WriteString(fmt.Sprintf("    Emoji: %d\n", data.GetEmoji()))
+			}
+			if data.GetDest() != 0 {
+				builder.WriteString(fmt.Sprintf("    Destination Node: %d\n", data.GetDest()))
+			}
+			if data.GetSource() != 0 {
+				builder.WriteString(fmt.Sprintf("    Source Node: %d\n", data.GetSource()))
+			}
+			if data.GetWantResponse() {
+				builder.WriteString("    Wants Response: Yes\n")
+			}
+			
 		} else if packet.GetEncrypted() != nil {
-			builder.WriteString(fmt.Sprintf("  Encrypted Payload (%d bytes): %x\n", len(packet.GetEncrypted()), packet.GetEncrypted()))
+			// Encrypted payload information
+			builder.WriteString("\n  Encrypted Payload:\n")
+			builder.WriteString(fmt.Sprintf("    Size: %d bytes\n", len(packet.GetEncrypted())))
+			builder.WriteString(fmt.Sprintf("    Channel: %d\n", packet.GetChannel()))
+			
+			// Print the first few bytes of the encrypted payload for identification
+			if len(packet.GetEncrypted()) > 0 {
+				displayLen := len(packet.GetEncrypted())
+				if displayLen > 16 {
+					displayLen = 16
+				}
+				builder.WriteString(fmt.Sprintf("    First %d bytes: %x\n", displayLen, packet.GetEncrypted()[:displayLen]))
+			}
+			
+			// If the packet has both channel and encrypted payload, it's using channel-based encryption
+			if packet.GetChannel() != 0 {
+				builder.WriteString("    Encryption: Channel-based\n")
+			}
 		}
 	}
 	
