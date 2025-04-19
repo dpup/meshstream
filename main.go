@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	mqttBroker     = "mqtt.bayme.sh"
-	mqttUsername   = "meshdev"
-	mqttPassword   = "large4cats"
+	mqttBroker      = "mqtt.bayme.sh"
+	mqttUsername    = "meshdev"
+	mqttPassword    = "large4cats"
 	mqttTopicPrefix = "msh/US/CA/Motherlode"
 )
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("Received message from topic: %s\n", msg.Topic())
-	
+
 	// Parse the topic structure
 	topicInfo, err := decoder.ParseTopic(msg.Topic())
 	if err != nil {
@@ -35,7 +35,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		formattedOutput := decoder.FormatMessage(topicInfo, msg.Payload())
 		fmt.Println(formattedOutput)
 	}
-	
+
 	fmt.Println(strings.Repeat("-", 80))
 }
 
@@ -50,13 +50,17 @@ var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err
 func main() {
 	// Set up logging
 	log.SetOutput(os.Stdout)
-	
+
 	// Initialize default channel key
 	err := decoder.AddChannelKey("LongFast", decoder.DefaultPrivateKey)
 	if err != nil {
 		log.Printf("Failed to initialize default channel key: %v", err)
 	}
-	
+
+	if err := decoder.AddChannelKey("ERSN", "VIuMtC5uDDJtC/ojdH314HLkDIHanX4LdbK5yViV9jA="); err != nil {
+		log.Printf("Failed to initialize ERSN channel key: %v", err)
+	}
+
 	// Create MQTT client options
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:1883", mqttBroker))

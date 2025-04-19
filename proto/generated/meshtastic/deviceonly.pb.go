@@ -711,7 +711,7 @@ var File_meshtastic_deviceonly_proto protoreflect.FileDescriptor
 const file_meshtastic_deviceonly_proto_rawDesc = "" +
 	"\n" +
 	"\x1bmeshtastic/deviceonly.proto\x12\n" +
-	"meshtastic\x1a\x18meshtastic/channel.proto\x1a\x15meshtastic/mesh.proto\x1a\x1ameshtastic/telemetry.proto\x1a\x17meshtastic/config.proto\x1a\x1ameshtastic/localonly.proto\x1a\fnanopb.proto\"\xc7\x01\n" +
+	"meshtastic\x1a\x18meshtastic/channel.proto\x1a\x15meshtastic/mesh.proto\x1a\x1ameshtastic/telemetry.proto\x1a\x17meshtastic/config.proto\x1a\x1ameshtastic/localonly.proto\x1a\x17meshtastic/nanopb.proto\"\xc7\x01\n" +
 	"\fPositionLite\x12\x1d\n" +
 	"\n" +
 	"latitude_i\x18\x01 \x01(\x0fR\tlatitudeI\x12\x1f\n" +
@@ -846,7 +846,7 @@ func file_meshtastic_deviceonly_proto_init() {
 	file_meshtastic_telemetry_proto_init()
 	file_meshtastic_config_proto_init()
 	file_meshtastic_localonly_proto_init()
-	file_nanopb_proto_init()
+	file_meshtastic_nanopb_proto_init()
 	file_meshtastic_deviceonly_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{

@@ -9,7 +9,7 @@
 // versions:
 // 	protoc-gen-go v1.36.6
 // 	protoc        v5.29.3
-// source: nanopb.proto
+// source: meshtastic/nanopb.proto
 
 package generated
 
@@ -71,11 +71,11 @@ func (x FieldType) String() string {
 }
 
 func (FieldType) Descriptor() protoreflect.EnumDescriptor {
-	return file_nanopb_proto_enumTypes[0].Descriptor()
+	return file_meshtastic_nanopb_proto_enumTypes[0].Descriptor()
 }
 
 func (FieldType) Type() protoreflect.EnumType {
-	return &file_nanopb_proto_enumTypes[0]
+	return &file_meshtastic_nanopb_proto_enumTypes[0]
 }
 
 func (x FieldType) Number() protoreflect.EnumNumber {
@@ -94,7 +94,7 @@ func (x *FieldType) UnmarshalJSON(b []byte) error {
 
 // Deprecated: Use FieldType.Descriptor instead.
 func (FieldType) EnumDescriptor() ([]byte, []int) {
-	return file_nanopb_proto_rawDescGZIP(), []int{0}
+	return file_meshtastic_nanopb_proto_rawDescGZIP(), []int{0}
 }
 
 type IntSize int32
@@ -136,11 +136,11 @@ func (x IntSize) String() string {
 }
 
 func (IntSize) Descriptor() protoreflect.EnumDescriptor {
-	return file_nanopb_proto_enumTypes[1].Descriptor()
+	return file_meshtastic_nanopb_proto_enumTypes[1].Descriptor()
 }
 
 func (IntSize) Type() protoreflect.EnumType {
-	return &file_nanopb_proto_enumTypes[1]
+	return &file_meshtastic_nanopb_proto_enumTypes[1]
 }
 
 func (x IntSize) Number() protoreflect.EnumNumber {
@@ -159,7 +159,7 @@ func (x *IntSize) UnmarshalJSON(b []byte) error {
 
 // Deprecated: Use IntSize.Descriptor instead.
 func (IntSize) EnumDescriptor() ([]byte, []int) {
-	return file_nanopb_proto_rawDescGZIP(), []int{1}
+	return file_meshtastic_nanopb_proto_rawDescGZIP(), []int{1}
 }
 
 type TypenameMangling int32
@@ -198,11 +198,11 @@ func (x TypenameMangling) String() string {
 }
 
 func (TypenameMangling) Descriptor() protoreflect.EnumDescriptor {
-	return file_nanopb_proto_enumTypes[2].Descriptor()
+	return file_meshtastic_nanopb_proto_enumTypes[2].Descriptor()
 }
 
 func (TypenameMangling) Type() protoreflect.EnumType {
-	return &file_nanopb_proto_enumTypes[2]
+	return &file_meshtastic_nanopb_proto_enumTypes[2]
 }
 
 func (x TypenameMangling) Number() protoreflect.EnumNumber {
@@ -221,7 +221,7 @@ func (x *TypenameMangling) UnmarshalJSON(b []byte) error {
 
 // Deprecated: Use TypenameMangling.Descriptor instead.
 func (TypenameMangling) EnumDescriptor() ([]byte, []int) {
-	return file_nanopb_proto_rawDescGZIP(), []int{2}
+	return file_meshtastic_nanopb_proto_rawDescGZIP(), []int{2}
 }
 
 type DescriptorSize int32
@@ -263,11 +263,11 @@ func (x DescriptorSize) String() string {
 }
 
 func (DescriptorSize) Descriptor() protoreflect.EnumDescriptor {
-	return file_nanopb_proto_enumTypes[3].Descriptor()
+	return file_meshtastic_nanopb_proto_enumTypes[3].Descriptor()
 }
 
 func (DescriptorSize) Type() protoreflect.EnumType {
-	return &file_nanopb_proto_enumTypes[3]
+	return &file_meshtastic_nanopb_proto_enumTypes[3]
 }
 
 func (x DescriptorSize) Number() protoreflect.EnumNumber {
@@ -286,7 +286,7 @@ func (x *DescriptorSize) UnmarshalJSON(b []byte) error {
 
 // Deprecated: Use DescriptorSize.Descriptor instead.
 func (DescriptorSize) EnumDescriptor() ([]byte, []int) {
-	return file_nanopb_proto_rawDescGZIP(), []int{3}
+	return file_meshtastic_nanopb_proto_rawDescGZIP(), []int{3}
 }
 
 // This is the inner options message, which basically defines options for
@@ -404,7 +404,7 @@ const (
 
 func (x *NanoPBOptions) Reset() {
 	*x = NanoPBOptions{}
-	mi := &file_nanopb_proto_msgTypes[0]
+	mi := &file_meshtastic_nanopb_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -416,7 +416,7 @@ func (x *NanoPBOptions) String() string {
 func (*NanoPBOptions) ProtoMessage() {}
 
 func (x *NanoPBOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_nanopb_proto_msgTypes[0]
+	mi := &file_meshtastic_nanopb_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -429,7 +429,7 @@ func (x *NanoPBOptions) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NanoPBOptions.ProtoReflect.Descriptor instead.
 func (*NanoPBOptions) Descriptor() ([]byte, []int) {
-	return file_nanopb_proto_rawDescGZIP(), []int{0}
+	return file_meshtastic_nanopb_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *NanoPBOptions) GetMaxSize() int32 {
@@ -635,14 +635,14 @@ func (x *NanoPBOptions) GetFallbackType() FieldType {
 	return Default_NanoPBOptions_FallbackType
 }
 
-var file_nanopb_proto_extTypes = []protoimpl.ExtensionInfo{
+var file_meshtastic_nanopb_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*descriptorpb.FileOptions)(nil),
 		ExtensionType: (*NanoPBOptions)(nil),
 		Field:         1010,
 		Name:          "nanopb_fileopt",
 		Tag:           "bytes,1010,opt,name=nanopb_fileopt",
-		Filename:      "nanopb.proto",
+		Filename:      "meshtastic/nanopb.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.MessageOptions)(nil),
@@ -650,7 +650,7 @@ var file_nanopb_proto_extTypes = []protoimpl.ExtensionInfo{
 		Field:         1010,
 		Name:          "nanopb_msgopt",
 		Tag:           "bytes,1010,opt,name=nanopb_msgopt",
-		Filename:      "nanopb.proto",
+		Filename:      "meshtastic/nanopb.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.EnumOptions)(nil),
@@ -658,7 +658,7 @@ var file_nanopb_proto_extTypes = []protoimpl.ExtensionInfo{
 		Field:         1010,
 		Name:          "nanopb_enumopt",
 		Tag:           "bytes,1010,opt,name=nanopb_enumopt",
-		Filename:      "nanopb.proto",
+		Filename:      "meshtastic/nanopb.proto",
 	},
 	{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
@@ -666,39 +666,39 @@ var file_nanopb_proto_extTypes = []protoimpl.ExtensionInfo{
 		Field:         1010,
 		Name:          "nanopb",
 		Tag:           "bytes,1010,opt,name=nanopb",
-		Filename:      "nanopb.proto",
+		Filename:      "meshtastic/nanopb.proto",
 	},
 }
 
 // Extension fields to descriptorpb.FileOptions.
 var (
 	// optional NanoPBOptions nanopb_fileopt = 1010;
-	E_NanopbFileopt = &file_nanopb_proto_extTypes[0]
+	E_NanopbFileopt = &file_meshtastic_nanopb_proto_extTypes[0]
 )
 
 // Extension fields to descriptorpb.MessageOptions.
 var (
 	// optional NanoPBOptions nanopb_msgopt = 1010;
-	E_NanopbMsgopt = &file_nanopb_proto_extTypes[1]
+	E_NanopbMsgopt = &file_meshtastic_nanopb_proto_extTypes[1]
 )
 
 // Extension fields to descriptorpb.EnumOptions.
 var (
 	// optional NanoPBOptions nanopb_enumopt = 1010;
-	E_NanopbEnumopt = &file_nanopb_proto_extTypes[2]
+	E_NanopbEnumopt = &file_meshtastic_nanopb_proto_extTypes[2]
 )
 
 // Extension fields to descriptorpb.FieldOptions.
 var (
 	// optional NanoPBOptions nanopb = 1010;
-	E_Nanopb = &file_nanopb_proto_extTypes[3]
+	E_Nanopb = &file_meshtastic_nanopb_proto_extTypes[3]
 )
 
-var File_nanopb_proto protoreflect.FileDescriptor
+var File_meshtastic_nanopb_proto protoreflect.FileDescriptor
 
-const file_nanopb_proto_rawDesc = "" +
+const file_meshtastic_nanopb_proto_rawDesc = "" +
 	"\n" +
-	"\fnanopb.proto\x1a google/protobuf/descriptor.proto\"\x86\n" +
+	"\x17meshtastic/nanopb.proto\x1a google/protobuf/descriptor.proto\"\x86\n" +
 	"\n" +
 	"\rNanoPBOptions\x12\x19\n" +
 	"\bmax_size\x18\x01 \x01(\x05R\amaxSize\x12\x1d\n" +
@@ -775,20 +775,20 @@ const file_nanopb_proto_rawDesc = "" +
 	"\x18fi.kapsi.koti.jpa.nanopbZ\"github.com/meshtastic/go/generated"
 
 var (
-	file_nanopb_proto_rawDescOnce sync.Once
-	file_nanopb_proto_rawDescData []byte
+	file_meshtastic_nanopb_proto_rawDescOnce sync.Once
+	file_meshtastic_nanopb_proto_rawDescData []byte
 )
 
-func file_nanopb_proto_rawDescGZIP() []byte {
-	file_nanopb_proto_rawDescOnce.Do(func() {
-		file_nanopb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_nanopb_proto_rawDesc), len(file_nanopb_proto_rawDesc)))
+func file_meshtastic_nanopb_proto_rawDescGZIP() []byte {
+	file_meshtastic_nanopb_proto_rawDescOnce.Do(func() {
+		file_meshtastic_nanopb_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_meshtastic_nanopb_proto_rawDesc), len(file_meshtastic_nanopb_proto_rawDesc)))
 	})
-	return file_nanopb_proto_rawDescData
+	return file_meshtastic_nanopb_proto_rawDescData
 }
 
-var file_nanopb_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_nanopb_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_nanopb_proto_goTypes = []any{
+var file_meshtastic_nanopb_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_meshtastic_nanopb_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_meshtastic_nanopb_proto_goTypes = []any{
 	(FieldType)(0),        // 0: FieldType
 	(IntSize)(0),          // 1: IntSize
 	(TypenameMangling)(0), // 2: TypenameMangling
@@ -800,7 +800,7 @@ var file_nanopb_proto_goTypes = []any{
 	(*descriptorpb.EnumOptions)(nil),            // 8: google.protobuf.EnumOptions
 	(*descriptorpb.FieldOptions)(nil),           // 9: google.protobuf.FieldOptions
 }
-var file_nanopb_proto_depIdxs = []int32{
+var file_meshtastic_nanopb_proto_depIdxs = []int32{
 	1,  // 0: NanoPBOptions.int_size:type_name -> IntSize
 	0,  // 1: NanoPBOptions.type:type_name -> FieldType
 	2,  // 2: NanoPBOptions.mangle_names:type_name -> TypenameMangling
@@ -822,28 +822,28 @@ var file_nanopb_proto_depIdxs = []int32{
 	0,  // [0:6] is the sub-list for field type_name
 }
 
-func init() { file_nanopb_proto_init() }
-func file_nanopb_proto_init() {
-	if File_nanopb_proto != nil {
+func init() { file_meshtastic_nanopb_proto_init() }
+func file_meshtastic_nanopb_proto_init() {
+	if File_meshtastic_nanopb_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_nanopb_proto_rawDesc), len(file_nanopb_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_meshtastic_nanopb_proto_rawDesc), len(file_meshtastic_nanopb_proto_rawDesc)),
 			NumEnums:      4,
 			NumMessages:   1,
 			NumExtensions: 4,
 			NumServices:   0,
 		},
-		GoTypes:           file_nanopb_proto_goTypes,
-		DependencyIndexes: file_nanopb_proto_depIdxs,
-		EnumInfos:         file_nanopb_proto_enumTypes,
-		MessageInfos:      file_nanopb_proto_msgTypes,
-		ExtensionInfos:    file_nanopb_proto_extTypes,
+		GoTypes:           file_meshtastic_nanopb_proto_goTypes,
+		DependencyIndexes: file_meshtastic_nanopb_proto_depIdxs,
+		EnumInfos:         file_meshtastic_nanopb_proto_enumTypes,
+		MessageInfos:      file_meshtastic_nanopb_proto_msgTypes,
+		ExtensionInfos:    file_meshtastic_nanopb_proto_extTypes,
 	}.Build()
-	File_nanopb_proto = out.File
-	file_nanopb_proto_goTypes = nil
-	file_nanopb_proto_depIdxs = nil
+	File_meshtastic_nanopb_proto = out.File
+	file_meshtastic_nanopb_proto_goTypes = nil
+	file_meshtastic_nanopb_proto_depIdxs = nil
 }
