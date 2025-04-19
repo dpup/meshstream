@@ -1,77 +1,15 @@
 package decoder
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/encoding/protojson"
 	
 	pb "meshstream/proto/generated/meshtastic"
 )
-
-// DefaultPrivateKey is the key used by pseudo public channels
-const DefaultPrivateKey = "AQ=="
-
-// ChannelKeys maps channelId to privateKey
-var ChannelKeys = make(map[string][]byte)
-var channelKeysMutex sync.RWMutex
-
-// AddChannelKey adds a new channel key to the map
-func AddChannelKey(channelId, base64Key string) error {
-	key, err := base64.StdEncoding.DecodeString(base64Key)
-	if err != nil {
-		return fmt.Errorf("invalid base64 key: %v", err)
-	}
-	
-	// Ensure the key is properly padded to be a valid AES key length (16, 24, or 32 bytes)
-	key = PadKey(key)
-	
-	channelKeysMutex.Lock()
-	defer channelKeysMutex.Unlock()
-	ChannelKeys[channelId] = key
-	return nil
-}
-
-// GetChannelKey retrieves a channel key from the map, or returns the default key if not found
-func GetChannelKey(channelId string) []byte {
-	channelKeysMutex.RLock()
-	defer channelKeysMutex.RUnlock()
-	
-	if key, ok := ChannelKeys[channelId]; ok {
-		return key
-	}
-	
-	// Return the default key if no specific key is found
-	defaultKey, _ := base64.StdEncoding.DecodeString(DefaultPrivateKey)
-	return PadKey(defaultKey)
-}
-
-// PadKey ensures the key is properly padded to be a valid AES key length (16, 24, or 32 bytes)
-func PadKey(key []byte) []byte {
-	// If key length is already valid, return as is
-	if len(key) == 16 || len(key) == 24 || len(key) == 32 {
-		return key
-	}
-	
-	// Pad to the next valid AES key length
-	if len(key) < 16 {
-		paddedKey := make([]byte, 16)
-		copy(paddedKey, key)
-		return paddedKey
-	} else if len(key) < 24 {
-		paddedKey := make([]byte, 24)
-		copy(paddedKey, key)
-		return paddedKey
-	} else {
-		paddedKey := make([]byte, 32)
-		copy(paddedKey, key)
-		return paddedKey
-	}
-}
 
 // TopicInfo contains parsed information about a Meshtastic MQTT topic
 type TopicInfo struct {
