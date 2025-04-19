@@ -51,6 +51,12 @@ func main() {
 	// Set up logging
 	log.SetOutput(os.Stdout)
 	
+	// Initialize default channel key
+	err := decoder.AddChannelKey("LongFast", decoder.DefaultPrivateKey)
+	if err != nil {
+		log.Printf("Failed to initialize default channel key: %v", err)
+	}
+	
 	// Create MQTT client options
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:1883", mqttBroker))

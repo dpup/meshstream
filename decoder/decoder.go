@@ -1,15 +1,77 @@
 package decoder
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/encoding/protojson"
 	
 	pb "meshstream/proto/generated/meshtastic"
 )
+
+// DefaultPrivateKey is the key used by pseudo public channels
+const DefaultPrivateKey = "AQ=="
+
+// ChannelKeys maps channelId to privateKey
+var ChannelKeys = make(map[string][]byte)
+var channelKeysMutex sync.RWMutex
+
+// AddChannelKey adds a new channel key to the map
+func AddChannelKey(channelId, base64Key string) error {
+	key, err := base64.StdEncoding.DecodeString(base64Key)
+	if err != nil {
+		return fmt.Errorf("invalid base64 key: %v", err)
+	}
+	
+	// Ensure the key is properly padded to be a valid AES key length (16, 24, or 32 bytes)
+	key = PadKey(key)
+	
+	channelKeysMutex.Lock()
+	defer channelKeysMutex.Unlock()
+	ChannelKeys[channelId] = key
+	return nil
+}
+
+// GetChannelKey retrieves a channel key from the map, or returns the default key if not found
+func GetChannelKey(channelId string) []byte {
+	channelKeysMutex.RLock()
+	defer channelKeysMutex.RUnlock()
+	
+	if key, ok := ChannelKeys[channelId]; ok {
+		return key
+	}
+	
+	// Return the default key if no specific key is found
+	defaultKey, _ := base64.StdEncoding.DecodeString(DefaultPrivateKey)
+	return PadKey(defaultKey)
+}
+
+// PadKey ensures the key is properly padded to be a valid AES key length (16, 24, or 32 bytes)
+func PadKey(key []byte) []byte {
+	// If key length is already valid, return as is
+	if len(key) == 16 || len(key) == 24 || len(key) == 32 {
+		return key
+	}
+	
+	// Pad to the next valid AES key length
+	if len(key) < 16 {
+		paddedKey := make([]byte, 16)
+		copy(paddedKey, key)
+		return paddedKey
+	} else if len(key) < 24 {
+		paddedKey := make([]byte, 24)
+		copy(paddedKey, key)
+		return paddedKey
+	} else {
+		paddedKey := make([]byte, 32)
+		copy(paddedKey, key)
+		return paddedKey
+	}
+}
 
 // TopicInfo contains parsed information about a Meshtastic MQTT topic
 type TopicInfo struct {
@@ -93,6 +155,17 @@ func DecodeJSONMessage(payload []byte) (map[string]interface{}, error) {
 		return nil, fmt.Errorf("failed to parse JSON: %v", err)
 	}
 	return jsonData, nil
+}
+
+// IsASCII checks if the given byte array contains only ASCII characters
+func IsASCII(data []byte) bool {
+	for _, b := range data {
+		// Check for non-control ASCII characters and common control characters
+		if (b < 32 && b != 9 && b != 10 && b != 13) || b > 126 {
+			return false
+		}
+	}
+	return true
 }
 
 // FormatServiceEnvelope formats a ServiceEnvelope message into a human-readable string
@@ -199,9 +272,76 @@ func FormatServiceEnvelope(envelope *pb.ServiceEnvelope) string {
 				builder.WriteString(fmt.Sprintf("    First %d bytes: %x\n", displayLen, packet.GetEncrypted()[:displayLen]))
 			}
 			
-			// If the packet has both channel and encrypted payload, it's using channel-based encryption
-			if packet.GetChannel() != 0 {
-				builder.WriteString("    Encryption: Channel-based\n")
+			// If the packet has channel ID, it's using channel-based encryption
+			channelId := envelope.GetChannelId()
+			if channelId != "" {
+				builder.WriteString(fmt.Sprintf("    Encryption: Channel-based (Channel ID: %s)\n", channelId))
+				
+				// Attempt to decrypt the payload using the channel key
+				channelKey := GetChannelKey(channelId)
+				builder.WriteString(fmt.Sprintf("    Using key (%d bytes): %x\n", len(channelKey), channelKey))
+				
+				// Try to decrypt
+				decrypted, err := XOR(packet.GetEncrypted(), channelKey, packet.GetId(), packet.GetFrom())
+				if err != nil {
+					builder.WriteString(fmt.Sprintf("    Decryption error: %v\n", err))
+				} else {
+					builder.WriteString(fmt.Sprintf("    Decrypted (%d bytes): %x\n", len(decrypted), decrypted))
+					
+					// Try to parse the decrypted payload as a Data message
+					var data pb.Data
+					if err := proto.Unmarshal(decrypted, &data); err == nil {
+						// Successfully decoded the decrypted payload
+						builder.WriteString(fmt.Sprintf("\n    Decoded Data (Port: %s):\n", data.GetPortnum()))
+						
+						// Output portnum-specific information
+						switch data.GetPortnum() {
+						case pb.PortNum_TEXT_MESSAGE_APP:
+							// Text message
+							builder.WriteString(fmt.Sprintf("      Text Message: %s\n", string(data.GetPayload())))
+						case pb.PortNum_TELEMETRY_APP:
+							// Telemetry data
+							builder.WriteString("      Telemetry Data\n")
+							builder.WriteString(fmt.Sprintf("      Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+						case pb.PortNum_NODEINFO_APP:
+							// Node information
+							builder.WriteString("      Node Information\n")
+							builder.WriteString(fmt.Sprintf("      Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+						case pb.PortNum_POSITION_APP:
+							// Position data
+							builder.WriteString("      Position Data\n")
+							builder.WriteString(fmt.Sprintf("      Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+						default:
+							// For other message types, print the payload as hex
+							builder.WriteString(fmt.Sprintf("      Payload (%d bytes): %x\n", len(data.GetPayload()), data.GetPayload()))
+						}
+						
+						// Show additional Data fields
+						if data.GetRequestId() != 0 {
+							builder.WriteString(fmt.Sprintf("      Request ID: %d\n", data.GetRequestId()))
+						}
+						if data.GetReplyId() != 0 {
+							builder.WriteString(fmt.Sprintf("      Reply ID: %d\n", data.GetReplyId()))
+						}
+						if data.GetEmoji() != 0 {
+							builder.WriteString(fmt.Sprintf("      Emoji: %d\n", data.GetEmoji()))
+						}
+						if data.GetDest() != 0 {
+							builder.WriteString(fmt.Sprintf("      Destination Node: %d\n", data.GetDest()))
+						}
+						if data.GetSource() != 0 {
+							builder.WriteString(fmt.Sprintf("      Source Node: %d\n", data.GetSource()))
+						}
+						if data.GetWantResponse() {
+							builder.WriteString("      Wants Response: Yes\n")
+						}
+					} else {
+						// If we couldn't parse as Data, try to interpret as text
+						if IsASCII(decrypted) {
+							builder.WriteString(fmt.Sprintf("    Decrypted as text: %s\n", string(decrypted)))
+						}
+					}
+				}
 			}
 		}
 	}
