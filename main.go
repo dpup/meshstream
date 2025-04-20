@@ -18,7 +18,7 @@ const (
 	mqttBroker      = "mqtt.bayme.sh"
 	mqttUsername    = "meshdev"
 	mqttPassword    = "large4cats"
-	mqttTopicPrefix = "msh/US/CA/Motherlode"
+	mqttTopicPrefix = "msh/US"
 )
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {

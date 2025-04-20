@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultPrivateKey is the key used by pseudo public channels
-const DefaultPrivateKey = "AQ=="
+const DefaultPrivateKey = "1PG7OiApB1nwvP+rz05pAQ=="
 
 // ChannelKeys maps channelId to privateKey
 var channelKeys = make(map[string][]byte)
@@ -19,13 +19,13 @@ func AddChannelKey(channelId, base64Key string) error {
 	if err != nil {
 		return fmt.Errorf("invalid base64 key: %v", err)
 	}
-	
+
 	// Ensure the key is properly padded to be a valid AES key length
 	key = PadKey(key)
-	
+
 	channelKeysMutex.Lock()
 	defer channelKeysMutex.Unlock()
-	
+
 	channelKeys[channelId] = key
 	return nil
 }
@@ -34,11 +34,11 @@ func AddChannelKey(channelId, base64Key string) error {
 func GetChannelKey(channelId string) []byte {
 	channelKeysMutex.RLock()
 	defer channelKeysMutex.RUnlock()
-	
+
 	if key, ok := channelKeys[channelId]; ok {
 		return key
 	}
-	
+
 	// Return the default key if no specific key is found
 	defaultKey, _ := base64.StdEncoding.DecodeString(DefaultPrivateKey)
 	return PadKey(defaultKey)
@@ -48,7 +48,7 @@ func GetChannelKey(channelId string) []byte {
 func ClearChannelKeys() {
 	channelKeysMutex.Lock()
 	defer channelKeysMutex.Unlock()
-	
+
 	channelKeys = make(map[string][]byte)
 }
 
@@ -56,7 +56,7 @@ func ClearChannelKeys() {
 func ListChannelKeys() map[string]string {
 	channelKeysMutex.RLock()
 	defer channelKeysMutex.RUnlock()
-	
+
 	result := make(map[string]string)
 	for id, key := range channelKeys {
 		result[id] = base64.StdEncoding.EncodeToString(key)
@@ -68,7 +68,7 @@ func ListChannelKeys() map[string]string {
 func RemoveChannelKey(channelId string) {
 	channelKeysMutex.Lock()
 	defer channelKeysMutex.Unlock()
-	
+
 	delete(channelKeys, channelId)
 }
 
@@ -78,7 +78,7 @@ func PadKey(key []byte) []byte {
 	if len(key) == 16 || len(key) == 24 || len(key) == 32 {
 		return key
 	}
-	
+
 	// Pad to the next valid AES key length
 	if len(key) < 16 {
 		paddedKey := make([]byte, 16)
