@@ -18,7 +18,7 @@ const (
 	mqttBroker      = "mqtt.bayme.sh"
 	mqttUsername    = "meshdev"
 	mqttPassword    = "large4cats"
-	mqttTopicPrefix = "msh/US"
+	mqttTopicPrefix = "msh/US/bayarea"
 )
 
 var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
@@ -37,7 +37,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			// Binary encoded protobuf message
 			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
-		} else if topicInfo.Format == "json" {
+		} else if topicInfo.Format == "map" {
+				// Map format - unencrypted map packets, display as text
+				formattedOutput = decoder.FormatTopicAndMapData(topicInfo, msg.Payload())
+			} else if topicInfo.Format == "json" {
 			// JSON format message
 			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())
 			if err != nil {
@@ -50,7 +53,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			// Unsupported format
 			formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
 		}
-		
+
 		// Print the formatted output
 		fmt.Println(formattedOutput)
 	}

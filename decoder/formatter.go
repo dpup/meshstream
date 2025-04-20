@@ -846,6 +846,32 @@ func FormatTopicAndJSONData(topicInfo *TopicInfo, jsonData map[string]interface{
 	return builder.String()
 }
 
+// FormatTopicAndMapData formats topic information and map data as text
+func FormatTopicAndMapData(topicInfo *TopicInfo, payload []byte) string {
+	var builder strings.Builder
+	
+	// Display topic information
+	builder.WriteString(fmt.Sprintf("Topic: %s\n", topicInfo.FullTopic))
+	builder.WriteString(fmt.Sprintf("Region Path: %s\n", topicInfo.RegionPath))
+	builder.WriteString(fmt.Sprintf("Version: %s\n", topicInfo.Version))
+	builder.WriteString(fmt.Sprintf("Format: %s\n", topicInfo.Format))
+	builder.WriteString(fmt.Sprintf("Channel: %s\n", topicInfo.Channel))
+	if topicInfo.UserID != "" {
+		builder.WriteString(fmt.Sprintf("User ID: %s\n", topicInfo.UserID))
+	}
+	builder.WriteString("\n")
+	
+	// Display map data as text
+	builder.WriteString("Map Data:\n")
+	if IsASCII(payload) {
+		builder.WriteString(fmt.Sprintf("  Text Content: %s\n", string(payload)))
+	} else {
+		builder.WriteString(fmt.Sprintf("  Data is not ASCII text, showing hex: %x\n", payload))
+	}
+	
+	return builder.String()
+}
+
 // FormatTopicAndRawData formats topic information and raw data for unsupported formats
 func FormatTopicAndRawData(topicInfo *TopicInfo, payload []byte) string {
 	var builder strings.Builder
