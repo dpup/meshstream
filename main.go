@@ -38,8 +38,10 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
 		} else if topicInfo.Format == "map" {
-				// Map format - unencrypted map packets, display as text
-				formattedOutput = decoder.FormatTopicAndMapData(topicInfo, msg.Payload())
+				// Map format - unencrypted map packets
+				// These are ServiceEnvelope messages with MAP_REPORT_APP data
+				decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
+				formattedOutput = decoder.FormatTopicAndMapData(topicInfo, decodedPacket)
 			} else if topicInfo.Format == "json" {
 			// JSON format message
 			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())

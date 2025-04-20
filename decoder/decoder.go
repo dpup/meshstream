@@ -288,15 +288,6 @@ func DecodeJSONMessage(payload []byte) (map[string]interface{}, error) {
 	return jsonData, nil
 }
 
-// DecodeMapReport decodes a MapReport protobuf message (format "map")
-func DecodeMapReport(payload []byte) (*pb.MapReport, error) {
-	var mapReport pb.MapReport
-	if err := proto.Unmarshal(payload, &mapReport); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal MapReport: %v", err)
-	}
-	return &mapReport, nil
-}
-
 // IsASCII checks if the given byte array contains only ASCII characters
 func IsASCII(data []byte) bool {
 	for _, b := range data {
