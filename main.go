@@ -31,8 +31,27 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 		fmt.Printf("Raw topic: %s\n", msg.Topic())
 		fmt.Printf("Raw payload: %x\n", msg.Payload())
 	} else {
-		// Format and print the message
-		formattedOutput := decoder.FormatMessage(topicInfo, msg.Payload())
+		// First decode the message based on its format
+		var formattedOutput string
+		if topicInfo.Format == "e" {
+			// Binary encoded protobuf message
+			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
+			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
+		} else if topicInfo.Format == "json" {
+			// JSON format message
+			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())
+			if err != nil {
+				fmt.Printf("Error decoding JSON message: %v\n", err)
+				formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
+			} else {
+				formattedOutput = decoder.FormatTopicAndJSONData(topicInfo, jsonData)
+			}
+		} else {
+			// Unsupported format
+			formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
+		}
+		
+		// Print the formatted output
 		fmt.Println(formattedOutput)
 	}
 

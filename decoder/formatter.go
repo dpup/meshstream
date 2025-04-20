@@ -430,64 +430,68 @@ func FormatWaypointMessage(waypoint *pb.Waypoint) string {
 	return builder.String()
 }
 
-// FormatData formats a Data message (deprecated - use FormatPayload instead)
-func FormatData(data *pb.Data) string {
+// FormatDataMessage formats a Data message
+func FormatDataMessage(data *pb.Data) string {
 	if data == nil {
 		return "Error: nil data"
 	}
 	
-	decoded := &DecodedPacket{
-		PortNum: data.GetPortnum(),
-		RequestID: data.GetRequestId(),
-		ReplyID: data.GetReplyId(),
-		Emoji: data.GetEmoji(),
-		Dest: data.GetDest(),
-		Source: data.GetSource(),
-		WantResponse: data.GetWantResponse(),
-		RawData: data,
-	}
+	var builder strings.Builder
+	builder.WriteString(fmt.Sprintf("Data (Port: %s):\n", data.GetPortnum()))
 	
-	// Process payload based on type
+	// Format payload based on port type
 	payload := data.GetPayload()
 	switch data.GetPortnum() {
 	case pb.PortNum_TEXT_MESSAGE_APP:
-		decoded.Payload = string(payload)
+		builder.WriteString(fmt.Sprintf("  Text Message: %s\n", string(payload)))
+		
+	case pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP:
+		builder.WriteString(fmt.Sprintf("  Compressed Text Message (%d bytes): %x\n", len(payload), payload))
+		
 	case pb.PortNum_TELEMETRY_APP:
 		var telemetry pb.Telemetry
 		if err := proto.Unmarshal(payload, &telemetry); err == nil {
-			decoded.Payload = &telemetry
+			builder.WriteString(FormatTelemetryMessage(&telemetry))
 		} else {
-			decoded.Payload = payload
+			builder.WriteString(fmt.Sprintf("  Failed to parse telemetry: %v\n", err))
+			builder.WriteString(fmt.Sprintf("  Raw bytes (%d): %x\n", len(payload), payload))
 		}
+		
 	case pb.PortNum_POSITION_APP:
 		var position pb.Position
 		if err := proto.Unmarshal(payload, &position); err == nil {
-			decoded.Payload = &position
+			builder.WriteString(FormatPositionMessage(&position))
 		} else {
-			decoded.Payload = payload
+			builder.WriteString(fmt.Sprintf("  Failed to parse position: %v\n", err))
+			builder.WriteString(fmt.Sprintf("  Raw bytes (%d): %x\n", len(payload), payload))
 		}
+		
 	case pb.PortNum_NODEINFO_APP:
 		var user pb.User
 		if err := proto.Unmarshal(payload, &user); err == nil {
-			decoded.Payload = &user
+			builder.WriteString(FormatNodeInfoMessage(&user))
 		} else {
-			decoded.Payload = payload
+			builder.WriteString(fmt.Sprintf("  Failed to parse node info: %v\n", err))
+			builder.WriteString(fmt.Sprintf("  Raw bytes (%d): %x\n", len(payload), payload))
 		}
+		
 	case pb.PortNum_WAYPOINT_APP:
 		var waypoint pb.Waypoint
 		if err := proto.Unmarshal(payload, &waypoint); err == nil {
-			decoded.Payload = &waypoint
+			builder.WriteString(FormatWaypointMessage(&waypoint))
 		} else {
-			decoded.Payload = payload
+			builder.WriteString(fmt.Sprintf("  Failed to parse waypoint: %v\n", err))
+			builder.WriteString(fmt.Sprintf("  Raw bytes (%d): %x\n", len(payload), payload))
 		}
+		
 	default:
-		decoded.Payload = payload
+		// For unknown types, show raw binary data
+		builder.WriteString(fmt.Sprintf("  Binary data (%d bytes): %x\n", len(payload), payload))
+		// If it looks like ASCII text, also show as text
+		if IsASCII(payload) {
+			builder.WriteString(fmt.Sprintf("  As text: %s\n", string(payload)))
+		}
 	}
-	
-	// Format with our new formatter
-	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("Data (Port: %s):\n", data.GetPortnum()))
-	builder.WriteString(FormatPayload(decoded.Payload, decoded.PortNum))
 	
 	// Show additional Data fields
 	if data.GetRequestId() != 0 {
@@ -692,7 +696,7 @@ func FormatServiceEnvelope(envelope *pb.ServiceEnvelope) string {
 		if packet.GetDecoded() != nil {
 			// For already decoded packets, use our specialized data formatter
 			builder.WriteString("\n")
-			builder.WriteString(FormatData(packet.GetDecoded()))
+			builder.WriteString(FormatDataMessage(packet.GetDecoded()))
 			
 		} else if packet.GetEncrypted() != nil {
 			// Encrypted payload information
@@ -731,7 +735,7 @@ func FormatServiceEnvelope(envelope *pb.ServiceEnvelope) string {
 						// Successfully decoded the decrypted payload into a Data message
 						// Use our specialized data formatter to show the message details
 						builder.WriteString("\n")
-						builder.WriteString(indent(FormatData(&data), "    "))
+						builder.WriteString(indent(FormatDataMessage(&data), "    "))
 					} else {
 						// If we couldn't parse as Data, try to interpret as text
 						if IsASCII(decrypted) {
@@ -800,8 +804,8 @@ func FormatJSONMessage(jsonData map[string]interface{}) string {
 	return builder.String()
 }
 
-// FormatMessage formats a decoded message based on its format
-func FormatMessage(topicInfo *TopicInfo, payload []byte) string {
+// FormatTopicAndPacket formats both topic information and a decoded packet
+func FormatTopicAndPacket(topicInfo *TopicInfo, decodedPacket *DecodedPacket) string {
 	var builder strings.Builder
 	
 	// Display topic information
@@ -815,25 +819,51 @@ func FormatMessage(topicInfo *TopicInfo, payload []byte) string {
 	}
 	builder.WriteString("\n")
 	
-	// Decode and format based on the format
-	if topicInfo.Format == "e" {
-		// Encoded protobuf message - use our new decoder
-		decodedPacket := DecodeMessage(payload, topicInfo)
-		builder.WriteString(FormatDecodedPacket(decodedPacket))
-	} else if topicInfo.Format == "json" {
-		// JSON message
-		jsonData, err := DecodeJSONMessage(payload)
-		if err != nil {
-			builder.WriteString(fmt.Sprintf("Error decoding JSON message: %v\n", err))
-			builder.WriteString(fmt.Sprintf("Raw Data: %s\n", string(payload)))
-		} else {
-			builder.WriteString(FormatJSONMessage(jsonData))
-		}
-	} else {
-		// Unknown format
-		builder.WriteString(fmt.Sprintf("Unsupported format: %s\n", topicInfo.Format))
-		builder.WriteString(fmt.Sprintf("Raw Data (%d bytes): %x\n", len(payload), payload))
+	// Format the decoded packet
+	builder.WriteString(FormatDecodedPacket(decodedPacket))
+	
+	return builder.String()
+}
+
+// FormatTopicAndJSONData formats both topic information and decoded JSON data
+func FormatTopicAndJSONData(topicInfo *TopicInfo, jsonData map[string]interface{}) string {
+	var builder strings.Builder
+	
+	// Display topic information
+	builder.WriteString(fmt.Sprintf("Topic: %s\n", topicInfo.FullTopic))
+	builder.WriteString(fmt.Sprintf("Region Path: %s\n", topicInfo.RegionPath))
+	builder.WriteString(fmt.Sprintf("Version: %s\n", topicInfo.Version))
+	builder.WriteString(fmt.Sprintf("Format: %s\n", topicInfo.Format))
+	builder.WriteString(fmt.Sprintf("Channel: %s\n", topicInfo.Channel))
+	if topicInfo.UserID != "" {
+		builder.WriteString(fmt.Sprintf("User ID: %s\n", topicInfo.UserID))
 	}
+	builder.WriteString("\n")
+	
+	// Format the JSON data
+	builder.WriteString(FormatJSONMessage(jsonData))
+	
+	return builder.String()
+}
+
+// FormatTopicAndRawData formats topic information and raw data for unsupported formats
+func FormatTopicAndRawData(topicInfo *TopicInfo, payload []byte) string {
+	var builder strings.Builder
+	
+	// Display topic information
+	builder.WriteString(fmt.Sprintf("Topic: %s\n", topicInfo.FullTopic))
+	builder.WriteString(fmt.Sprintf("Region Path: %s\n", topicInfo.RegionPath))
+	builder.WriteString(fmt.Sprintf("Version: %s\n", topicInfo.Version))
+	builder.WriteString(fmt.Sprintf("Format: %s\n", topicInfo.Format))
+	builder.WriteString(fmt.Sprintf("Channel: %s\n", topicInfo.Channel))
+	if topicInfo.UserID != "" {
+		builder.WriteString(fmt.Sprintf("User ID: %s\n", topicInfo.UserID))
+	}
+	builder.WriteString("\n")
+	
+	// Display raw data
+	builder.WriteString(fmt.Sprintf("Unsupported format: %s\n", topicInfo.Format))
+	builder.WriteString(fmt.Sprintf("Raw Data (%d bytes): %x\n", len(payload), payload))
 	
 	return builder.String()
 }
