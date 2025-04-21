@@ -1,8 +1,9 @@
 package mqtt
 
 import (
-	"log"
 	"sync"
+	
+	"github.com/dpup/prefab/logging"
 )
 
 // SubscriberConfig holds configuration for creating a subscriber
@@ -26,10 +27,14 @@ type BaseSubscriber struct {
 	startHook  func()
 	closeHook  func()
 	BufferSize int
+	logger     logging.Logger
 }
 
 // NewBaseSubscriber creates a new base subscriber
 func NewBaseSubscriber(config SubscriberConfig) *BaseSubscriber {
+	// Create a logger for this subscriber
+	logger := logging.NewDevLogger().Named("mqtt.subscriber." + config.Name)
+	
 	return &BaseSubscriber{
 		broker:     config.Broker,
 		name:       config.Name,
@@ -38,6 +43,7 @@ func NewBaseSubscriber(config SubscriberConfig) *BaseSubscriber {
 		startHook:  config.StartHook,
 		closeHook:  config.CloseHook,
 		BufferSize: config.BufferSize,
+		logger:     logger,
 	}
 }
 
@@ -55,7 +61,7 @@ func (b *BaseSubscriber) Start() {
 	b.wg.Add(1)
 	go b.run()
 	
-	log.Printf("Subscriber %s started", b.name)
+	b.logger.Infof("Subscriber %s started", b.name)
 }
 
 // run processes messages from the channel
@@ -67,7 +73,7 @@ func (b *BaseSubscriber) run() {
 		case packet, ok := <-b.channel:
 			if !ok {
 				// Channel closed
-				log.Printf("Channel closed for subscriber %s", b.name)
+				b.logger.Infof("Channel closed for subscriber %s", b.name)
 				return
 			}
 			
@@ -76,7 +82,7 @@ func (b *BaseSubscriber) run() {
 			}
 			
 		case <-b.done:
-			log.Printf("Subscriber %s received shutdown signal", b.name)
+			b.logger.Infof("Subscriber %s received shutdown signal", b.name)
 			return
 		}
 	}
@@ -84,7 +90,7 @@ func (b *BaseSubscriber) run() {
 
 // Close stops the subscriber and releases resources
 func (b *BaseSubscriber) Close() {
-	log.Printf("Closing subscriber %s", b.name)
+	b.logger.Infof("Closing subscriber %s", b.name)
 	
 	// Signal the processing loop to stop
 	close(b.done)
@@ -100,7 +106,7 @@ func (b *BaseSubscriber) Close() {
 		b.closeHook()
 	}
 	
-	log.Printf("Subscriber %s closed", b.name)
+	b.logger.Infof("Subscriber %s closed", b.name)
 }
 
 // Name returns the subscriber's name

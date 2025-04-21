@@ -3,13 +3,13 @@ package server
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 	"sync/atomic"
 	"time"
 
 	"github.com/dpup/prefab"
+	"github.com/dpup/prefab/logging"
 
 	"meshstream/mqtt"
 )
@@ -29,17 +29,23 @@ type Server struct {
 	shutdown chan struct{}
 	// Atomic flag to indicate if server is shutting down
 	isShuttingDown atomic.Bool
+	// Logger instance
+	logger logging.Logger
 }
 
 // New creates a new server instance
 func New(config Config) *Server {
+	// Create a named logger
+	logger := logging.NewDevLogger().Named("server")
+	
 	if config.Broker == nil {
-		log.Println("Warning: Server created without a broker, streaming will not work")
+		logger.Info("Warning: Server created without a broker, streaming will not work")
 	}
 	
 	return &Server{
 		config:   config,
 		shutdown: make(chan struct{}),
+		logger:   logger,
 	}
 }
 
@@ -61,7 +67,7 @@ func (s *Server) Start() error {
 	)
 
 	// Start the server
-	log.Printf("Starting server on %s:%s", s.config.Host, s.config.Port)
+	s.logger.Infof("Starting server on %s:%s", s.config.Host, s.config.Port)
 	return s.server.Start()
 }
 
@@ -82,10 +88,17 @@ func (s *Server) Stop() error {
 
 // handleStatus is a placeholder API endpoint that returns server status
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Ensure logger is in context
+	ctx = logging.EnsureLogger(ctx)
+	logger := logging.FromContext(ctx).Named("api.status")
+	
 	status := map[string]interface{}{
 		"status": "ok",
 		"message": "Meshtastic Stream API is running",
 	}
+	
+	logger.Debug("Status endpoint called")
 	
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(status)
@@ -93,6 +106,12 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleStream handles Server-Sent Events streaming of MQTT messages
 func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	// Ensure we have a logger in the context
+	ctx = logging.EnsureLogger(ctx)
+	// Create request-scoped logger 
+	logger := logging.FromContext(ctx).Named("sse")
+	
 	// Check if the server is shutting down
 	if s.isShuttingDown.Load() {
 		http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
@@ -122,7 +141,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	packetChan := s.config.Broker.Subscribe(10)
 	
 	// Signal when the client disconnects
-	notify := r.Context().Done()
+	notify := ctx.Done()
 	
 	// Send an initial message
 	fmt.Fprintf(w, "event: info\ndata: Connected to Meshtastic stream\n\n")
@@ -133,13 +152,13 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-notify:
 			// Client disconnected, unsubscribe and return
-			log.Println("Client disconnected, unsubscribing from broker")
+			logger.Info("Client disconnected, unsubscribing from broker")
 			s.config.Broker.Unsubscribe(packetChan)
 			return
 			
 		case <-s.shutdown:
 			// Server is shutting down, send a message to client and close
-			log.Println("Server shutting down, closing SSE connection")
+			logger.Info("Server shutting down, closing SSE connection")
 			fmt.Fprintf(w, "event: info\ndata: Server shutting down, connection closed\n\n")
 			flusher.Flush()
 			s.config.Broker.Unsubscribe(packetChan)
@@ -148,7 +167,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 		case packet, ok := <-packetChan:
 			if !ok {
 				// Channel closed, probably shutting down
-				log.Println("Packet channel closed, ending stream")
+				logger.Info("Packet channel closed, ending stream")
 				return
 			}
 			
@@ -172,7 +191,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			data, err := json.Marshal(packetWrapper)
 			
 			if err != nil {
-				log.Printf("Error marshaling packet to JSON: %v", err)
+				logger.Errorw("Error marshaling packet to JSON", "error", err)
 				continue
 			}
 			

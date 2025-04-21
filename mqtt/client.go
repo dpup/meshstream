@@ -2,12 +2,12 @@ package mqtt
 
 import (
 	"fmt"
-	"log"
 	"time"
 
-	"meshstream/decoder"
-
+	"github.com/dpup/prefab/logging"
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+
+	"meshstream/decoder"
 )
 
 // Config holds configuration for the MQTT client
@@ -25,14 +25,18 @@ type Client struct {
 	client          mqtt.Client
 	decodedMessages chan *Packet
 	done            chan struct{}
+	logger          logging.Logger
 }
 
 // NewClient creates a new MQTT client with the provided configuration
 func NewClient(config Config) *Client {
+	logger := logging.NewDevLogger().Named("mqtt.client")
+	
 	return &Client{
 		config:          config,
 		decodedMessages: make(chan *Packet, 100), // Buffer up to 100 messages
 		done:            make(chan struct{}),
+		logger:          logger,
 	}
 }
 
@@ -58,7 +62,7 @@ func (c *Client) Connect() error {
 	// Subscribe to the configured topic
 	token := c.client.Subscribe(c.config.Topic, 0, nil)
 	token.Wait()
-	log.Printf("Subscribed to topic: %s\n", c.config.Topic)
+	c.logger.Infof("Subscribed to topic: %s", c.config.Topic)
 
 	return nil
 }
@@ -81,14 +85,16 @@ func (c *Client) Messages() <-chan *Packet {
 
 // messageHandler processes incoming MQTT messages
 func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
-	log.Printf("Received message from topic: %s\n", msg.Topic())
+	c.logger.Debugf("Received message from topic: %s", msg.Topic())
 
 	// Parse the topic structure
 	topicInfo, err := decoder.ParseTopic(msg.Topic())
 	if err != nil {
-		log.Printf("Error parsing topic: %v\n", err)
-		log.Printf("Raw topic: %s\n", msg.Topic())
-		log.Printf("Raw payload: %x\n", msg.Payload())
+		c.logger.Errorw("Error parsing topic", 
+			"error", err,
+			"topic", msg.Topic(),
+			"payload_hex", fmt.Sprintf("%x", msg.Payload()),
+		)
 		return
 	}
 
@@ -113,25 +119,25 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 			return
 		default:
 			// Channel buffer is full, log a warning and drop the message
-			log.Println("Warning: Message buffer full, dropping message")
+			c.logger.Warn("Message buffer full, dropping message")
 		}
 	
 	case "json":
 		// TODO: Add support for JSON format messages in the future
-		log.Printf("Ignoring JSON format message from topic: %s\n", msg.Topic())
+		c.logger.Debugf("Ignoring JSON format message from topic: %s", msg.Topic())
 	
 	default:
 		// Unsupported format, log and ignore
-		log.Printf("Unsupported format: %s from topic: %s\n", topicInfo.Format, msg.Topic())
+		c.logger.Infow("Unsupported format", "format", topicInfo.Format, "topic", msg.Topic())
 	}
 }
 
 // connectHandler is called when the client connects to the broker
 func (c *Client) connectHandler(client mqtt.Client) {
-	log.Println("Connected to MQTT Broker!")
+	c.logger.Info("Connected to MQTT Broker")
 }
 
 // connectionLostHandler is called when the client loses connection
 func (c *Client) connectionLostHandler(client mqtt.Client, err error) {
-	log.Printf("Connection lost: %v\n", err)
+	c.logger.Errorw("Connection lost", "error", err)
 }

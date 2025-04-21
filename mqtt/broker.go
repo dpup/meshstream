@@ -1,8 +1,9 @@
 package mqtt
 
 import (
-	"log"
 	"sync"
+
+	"github.com/dpup/prefab/logging"
 )
 
 // Broker distributes messages from a source channel to multiple subscriber channels
@@ -12,14 +13,22 @@ type Broker struct {
 	subscriberMutex sync.RWMutex              // Lock for modifying the subscribers map
 	done            chan struct{}             // Signal to stop the dispatch loop
 	wg              sync.WaitGroup            // Wait group to ensure clean shutdown
+	logger          logging.Logger            // Logger for broker operations
 }
 
 // NewBroker creates a new broker that distributes messages from sourceChannel to subscribers
-func NewBroker(sourceChannel <-chan *Packet) *Broker {
+func NewBroker(sourceChannel <-chan *Packet, logger logging.Logger) *Broker {
+	// Create a named logger if one was not provided
+	if logger == nil {
+		logger = logging.NewDevLogger()
+	}
+	brokerLogger := logger.Named("mqtt.broker")
+	
 	broker := &Broker{
 		sourceChan:  sourceChannel,
 		subscribers: make(map[chan *Packet]struct{}),
 		done:        make(chan struct{}),
+		logger:      brokerLogger,
 	}
 
 	// Start the dispatch loop
@@ -46,7 +55,6 @@ func (b *Broker) Subscribe(bufferSize int) <-chan *Packet {
 
 // Unsubscribe removes a subscriber and closes its channel
 func (b *Broker) Unsubscribe(ch <-chan *Packet) {
-
 	b.subscriberMutex.Lock()
 	defer b.subscriberMutex.Unlock()
 
@@ -60,7 +68,7 @@ func (b *Broker) Unsubscribe(ch <-chan *Packet) {
 	}
 
 	// If we get here, the channel wasn't found
-	log.Println("Warning: Subscriber channel not found - cannot unsubscribe")
+	b.logger.Warn("Subscriber channel not found - cannot unsubscribe")
 }
 
 // Close shuts down the broker and closes all subscriber channels
@@ -94,7 +102,7 @@ func (b *Broker) dispatchLoop() {
 		case packet, ok := <-b.sourceChan:
 			if !ok {
 				// Source channel has been closed, shut down the broker
-				log.Println("Source channel closed, shutting down broker")
+				b.logger.Info("Source channel closed, shutting down broker")
 				b.Close()
 				return
 			}
@@ -122,7 +130,7 @@ func (b *Broker) broadcast(packet *Packet) {
 			defer func() {
 				if r := recover(); r != nil {
 					// This can happen if the channel was closed after we took a snapshot
-					log.Println("Warning: Recovered from panic in broadcast, channel likely closed")
+					b.logger.Warn("Recovered from panic in broadcast, channel likely closed")
 				}
 			}()
 
@@ -132,7 +140,7 @@ func (b *Broker) broadcast(packet *Packet) {
 				// Message delivered successfully
 			default:
 				// Channel buffer is full, log warning and drop the message
-				log.Println("Warning: Subscriber buffer full, dropping message")
+				b.logger.Warn("Subscriber buffer full, dropping message")
 			}
 		}(ch)
 	}

@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/dpup/prefab/logging"
 
 	"meshstream/decoder"
 	"meshstream/mqtt"
@@ -28,16 +29,16 @@ const (
 
 func main() {
 	// Set up logging
-	log.SetOutput(os.Stdout)
-
+	logger := logging.NewDevLogger().Named("main")
+	
 	// Initialize default channel key
 	err := decoder.AddChannelKey("LongFast", decoder.DefaultPrivateKey)
 	if err != nil {
-		log.Printf("Failed to initialize default channel key: %v", err)
+		logger.Errorw("Failed to initialize default channel key", "error", err)
 	}
 
 	if err := decoder.AddChannelKey("ERSN", "VIuMtC5uDDJtC/ojdH314HLkDIHanX4LdbK5yViV9jA="); err != nil {
-		log.Printf("Failed to initialize ERSN channel key: %v", err)
+		logger.Errorw("Failed to initialize ERSN channel key", "error", err)
 	}
 
 	// Configure and create the MQTT client
@@ -53,14 +54,14 @@ func main() {
 	
 	// Connect to the MQTT broker
 	if err := mqttClient.Connect(); err != nil {
-		log.Fatalf("Failed to connect to MQTT broker: %v", err)
+		logger.Fatalw("Failed to connect to MQTT broker", "error", err)
 	}
 	
 	// Get the messages channel to receive decoded messages
 	messagesChan := mqttClient.Messages()
 	
 	// Create a message broker to distribute messages to multiple consumers
-	broker := mqtt.NewBroker(messagesChan)
+	broker := mqtt.NewBroker(messagesChan, logger)
 	
 	// Create a stats tracker that subscribes to the broker
 	// with statistics printed every 30 seconds
@@ -75,7 +76,7 @@ func main() {
 		strings.Repeat("-", 80), // Use separator
 	)
 	if err != nil {
-		log.Printf("Warning: Failed to initialize message logger: %v", err)
+		logger.Warnw("Failed to initialize message logger", "error", err)
 	}
 	
 	// Start the web server
@@ -88,7 +89,7 @@ func main() {
 	// Start the server in a goroutine
 	go func() {
 		if err := webServer.Start(); err != nil {
-			log.Printf("Web server error: %v", err)
+			logger.Errorw("Web server error", "error", err)
 		}
 	}()
 	
@@ -111,7 +112,7 @@ func main() {
 	// Close components in reverse order of creation
 	// First stop the web server
 	if err := webServer.Stop(); err != nil {
-		log.Printf("Error stopping web server: %v", err)
+		logger.Errorw("Error stopping web server", "error", err)
 	}
 	
 	// Then stop the logger
