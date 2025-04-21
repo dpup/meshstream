@@ -2,9 +2,10 @@ package mqtt
 
 import (
 	"fmt"
-	"strings"
 	"sync"
 	"time"
+
+	"github.com/dpup/prefab/logging"
 
 	pb "meshstream/proto/generated/meshtastic"
 )
@@ -18,15 +19,20 @@ type MessageStats struct {
 	ByPortType       map[pb.PortNum]int
 	LastStatsPrinted time.Time
 	ticker           *time.Ticker
+	logger           logging.Logger
 }
 
 // NewMessageStats creates a new MessageStats instance
 func NewMessageStats(broker *Broker, printInterval time.Duration) *MessageStats {
+	// Create a logger for stats
+	logger := logging.NewDevLogger().Named("mqtt.stats")
+	
 	s := &MessageStats{
 		ByNode:           make(map[uint32]int),
 		ByPortType:       make(map[pb.PortNum]int),
 		LastStatsPrinted: time.Now(),
 		ticker:           time.NewTicker(printInterval),
+		logger:           logger,
 	}
 	
 	// Create base subscriber with stats message handler
@@ -71,7 +77,7 @@ func (s *MessageStats) recordMessage(packet *Packet) {
 	s.ByPortType[packet.PortNum]++
 }
 
-// PrintStats prints current statistics
+// PrintStats logs current statistics using the structured logger
 func (s *MessageStats) PrintStats() {
 	s.Lock()
 	defer s.Unlock()
@@ -80,21 +86,36 @@ func (s *MessageStats) PrintStats() {
 	duration := now.Sub(s.LastStatsPrinted)
 	msgPerSec := float64(s.TotalMessages) / duration.Seconds()
 	
-	fmt.Println("\n==== Message Statistics ====")
-	fmt.Printf("Total messages: %d (%.2f msg/sec)\n", s.TotalMessages, msgPerSec)
+	// Log the basic statistics with structured fields
+	s.logger.Infow("Message Statistics Summary", 
+		"total_messages", s.TotalMessages,
+		"messages_per_second", msgPerSec,
+		"duration_seconds", duration.Seconds(),
+	)
 	
-	// Print node statistics
-	fmt.Println("\nMessages by Node:")
+	// Create maps for structured node and port stats
+	nodeStats := make(map[string]int)
 	for nodeID, count := range s.ByNode {
-		fmt.Printf("  Node %d: %d messages\n", nodeID, count)
+		nodeStats[fmt.Sprintf("node_%d", nodeID)] = count
 	}
 	
-	// Print port type statistics
-	fmt.Println("\nMessages by Port Type:")
+	// Log node statistics with structured fields
+	s.logger.Infow("Messages by Node", 
+		"node_counts", nodeStats,
+		"active_nodes", len(s.ByNode),
+	)
+	
+	// Create maps for structured port stats
+	portStats := make(map[string]int)
 	for portType, count := range s.ByPortType {
-		fmt.Printf("  %s: %d messages\n", portType, count)
+		portStats[portType.String()] = count
 	}
-	fmt.Println(strings.Repeat("=", 30))
+	
+	// Log port type statistics with structured fields
+	s.logger.Infow("Messages by Port Type", 
+		"port_counts", portStats,
+		"active_ports", len(s.ByPortType),
+	)
 	
 	// Reset counters for rate calculation
 	s.TotalMessages = 0
