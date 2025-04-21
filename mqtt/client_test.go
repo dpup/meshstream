@@ -56,7 +56,7 @@ func TestMessagesChannel(t *testing.T) {
 
 	// Test we can read from the channel
 	go func() {
-		msg := DecodedMessage{}
+		msg := &Packet{}
 		client.decodedMessages <- msg
 	}()
 

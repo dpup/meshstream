@@ -23,21 +23,15 @@ type Config struct {
 type Client struct {
 	config          Config
 	client          mqtt.Client
-	decodedMessages chan DecodedMessage
+	decodedMessages chan *Packet
 	done            chan struct{}
-}
-
-// DecodedMessage contains a decoded packet and its topic info
-type DecodedMessage struct {
-	TopicInfo     *decoder.TopicInfo
-	DecodedPacket *decoder.DecodedPacket
 }
 
 // NewClient creates a new MQTT client with the provided configuration
 func NewClient(config Config) *Client {
 	return &Client{
 		config:          config,
-		decodedMessages: make(chan DecodedMessage, 100), // Buffer up to 100 messages
+		decodedMessages: make(chan *Packet, 100), // Buffer up to 100 messages
 		done:            make(chan struct{}),
 	}
 }
@@ -79,7 +73,7 @@ func (c *Client) Disconnect() {
 
 // Messages returns a channel of decoded messages
 // The consumer should read from this channel to receive decoded messages
-func (c *Client) Messages() <-chan DecodedMessage {
+func (c *Client) Messages() <-chan *Packet {
 	return c.decodedMessages
 }
 
@@ -103,9 +97,15 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 		// Binary encoded protobuf message
 		decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 		
+		// Create packet with both the decoded packet and topic info
+		packet := &Packet{
+			DecodedPacket: decodedPacket,
+			TopicInfo:     topicInfo,
+		}
+		
 		// Send the decoded message to the channel, but don't block if buffer is full
 		select {
-		case c.decodedMessages <- DecodedMessage{TopicInfo: topicInfo, DecodedPacket: decodedPacket}:
+		case c.decodedMessages <- packet:
 			// Message sent successfully
 		case <-c.done:
 			// Client is shutting down

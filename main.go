@@ -62,9 +62,9 @@ func main() {
 	// Main event loop
 	for {
 		select {
-		case msg := <-messagesChan:
+		case packet := <-messagesChan:
 			// Format and print the decoded message
-			formattedOutput := decoder.FormatTopicAndPacket(msg.TopicInfo, msg.DecodedPacket)
+			formattedOutput := decoder.FormatTopicAndPacket(packet.TopicInfo, packet.DecodedPacket)
 			fmt.Println(formattedOutput)
 			fmt.Println(strings.Repeat("-", 80))
 			
