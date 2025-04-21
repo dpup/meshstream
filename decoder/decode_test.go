@@ -149,14 +149,8 @@ func TestDecodeMessageWithMapPayload(t *testing.T) {
 		t.Errorf("Expected PortNum to be MAP_REPORT_APP, got %s", decodedPacket.PortNum)
 	}
 
-	// Check that all key fields were populated
-	if decodedPacket.RawEnvelope == nil {
-		t.Error("Expected RawEnvelope to be populated")
-	}
-
-	if decodedPacket.RawPacket == nil {
-		t.Error("Expected RawPacket to be populated")
-	}
+	// These fields are no longer used
+	// Only verify that key metadata was correctly extracted
 
 	// Verify that key metadata was correctly extracted
 	if decodedPacket.From == 0 {

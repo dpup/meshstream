@@ -40,11 +40,6 @@ type DecodedPacket struct {
 	Source    uint32
 	WantResponse bool
 	
-	// Raw message objects (for advanced use)
-	RawEnvelope *pb.ServiceEnvelope
-	RawPacket   *pb.MeshPacket
-	RawData     *pb.Data
-	
 	// Error tracking
 	DecodeError error
 }
@@ -135,8 +130,7 @@ func DecodeMessage(payload []byte, topicInfo *TopicInfo) *DecodedPacket {
 		return decoded
 	}
 	
-	// Store raw envelope
-	decoded.RawEnvelope = envelope
+	// Extract envelope fields without storing raw envelope
 	
 	// Extract envelope fields
 	decoded.ChannelID = envelope.GetChannelId()
@@ -149,8 +143,7 @@ func DecodeMessage(payload []byte, topicInfo *TopicInfo) *DecodedPacket {
 		return decoded
 	}
 	
-	// Store raw packet
-	decoded.RawPacket = packet
+	// Extract mesh packet fields without storing raw packet
 	
 	// Extract mesh packet fields
 	decoded.ID = packet.GetId()
@@ -180,8 +173,7 @@ func DecodeMessage(payload []byte, topicInfo *TopicInfo) *DecodedPacket {
 
 // decodeDataPayload extracts information from a Data message
 func decodeDataPayload(decoded *DecodedPacket, data *pb.Data) {
-	// Store raw data
-	decoded.RawData = data
+	// Extract data fields without storing raw data
 	
 	// Extract data fields
 	decoded.PortNum = data.GetPortnum()

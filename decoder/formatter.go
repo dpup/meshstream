@@ -745,44 +745,7 @@ func FormatDecodedPacket(packet *DecodedPacket) string {
 		builder.WriteString(fmt.Sprintf("Error decoding packet: %v\n", packet.DecodeError))
 		
 		// Show raw data in different formats for debugging
-		if packet.RawData != nil && packet.RawData.GetPayload() != nil {
-			rawData := packet.RawData.GetPayload()
-			builder.WriteString(fmt.Sprintf("Raw data (%d bytes):\n", len(rawData)))
-			builder.WriteString(fmt.Sprintf("  Hex: %x\n", rawData))
-			
-			// Show binary representation
-			builder.WriteString("  Binary: ")
-			for i, b := range rawData {
-				if i > 0 && i%8 == 0 {
-					builder.WriteString(" ")
-				}
-				if i > 0 && i%32 == 0 {
-					builder.WriteString("\n          ")
-				}
-				builder.WriteString(fmt.Sprintf("%08b ", b))
-				
-				// Limit to first 32 bytes for binary representation
-				if i >= 31 {
-					builder.WriteString("...\n")
-					break
-				}
-			}
-			
-			// Show as text if it might be displayable
-			if IsASCII(rawData) {
-				builder.WriteString(fmt.Sprintf("  Text: %s\n", string(rawData)))
-			}
-		} else if packet.RawPacket != nil && packet.RawPacket.GetEncrypted() != nil {
-			// Show raw encrypted data if available
-			encData := packet.RawPacket.GetEncrypted()
-			builder.WriteString(fmt.Sprintf("Raw encrypted data (%d bytes):\n", len(encData)))
-			builder.WriteString(fmt.Sprintf("  Hex: %x\n", encData))
-			
-			// Show as text only if it looks like ASCII (rare for encrypted data)
-			if IsASCII(encData) {
-				builder.WriteString(fmt.Sprintf("  Text: %s\n", string(encData)))
-			}
-		} else if packet.Payload != nil {
+		if packet.Payload != nil {
 			// If we have a payload but an error occurred during decoding
 			if data, ok := packet.Payload.([]byte); ok {
 				builder.WriteString(fmt.Sprintf("Raw payload (%d bytes):\n", len(data)))
