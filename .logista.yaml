@@ -1,0 +1,39 @@
+# Meshstream Logista Configuration
+format: |
+  {{ $timestamp := .timestamp | date | color "blue" }}
+  {{ $level := .level | colorByLevel .level | bold }}
+  {{ $logger := .logger | dim }}
+  {{ $message := .msg }}
+  
+  {{ $timestamp }} {{ $level }} [{{ $logger }}] {{ $message }}
+  
+  {{- if .from }}
+  {{ "From:" | dim }} {{ .from }} {{ "To:" | dim }} {{ .to -}}
+  {{- if .portNum }} {{ "Type:" | dim }} {{ .portNum | color "magenta" }}{{ end -}}
+  {{- if .channel }} {{ "Channel:" | dim }} {{ .channel | color "green" }}{{ end -}}
+  {{- if .gateway }} {{ "Gateway:" | dim }} {{ .gateway | color "yellow" }}{{ end }}
+  {{- end }}
+  
+  {{- if eq .level "error" }}
+  {{ if .error }}{{ .error | color "red" }}{{ end }}
+  {{- end }}
+  
+  {{- if .message }}
+  {{ "Message:" | dim }} {{ .message }}
+  {{- end }}
+  
+  {{- if and .latitude .longitude }}
+  {{ "Position:" | dim }} {{ .latitude }}, {{ .longitude }}{{ if .altitude }} Alt: {{ .altitude }}m{{ end }}
+  {{- end }}
+  
+  {{- if or .temperature .batteryLevel .voltage }}
+  {{ "Telemetry:" | dim }}{{ if .temperature }} Temp: {{ .temperature }}°C{{ end }}{{ if .batteryLevel }} Battery: {{ .batteryLevel }}%{{ end }}{{ if .voltage }} Voltage: {{ .voltage }}V{{ end }}
+  {{- end }}
+  
+  {{ filter . "timestamp" "level" "logger" "msg" "error" "from" "to" "portNum" "channel" "gateway" "message" "latitude" "longitude" "altitude" "temperature" "batteryLevel" "voltage" | table }}
+
+# Date formatting
+date_format: "15:04:05.000"
+
+# Handle non-JSON lines
+handle_non_json: true

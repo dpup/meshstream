@@ -2,6 +2,11 @@ module meshstream
 
 go 1.24.1
 
+// Add logista as a go tool
+toolchain go1.24.1
+
+tool github.com/dpup/logista v1.0.7
+
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.0
 	google.golang.org/protobuf v1.36.6
