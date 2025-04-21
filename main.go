@@ -7,11 +7,9 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
-	"time"
 
 	"meshstream/decoder"
-
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"meshstream/mqtt"
 )
 
 const (
@@ -20,52 +18,6 @@ const (
 	mqttPassword    = "large4cats"
 	mqttTopicPrefix = "msh/US/bayarea"
 )
-
-var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("Received message from topic: %s\n", msg.Topic())
-
-	// Parse the topic structure
-	topicInfo, err := decoder.ParseTopic(msg.Topic())
-	if err != nil {
-		fmt.Printf("Error parsing topic: %v\n", err)
-		fmt.Printf("Raw topic: %s\n", msg.Topic())
-		fmt.Printf("Raw payload: %x\n", msg.Payload())
-	} else {
-		// First decode the message based on its format
-		var formattedOutput string
-		switch topicInfo.Format {
-		case "e", "c", "map":
-			// Binary encoded protobuf message (both regular and map formats use the same decoder)
-			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
-			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
-		case "json":
-			// JSON format message
-			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())
-			if err != nil {
-				fmt.Printf("Error decoding JSON message: %v\n", err)
-				formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
-			} else {
-				formattedOutput = decoder.FormatTopicAndJSONData(topicInfo, jsonData)
-			}
-		default:
-			// Unsupported format
-			formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
-		}
-
-		// Print the formatted output
-		fmt.Println(formattedOutput)
-	}
-
-	fmt.Println(strings.Repeat("-", 80))
-}
-
-var connectHandler mqtt.OnConnectHandler = func(client mqtt.Client) {
-	fmt.Println("Connected to MQTT Broker!")
-}
-
-var connectLostHandler mqtt.ConnectionLostHandler = func(client mqtt.Client, err error) {
-	fmt.Printf("Connection lost: %v\n", err)
-}
 
 func main() {
 	// Set up logging
@@ -81,40 +33,46 @@ func main() {
 		log.Printf("Failed to initialize ERSN channel key: %v", err)
 	}
 
-	// Create MQTT client options
-	opts := mqtt.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:1883", mqttBroker))
-	opts.SetClientID("meshstream-client")
-	opts.SetUsername(mqttUsername)
-	opts.SetPassword(mqttPassword)
-	opts.SetDefaultPublishHandler(messagePubHandler)
-	opts.SetPingTimeout(1 * time.Second)
-	opts.OnConnect = connectHandler
-	opts.OnConnectionLost = connectLostHandler
-
-	// Create and start a client
-	client := mqtt.NewClient(opts)
-	if token := client.Connect(); token.Wait() && token.Error() != nil {
-		log.Fatalf("Error connecting to MQTT broker: %v", token.Error())
+	// Configure and create the MQTT client
+	mqttConfig := mqtt.Config{
+		Broker:   mqttBroker,
+		Username: mqttUsername,
+		Password: mqttPassword,
+		ClientID: "meshstream-client",
+		Topic:    mqttTopicPrefix + "/#",
 	}
-
-	// Subscribe to all topics for this region
-	// This will capture:
-	// - msh/US/CA/Motherlode/2/e/# (binary protobuf data)
-	// - msh/US/CA/Motherlode/2/json/# (JSON formatted data)
-	topic := mqttTopicPrefix + "/#"
-	token := client.Subscribe(topic, 0, nil)
-	token.Wait()
-	fmt.Printf("Subscribed to topic: %s\n", topic)
-
-	// Wait for interrupt signal to gracefully shutdown
+	
+	mqttClient := mqtt.NewClient(mqttConfig)
+	
+	// Connect to the MQTT broker
+	if err := mqttClient.Connect(); err != nil {
+		log.Fatalf("Failed to connect to MQTT broker: %v", err)
+	}
+	
+	// Get the messages channel to receive decoded messages
+	messagesChan := mqttClient.Messages()
+	
+	// Setup signal handling for graceful shutdown
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
-	<-sig
-
-	// Unsubscribe and disconnect
-	fmt.Println("Unsubscribing and disconnecting...")
-	token = client.Unsubscribe(topic)
-	token.Wait()
-	client.Disconnect(250)
+	
+	// Process messages until interrupt received
+	fmt.Println("Waiting for messages... Press Ctrl+C to exit")
+	
+	// Main event loop
+	for {
+		select {
+		case msg := <-messagesChan:
+			// Format and print the decoded message
+			formattedOutput := decoder.FormatTopicAndPacket(msg.TopicInfo, msg.DecodedPacket)
+			fmt.Println(formattedOutput)
+			fmt.Println(strings.Repeat("-", 80))
+			
+		case <-sig:
+			// Got an interrupt signal, shutting down
+			fmt.Println("Shutting down...")
+			mqttClient.Disconnect()
+			return
+		}
+	}
 }
