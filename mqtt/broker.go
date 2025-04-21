@@ -18,17 +18,11 @@ type Broker struct {
 
 // NewBroker creates a new broker that distributes messages from sourceChannel to subscribers
 func NewBroker(sourceChannel <-chan *Packet, logger logging.Logger) *Broker {
-	// Create a named logger if one was not provided
-	if logger == nil {
-		logger = logging.NewDevLogger()
-	}
-	brokerLogger := logger.Named("mqtt.broker")
-	
 	broker := &Broker{
 		sourceChan:  sourceChannel,
 		subscribers: make(map[chan *Packet]struct{}),
 		done:        make(chan struct{}),
-		logger:      brokerLogger,
+		logger:      logger.Named("mqtt.broker"),
 	}
 
 	// Start the dispatch loop

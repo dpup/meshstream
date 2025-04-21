@@ -42,6 +42,7 @@ func NewMessageStats(broker *Broker, printInterval time.Duration, logger logging
 		Processor:  s.recordMessage,
 		StartHook:  func() { go s.runTicker() },
 		CloseHook:  func() { s.ticker.Stop() },
+		Logger:     statsLogger,
 	})
 
 	// Start processing messages

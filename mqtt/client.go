@@ -30,17 +30,11 @@ type Client struct {
 
 // NewClient creates a new MQTT client with the provided configuration
 func NewClient(config Config, logger logging.Logger) *Client {
-	// Use provided logger or create a default one
-	if logger == nil {
-		logger = logging.NewDevLogger()
-	}
-	clientLogger := logger.Named("mqtt.client")
-	
 	return &Client{
 		config:          config,
 		decodedMessages: make(chan *Packet, 100), // Buffer up to 100 messages
 		done:            make(chan struct{}),
-		logger:          clientLogger,
+		logger:          logger.Named("mqtt.client"),
 	}
 }
 
@@ -94,7 +88,7 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	// Parse the topic structure
 	topicInfo, err := decoder.ParseTopic(msg.Topic())
 	if err != nil {
-		c.logger.Errorw("Error parsing topic", 
+		c.logger.Errorw("Error parsing topic",
 			"error", err,
 			"topic", msg.Topic(),
 			"payload_hex", fmt.Sprintf("%x", msg.Payload()),
@@ -107,13 +101,13 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	case "e", "c", "map":
 		// Binary encoded protobuf message
 		decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
-		
+
 		// Create packet with both the decoded packet and topic info
 		packet := &Packet{
 			DecodedPacket: decodedPacket,
 			TopicInfo:     topicInfo,
 		}
-		
+
 		// Send the decoded message to the channel, but don't block if buffer is full
 		select {
 		case c.decodedMessages <- packet:
@@ -125,11 +119,11 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 			// Channel buffer is full, log a warning and drop the message
 			c.logger.Warn("Message buffer full, dropping message")
 		}
-	
+
 	case "json":
 		// TODO: Add support for JSON format messages in the future
 		c.logger.Debugf("Ignoring JSON format message from topic: %s", msg.Topic())
-	
+
 	default:
 		// Unsupported format, log and ignore
 		c.logger.Infow("Unsupported format", "format", topicInfo.Format, "topic", msg.Topic())

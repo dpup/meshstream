@@ -33,13 +33,8 @@ type BaseSubscriber struct {
 
 // NewBaseSubscriber creates a new base subscriber
 func NewBaseSubscriber(config SubscriberConfig) *BaseSubscriber {
-	// Use provided logger or create a default one
-	var subscriberLogger logging.Logger
-	if config.Logger == nil {
-		subscriberLogger = logging.NewDevLogger().Named("mqtt.subscriber." + config.Name)
-	} else {
-		subscriberLogger = config.Logger.Named("mqtt.subscriber." + config.Name)
-	}
+
+	subscriberLogger := config.Logger.Named("mqtt.subscriber." + config.Name)
 
 	return &BaseSubscriber{
 		broker:     config.Broker,

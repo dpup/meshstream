@@ -5,84 +5,34 @@
 # {"level":"info","ts":1745264405.2398899,"logger":"main.mqtt.MessageLogger","caller":"mqtt/subscriber.go:82","msg":"[TELEMETRY_APP] Gateway:!eb976cd5 Telemetry: device","packet":{"ChannelID":"MediumSlow","GatewayID":"!eb976cd5","ID":2022965751,"From":3149439480,"To":4294967295,"HopLimit":3,"HopStart":3,"WantACK":false,"Priority":"UNSET","ViaMQTT":false,"NextHop":0,"RelayNode":0,"PortNum":67,"Payload":{"time":1745264403,"Variant":{"DeviceMetrics":{"battery_level":100,"voltage":4.19,"channel_utilization":13.37,"air_util_tx":2.5811112,"uptime_seconds":771327}}},"RequestID":0,"ReplyID":0,"Emoji":0,"Dest":0,"Source":0,"WantResponse":false,"DecodeError":null,"FullTopic":"msh/US/bayarea/2/e/MediumSlow/!eb976cd5","RegionPath":"US/bayarea","Version":"2","Format":"e","Channel":"MediumSlow","UserID":"!eb976cd5"}}
 
 format: |
-  {{ $timestamp := .ts | date | color "blue" }}
-  {{ $level := .level | colorByLevel .level | bold }}
-  {{ $logger := .logger | dim }}
-  {{ $message := .msg }}
-  
-  {{ $timestamp }} {{ $level }} [{{ $logger }}] {{ $message }}
-  
-  {{- if .packet }}
-  {{- $packet := .packet }}
-  
-  {{ "Channel:" | dim }} {{ $packet.Channel | color "green" }}
-  {{ "From:" | dim }} {{ $packet.From }} {{ "To:" | dim }} {{ $packet.To }}
-  {{ "Type:" | dim }} {{ $packet.PortNum | color "magenta" }}
+  {{- $timestamp := .ts | date | color "blue" -}}
+  {{- $level := .level | colorByLevel .level | bold -}}
+  {{- $logger := .logger | dim -}}
+  {{- $message := .msg -}}
+
+  {{$timestamp }} {{ $level }} [{{ $logger }}] {{ $message }}
+  {{if .packet -}}
+  {{- $packet := .packet -}}
+  {{"Channel:" | dim }} {{ $packet.ChannelID | color "green" }}
+  {{ "From:" | dim }} {{ $packet.From | mult 1 }} {{ "To:" | dim }} {{ $packet.To | mult 1 }}
   {{ "Gateway:" | dim }} {{ $packet.GatewayID | color "yellow" }}
   {{ "Priority:" | dim }} {{ $packet.Priority }}
-  
+  {{ "PortNum:" | dim }} {{ $packet.PortNum }}
+
   {{- if $packet.HopLimit }}
   {{ "Hop:" | dim }} {{ $packet.HopStart }}/{{ $packet.HopLimit }}
   {{- end }}
-  
   {{- if $packet.DecodeError }}
   {{ "Error:" | dim }} {{ $packet.DecodeError | color "red" }}
   {{- end }}
-  
-  {{- if eq $packet.PortNum 0 }}
-  {{ "Text Message:" | dim }} {{ if $packet.Payload }}{{ $packet.Payload | color "cyan" }}{{ end }}
-  {{- end }}
-  
-  {{- if eq $packet.PortNum 4 }}
-  {{ "Node Info:" | dim }}
-  {{- if $packet.Payload.long_name }} Name: {{ $packet.Payload.long_name }}{{ end }}
-  {{- if $packet.Payload.short_name }} Short: {{ $packet.Payload.short_name }}{{ end }}
-  {{- if $packet.Payload.id }} ID: {{ $packet.Payload.id }}{{ end }}
-  {{- if $packet.Payload.hw_model }} HW: {{ $packet.Payload.hw_model }}{{ end }}
-  {{- end }}
-  
-  {{- if eq $packet.PortNum 67 }}
-  {{ "Telemetry:" | dim }}
-  {{- if $packet.Payload.Variant.DeviceMetrics }}
-  {{- $metrics := $packet.Payload.Variant.DeviceMetrics }}
-  {{- if $metrics.battery_level }} Battery: {{ $metrics.battery_level }}%{{ end }}
-  {{- if $metrics.voltage }} Voltage: {{ $metrics.voltage }}V{{ end }}
-  {{- if $metrics.channel_utilization }} Chan Util: {{ $metrics.channel_utilization }}%{{ end }}
-  {{- if $metrics.air_util_tx }} Air Util: {{ $metrics.air_util_tx }}%{{ end }}
-  {{- if $metrics.uptime_seconds }} Uptime: {{ $metrics.uptime_seconds | mult 0.000277778 | printf "%.1f hrs" }}{{ end }}
-  {{- end }}
-  
-  {{- if $packet.Payload.Variant.EnvironmentMetrics }}
-  {{- $env := $packet.Payload.Variant.EnvironmentMetrics }}
-  {{- if $env.temperature }} Temp: {{ $env.temperature }}°C{{ end }}
-  {{- if $env.relative_humidity }} Humidity: {{ $env.relative_humidity }}%{{ end }}
-  {{- if $env.barometric_pressure }} Pressure: {{ $env.barometric_pressure }}hPa{{ end }}
-  {{- end }}
-  {{- end }}
-  
-  {{- if eq $packet.PortNum 1 }}
-  {{ "Position:" | dim }}
-  {{- if $packet.Payload.latitude_i }} Lat: {{ index $packet.Payload "latitude_i" | mult 0.0000001 | printf "%.6f" }}{{ end }}
-  {{- if $packet.Payload.longitude_i }} Lon: {{ index $packet.Payload "longitude_i" | mult 0.0000001 | printf "%.6f" }}{{ end }}
-  {{- if $packet.Payload.altitude }} Alt: {{ $packet.Payload.altitude }}m{{ end }}
-  {{- end }}
-  
-  {{- if ne $packet.PortNum 0 }}
-  {{- if ne $packet.PortNum 1 }}
-  {{- if ne $packet.PortNum 4 }}
-  {{- if ne $packet.PortNum 67 }}
   {{ "Payload:" | dim }} 
-  {{ $packet.Payload | pretty }}
-  {{- end }}
-  {{- end }}
-  {{- end }}
-  {{- end }}
-  
-  {{- end }}
-  
-  {{ if not .packet }}
-  {{ filter . "level" "ts" "logger" "caller" "msg" | table }}
-  {{ end }}
+  {{ $packet.Payload | table }}
+
+  {{end -}}
+
+  {{- if not .packet -}}
+  {{- filter . "level" "ts" "logger" "caller" "msg" | table -}}
+  {{- end -}}
 
 # Date formatting
 date_format: "15:04:05.000"
