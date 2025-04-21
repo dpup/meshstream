@@ -11,6 +11,7 @@ import (
 
 	"meshstream/decoder"
 	"meshstream/mqtt"
+	"meshstream/server"
 )
 
 const (
@@ -19,6 +20,10 @@ const (
 	mqttPassword    = "large4cats"
 	mqttTopicPrefix = "msh/US/bayarea"
 	logsDir         = "./logs"
+	
+	// Web server configuration
+	serverHost      = "localhost"
+	serverPort      = "8080"
 )
 
 func main() {
@@ -73,6 +78,19 @@ func main() {
 		log.Printf("Warning: Failed to initialize message logger: %v", err)
 	}
 	
+	// Start the web server
+	webServer := server.New(server.Config{
+		Host: serverHost,
+		Port: serverPort,
+	})
+	
+	// Start the server in a goroutine
+	go func() {
+		if err := webServer.Start(); err != nil {
+			log.Printf("Web server error: %v", err)
+		}
+	}()
+	
 	// Setup signal handling for graceful shutdown
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, os.Interrupt, syscall.SIGTERM)
@@ -81,6 +99,7 @@ func main() {
 	fmt.Println("Waiting for messages... Press Ctrl+C to exit")
 	fmt.Println("Statistics will be printed every 30 seconds")
 	fmt.Println("Messages will be logged to files in the ./logs directory")
+	fmt.Printf("Web server running at http://%s:%s\n", serverHost, serverPort)
 	
 	// Wait for interrupt signal
 	<-sig
@@ -89,10 +108,17 @@ func main() {
 	fmt.Println("Shutting down...")
 	
 	// Close components in reverse order of creation
+	// First stop the web server
+	if err := webServer.Stop(); err != nil {
+		log.Printf("Error stopping web server: %v", err)
+	}
+	
+	// Then stop the logger
 	if messageLogger != nil {
 		messageLogger.Close()
 	}
 	
+	// Stop the stats collector
 	stats.Close()
 	
 	// Close the broker (which will close all subscriber channels)
