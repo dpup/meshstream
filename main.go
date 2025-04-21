@@ -71,7 +71,7 @@ func main() {
 	// and also logs to stdout with a separator
 	messageLogger, err := mqtt.NewMessageLogger(
 		broker, 
-		logsDir, 
+		true, // Use brief mode for more concise logs
 		true, // Enable logging to stdout
 		strings.Repeat("-", 80), // Use separator
 		logger,
