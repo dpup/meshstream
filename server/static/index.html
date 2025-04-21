@@ -10,30 +10,125 @@
             margin: 0;
             padding: 20px;
             line-height: 1.6;
+            max-width: 960px;
+            margin: 0 auto;
         }
         h1 {
             color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
         }
         #messages {
             margin-top: 20px;
             border: 1px solid #ddd;
+            border-radius: 4px;
             padding: 10px;
-            height: 400px;
+            height: 500px;
             overflow-y: auto;
             background-color: #f9f9f9;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 14px;
+        }
+        .message {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .message:last-child {
+            border-bottom: none;
+        }
+        .info {
+            padding: 10px;
+            background-color: #e9f7fe;
+            border-radius: 4px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
 <body>
     <h1>Meshtastic Stream</h1>
+    
+    <div class="info">
+        <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
+        <p>Messages are streamed using Server-Sent Events (SSE) and will appear below as they arrive.</p>
+    </div>
+    
     <div id="messages">
         <p>Waiting for messages...</p>
     </div>
 
     <script>
-        // Placeholder for future WebSocket/API integration
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('Page loaded, ready to connect to API');
+            const messagesDiv = document.getElementById('messages');
+            
+            // Function to add a message to the UI
+            function addMessage(text) {
+                const msgElement = document.createElement('div');
+                msgElement.className = 'message';
+                msgElement.textContent = text;
+                messagesDiv.appendChild(msgElement);
+                
+                // Auto-scroll to the bottom
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            }
+            
+            // Clear initial waiting message
+            messagesDiv.innerHTML = '';
+            
+            // Connect to SSE endpoint
+            console.log('Connecting to SSE stream...');
+            const eventSource = new EventSource('/api/stream');
+            
+            // Handle connection open
+            eventSource.onopen = () => {
+                console.log('SSE connection established');
+                addMessage('Connected to Meshtastic stream.');
+            };
+            
+            // Handle connection error
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error:', error);
+                addMessage('Error: Connection to server lost. Trying to reconnect...');
+            };
+            
+            // Handle 'info' events
+            eventSource.addEventListener('info', (e) => {
+                console.log('Info event:', e.data);
+                addMessage(`Server info: ${e.data}`);
+            });
+            
+            // Handle 'message' events
+            eventSource.addEventListener('message', (e) => {
+                console.log('Message event:', e.data);
+                try {
+                    const data = JSON.parse(e.data);
+                    const timestamp = new Date(data.timestamp * 1000).toLocaleTimeString();
+                    
+                    let msgText = `[${timestamp}] From Node ${data.from} to ${data.to} (${data.port})`;
+                    
+                    // Add packet ID and hop info if available
+                    if (data.id) {
+                        msgText += ` • ID: ${data.id}`;
+                    }
+                    
+                    if (data.hop_limit && data.hop_limit > 0) {
+                        msgText += ` • Hop: ${data.hop_start}/${data.hop_limit}`;
+                    }
+                    
+                    // Add payload info
+                    if (data.payload_type === 'text' && data.payload) {
+                        msgText += ` • Message: "${data.payload}"`;
+                    } else if (data.payload_type === 'binary' && data.payload_size) {
+                        msgText += ` • Binary data: ${data.payload_size} bytes`;
+                    } else if (data.payload_type && data.payload_type !== 'none') {
+                        msgText += ` • Payload: ${data.payload_type}`;
+                    }
+                    
+                    addMessage(msgText);
+                } catch (err) {
+                    console.error('Error parsing message:', err);
+                    addMessage(`Raw message: ${e.data}`);
+                }
+            });
         });
     </script>
 </body>

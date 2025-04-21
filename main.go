@@ -80,8 +80,9 @@ func main() {
 	
 	// Start the web server
 	webServer := server.New(server.Config{
-		Host: serverHost,
-		Port: serverPort,
+		Host:   serverHost,
+		Port:   serverPort,
+		Broker: broker,
 	})
 	
 	// Start the server in a goroutine
