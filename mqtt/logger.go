@@ -16,14 +16,11 @@ import (
 
 // MessageLogger logs messages to files and optionally to stdout
 type MessageLogger struct {
+	*BaseSubscriber
 	logDir          string
-	broker          *Broker
-	subscriber      <-chan *Packet
 	loggers         map[pb.PortNum]*log.Logger
 	files           map[pb.PortNum]*os.File
 	mutex           sync.Mutex
-	done            chan struct{}
-	wg              sync.WaitGroup
 	logToStdout     bool  // Flag to enable console output
 	stdoutSeparator string // Separator for console output
 }
@@ -37,43 +34,35 @@ func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSep
 	
 	ml := &MessageLogger{
 		logDir:          logDir,
-		broker:          broker,
 		loggers:         make(map[pb.PortNum]*log.Logger),
 		files:           make(map[pb.PortNum]*os.File),
-		done:            make(chan struct{}),
 		logToStdout:     logToStdout,
 		stdoutSeparator: stdoutSeparator,
 	}
 	
-	// Subscribe to the broker with a large buffer
-	ml.subscriber = broker.Subscribe(100)
+	// Create base subscriber with logger's message handler
+	ml.BaseSubscriber = NewBaseSubscriber(SubscriberConfig{
+		Name:       "MessageLogger",
+		Broker:     broker,
+		BufferSize: 100,
+		Processor:  ml.logMessage,
+		CloseHook:  ml.closeLogFiles,
+	})
 	
 	// Start processing messages
-	ml.wg.Add(1)
-	go ml.run()
+	ml.Start()
 	
 	return ml, nil
 }
 
-// run processes incoming messages
-func (ml *MessageLogger) run() {
-	defer ml.wg.Done()
+// closeLogFiles is called when the subscriber is closed
+func (ml *MessageLogger) closeLogFiles() {
+	ml.mutex.Lock()
+	defer ml.mutex.Unlock()
 	
-	for {
-		select {
-		case packet, ok := <-ml.subscriber:
-			if !ok {
-				// Channel closed
-				return
-			}
-			
-			if packet != nil {
-				ml.logMessage(packet)
-			}
-			
-		case <-ml.done:
-			return
-		}
+	for portNum, file := range ml.files {
+		log.Printf("Closing log file for %s", portNum)
+		file.Close()
 	}
 }
 
@@ -133,23 +122,8 @@ func (ml *MessageLogger) logMessage(packet *Packet) {
 	}
 }
 
-// Close stops the logger and closes all log files
+// Close overrides the BaseSubscriber.Close method
 func (ml *MessageLogger) Close() {
-	// Signal the processing loop to stop
-	close(ml.done)
-	
-	// Unsubscribe from the broker
-	ml.broker.Unsubscribe(ml.subscriber)
-	
-	// Wait for the processing loop to exit
-	ml.wg.Wait()
-	
-	// Close all log files
-	ml.mutex.Lock()
-	defer ml.mutex.Unlock()
-	
-	for portNum, file := range ml.files {
-		log.Printf("Closing log file for %s", portNum)
-		file.Close()
-	}
+	// Call the base close method which will handle unsubscribe and closeLogFiles
+	ml.BaseSubscriber.Close()
 }

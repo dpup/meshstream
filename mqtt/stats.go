@@ -11,60 +11,46 @@ import (
 
 // MessageStats tracks statistics about received messages
 type MessageStats struct {
+	*BaseSubscriber
 	sync.Mutex
-	broker           *Broker
-	subscriber       <-chan *Packet
 	TotalMessages    int
 	ByNode           map[uint32]int
 	ByPortType       map[pb.PortNum]int
 	LastStatsPrinted time.Time
-	done             chan struct{}
-	wg               sync.WaitGroup
+	ticker           *time.Ticker
 }
 
 // NewMessageStats creates a new MessageStats instance
 func NewMessageStats(broker *Broker, printInterval time.Duration) *MessageStats {
 	s := &MessageStats{
-		broker:           broker,
 		ByNode:           make(map[uint32]int),
 		ByPortType:       make(map[pb.PortNum]int),
 		LastStatsPrinted: time.Now(),
-		done:             make(chan struct{}),
+		ticker:           time.NewTicker(printInterval),
 	}
 	
-	// Subscribe to the broker with a larger buffer to handle bursts
-	s.subscriber = broker.Subscribe(50)
+	// Create base subscriber with stats message handler
+	s.BaseSubscriber = NewBaseSubscriber(SubscriberConfig{
+		Name:       "MessageStats",
+		Broker:     broker,
+		BufferSize: 50,
+		Processor:  s.recordMessage,
+		StartHook:  func() { go s.runTicker() },
+		CloseHook:  func() { s.ticker.Stop() },
+	})
 	
-	// Start the collection loop
-	s.wg.Add(1)
-	go s.run(printInterval)
+	// Start processing messages
+	s.Start()
 	
 	return s
 }
 
-// run handles statistics collection and periodic printing
-func (s *MessageStats) run(printInterval time.Duration) {
-	defer s.wg.Done()
-	
-	// Create a ticker for periodically printing stats
-	statsTicker := time.NewTicker(printInterval)
-	defer statsTicker.Stop()
-	
+// runTicker handles the periodic stats printing
+func (s *MessageStats) runTicker() {
 	for {
 		select {
-		case packet, ok := <-s.subscriber:
-			if !ok {
-				// Channel closed
-				return
-			}
-			
-			if packet != nil {
-				s.recordMessage(packet)
-			}
-			
-		case <-statsTicker.C:
+		case <-s.ticker.C:
 			s.PrintStats()
-			
 		case <-s.done:
 			return
 		}
@@ -117,14 +103,8 @@ func (s *MessageStats) PrintStats() {
 	s.LastStatsPrinted = now
 }
 
-// Close stops the stats collector and unsubscribes from the broker
+// Close overrides the BaseSubscriber.Close method
 func (s *MessageStats) Close() {
-	// Signal the collection loop to stop
-	close(s.done)
-	
-	// Unsubscribe from the broker
-	s.broker.Unsubscribe(s.subscriber)
-	
-	// Wait for the collection loop to exit
-	s.wg.Wait()
+	// Call the base close method which will handle unsubscribe and stop the ticker
+	s.BaseSubscriber.Close()
 }
