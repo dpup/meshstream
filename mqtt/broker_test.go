@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dpup/prefab/logging"
+
 	"meshstream/decoder"
 )
 
@@ -14,7 +16,8 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	sourceChan := make(chan *Packet, 10)
 	
 	// Create a broker with the source channel
-	broker := NewBroker(sourceChan)
+	testLogger := logging.NewDevLogger().Named("test")
+	broker := NewBroker(sourceChan, testLogger)
 	defer broker.Close()
 
 	// Subscribe to the broker
@@ -99,7 +102,8 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 	sourceChan := make(chan *Packet, 10)
 	
 	// Create a broker with the source channel
-	broker := NewBroker(sourceChan)
+	testLogger := logging.NewDevLogger().Named("test")
+	broker := NewBroker(sourceChan, testLogger)
 	defer broker.Close()
 
 	// Create multiple subscribers
@@ -144,7 +148,8 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 	sourceChan := make(chan *Packet, 10)
 	
 	// Create a broker with the source channel
-	broker := NewBroker(sourceChan)
+	testLogger := logging.NewDevLogger().Named("test")
+	broker := NewBroker(sourceChan, testLogger)
 	defer broker.Close()
 
 	// Create a slow subscriber with buffer size 1
@@ -215,7 +220,8 @@ func TestBrokerCloseWithSubscribers(t *testing.T) {
 	sourceChan := make(chan *Packet, 10)
 	
 	// Create a broker with the source channel
-	broker := NewBroker(sourceChan)
+	testLogger := logging.NewDevLogger().Named("test")
+	broker := NewBroker(sourceChan, testLogger)
 
 	// Subscribe to the broker
 	subscriber := broker.Subscribe(5)

@@ -3,6 +3,8 @@ package mqtt
 import (
 	"testing"
 	"time"
+
+	"github.com/dpup/prefab/logging"
 )
 
 // TestClientConfig verifies that the client can be created with a config
@@ -15,7 +17,8 @@ func TestClientConfig(t *testing.T) {
 		Topic:    "test/topic",
 	}
 
-	client := NewClient(config)
+	testLogger := logging.NewDevLogger().Named("test")
+	client := NewClient(config, testLogger)
 	if client == nil {
 		t.Fatal("Expected client to be created, got nil")
 	}
@@ -46,7 +49,8 @@ func TestClientConfig(t *testing.T) {
 // This test is a mock test and doesn't actually connect to MQTT
 // It just verifies that the messages channel works as expected
 func TestMessagesChannel(t *testing.T) {
-	client := NewClient(Config{})
+	testLogger := logging.NewDevLogger().Named("test")
+	client := NewClient(Config{}, testLogger)
 	ch := client.Messages()
 
 	// Verify we get the channel
