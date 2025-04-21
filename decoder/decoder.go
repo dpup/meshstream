@@ -241,6 +241,33 @@ func decodeDataPayload(decoded *DecodedPacket, data *pb.Data) {
 			decoded.Payload = &waypoint
 		}
 		
+	case pb.PortNum_MAP_REPORT_APP:
+		// Map report data
+		var mapReport pb.MapReport
+		if err := proto.Unmarshal(payload, &mapReport); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal MapReport data: %v", err)
+		} else {
+			decoded.Payload = &mapReport
+		}
+		
+	case pb.PortNum_TRACEROUTE_APP:
+		// Traceroute data
+		var routeDiscovery pb.RouteDiscovery
+		if err := proto.Unmarshal(payload, &routeDiscovery); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal RouteDiscovery data: %v", err)
+		} else {
+			decoded.Payload = &routeDiscovery
+		}
+		
+	case pb.PortNum_NEIGHBORINFO_APP:
+		// Neighbor information data
+		var neighborInfo pb.NeighborInfo
+		if err := proto.Unmarshal(payload, &neighborInfo); err != nil {
+			decoded.DecodeError = fmt.Errorf("failed to unmarshal NeighborInfo data: %v", err)
+		} else {
+			decoded.Payload = &neighborInfo
+		}
+		
 	default:
 		// For other types, just store the raw bytes
 		decoded.Payload = payload

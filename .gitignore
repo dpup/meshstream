@@ -69,3 +69,7 @@ debug.test
 # Temporary files
 tmp/
 temp/
+
+
+# Binary output type
+meshstream

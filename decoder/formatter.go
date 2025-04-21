@@ -1,12 +1,10 @@
 package decoder
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	pb "meshstream/proto/generated/meshtastic"
@@ -225,12 +223,6 @@ func FormatTelemetryMessage(telemetry *pb.Telemetry) string {
 		}
 	}
 
-	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(telemetry)
-	if err == nil {
-		builder.WriteString("\nFull Telemetry Structure:\n")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
@@ -314,12 +306,6 @@ func FormatPositionMessage(position *pb.Position) string {
 		builder.WriteString(fmt.Sprintf("  Satellites in view: %d\n", position.GetSatsInView()))
 	}
 
-	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(position)
-	if err == nil {
-		builder.WriteString("\nFull Position Structure:\n")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
@@ -362,13 +348,103 @@ func FormatNodeInfoMessage(user *pb.User) string {
 		builder.WriteString(fmt.Sprintf("  Public Key: %x\n", user.GetPublicKey()))
 	}
 
-	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(user)
-	if err == nil {
-		builder.WriteString("\nFull User Structure:\n")
-		builder.WriteString(string(jsonBytes))
+
+	return builder.String()
+}
+
+// FormatRouteDiscoveryMessage formats a RouteDiscovery message
+func FormatRouteDiscoveryMessage(routeDiscovery *pb.RouteDiscovery) string {
+	var builder strings.Builder
+	
+	if routeDiscovery == nil {
+		return "Error: nil route discovery data"
 	}
 
+	builder.WriteString("Route Discovery Data:\n")
+	
+	// Format route information
+	route := routeDiscovery.GetRoute()
+	if len(route) > 0 {
+		builder.WriteString("  Route Towards Destination:\n")
+		
+		for i, nodeId := range route {
+			snrText := ""
+			if i < len(routeDiscovery.GetSnrTowards()) {
+				// SNR values are scaled by 4
+				snrValue := float32(routeDiscovery.GetSnrTowards()[i]) / 4.0
+				snrText = fmt.Sprintf(" (SNR: %.1f dB)", snrValue)
+			}
+			builder.WriteString(fmt.Sprintf("    Hop %d: Node %d%s\n", i+1, nodeId, snrText))
+		}
+	} else {
+		builder.WriteString("  No route towards destination recorded\n")
+	}
+	
+	routeBack := routeDiscovery.GetRouteBack()
+	if len(routeBack) > 0 {
+		builder.WriteString("  Route Back from Destination:\n")
+		
+		for i, nodeId := range routeBack {
+			snrText := ""
+			if i < len(routeDiscovery.GetSnrBack()) {
+				// SNR values are scaled by 4
+				snrValue := float32(routeDiscovery.GetSnrBack()[i]) / 4.0
+				snrText = fmt.Sprintf(" (SNR: %.1f dB)", snrValue)
+			}
+			builder.WriteString(fmt.Sprintf("    Hop %d: Node %d%s\n", i+1, nodeId, snrText))
+		}
+	} else {
+		builder.WriteString("  No return route recorded\n")
+	}
+	
+	return builder.String()
+}
+
+// FormatNeighborInfoMessage formats a NeighborInfo message
+func FormatNeighborInfoMessage(neighborInfo *pb.NeighborInfo) string {
+	var builder strings.Builder
+	
+	if neighborInfo == nil {
+		return "Error: nil neighbor info data"
+	}
+
+	builder.WriteString("Neighbor Info Data:\n")
+	
+	// Node information
+	builder.WriteString(fmt.Sprintf("  Node ID: %d\n", neighborInfo.GetNodeId()))
+	
+	if neighborInfo.GetLastSentById() != 0 {
+		builder.WriteString(fmt.Sprintf("  Last Sent By ID: %d\n", neighborInfo.GetLastSentById()))
+	}
+	
+	if neighborInfo.GetNodeBroadcastIntervalSecs() != 0 {
+		builder.WriteString(fmt.Sprintf("  Broadcast Interval: %d seconds\n", neighborInfo.GetNodeBroadcastIntervalSecs()))
+	}
+	
+	// Format neighbors
+	neighbors := neighborInfo.GetNeighbors()
+	if len(neighbors) > 0 {
+		builder.WriteString("  Neighbors:\n")
+		
+		for i, neighbor := range neighbors {
+			builder.WriteString(fmt.Sprintf("    Neighbor %d:\n", i+1))
+			builder.WriteString(fmt.Sprintf("      Node ID: %d\n", neighbor.GetNodeId()))
+			builder.WriteString(fmt.Sprintf("      SNR: %.1f dB\n", neighbor.GetSnr()))
+			
+			if neighbor.GetLastRxTime() != 0 {
+				// Convert UNIX timestamp to readable time
+				rxTime := time.Unix(int64(neighbor.GetLastRxTime()), 0)
+				builder.WriteString(fmt.Sprintf("      Last Received: %s\n", rxTime.Format(time.RFC3339)))
+			}
+			
+			if neighbor.GetNodeBroadcastIntervalSecs() != 0 {
+				builder.WriteString(fmt.Sprintf("      Broadcast Interval: %d seconds\n", neighbor.GetNodeBroadcastIntervalSecs()))
+			}
+		}
+	} else {
+		builder.WriteString("  No neighbors recorded\n")
+	}
+	
 	return builder.String()
 }
 
@@ -420,12 +496,6 @@ func FormatWaypointMessage(waypoint *pb.Waypoint) string {
 		builder.WriteString(fmt.Sprintf("  Locked to node: %d\n", waypoint.GetLockedTo()))
 	}
 
-	// Marshal to JSON for detailed view
-	jsonBytes, err := protojson.MarshalOptions{Multiline: true, Indent: "  "}.Marshal(waypoint)
-	if err == nil {
-		builder.WriteString("\nFull Waypoint Structure:\n")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
@@ -581,16 +651,6 @@ func FormatMapReportMessage(mapReport *pb.MapReport) string {
 		builder.WriteString(fmt.Sprintf("  Online Local Nodes: %d\n", mapReport.GetNumOnlineLocalNodes()))
 	}
 
-	// Use protojson to generate a full JSON representation for debugging
-	marshaler := protojson.MarshalOptions{
-		Multiline: true,
-		Indent:    "  ",
-	}
-	jsonBytes, err := marshaler.Marshal(mapReport)
-	if err == nil {
-		builder.WriteString("\nFull Map Report Structure:\n")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
@@ -643,6 +703,18 @@ func FormatPayload(payload interface{}, portNum pb.PortNum) string {
 		// Map data
 		if mapReport, ok := payload.(*pb.MapReport); ok {
 			return FormatMapReportMessage(mapReport)
+		}
+		
+	case pb.PortNum_TRACEROUTE_APP:
+		// Traceroute data
+		if routeDiscovery, ok := payload.(*pb.RouteDiscovery); ok {
+			return FormatRouteDiscoveryMessage(routeDiscovery)
+		}
+		
+	case pb.PortNum_NEIGHBORINFO_APP:
+		// Neighbor info data
+		if neighborInfo, ok := payload.(*pb.NeighborInfo); ok {
+			return FormatNeighborInfoMessage(neighborInfo)
 		}
 	}
 
@@ -834,16 +906,6 @@ func FormatServiceEnvelope(envelope *pb.ServiceEnvelope) string {
 		}
 	}
 
-	// Use protojson to generate a full JSON representation for debugging
-	marshaler := protojson.MarshalOptions{
-		Multiline: true,
-		Indent:    "  ",
-	}
-	jsonBytes, err := marshaler.Marshal(envelope)
-	if err == nil {
-		builder.WriteString("\nFull Protobuf Structure:\n")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
@@ -879,12 +941,6 @@ func FormatJSONMessage(jsonData map[string]interface{}) string {
 		builder.WriteString(fmt.Sprintf("  Timestamp: %s\n", timestamp))
 	}
 
-	// Format the full JSON for reference
-	jsonBytes, err := json.MarshalIndent(jsonData, "  ", "  ")
-	if err == nil {
-		builder.WriteString("\nFull JSON Structure:\n  ")
-		builder.WriteString(string(jsonBytes))
-	}
 
 	return builder.String()
 }
