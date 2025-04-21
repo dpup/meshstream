@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,11 +14,13 @@
             max-width: 960px;
             margin: 0 auto;
         }
+
         h1 {
             color: #333;
             border-bottom: 1px solid #eee;
             padding-bottom: 10px;
         }
+
         #messages {
             margin-top: 20px;
             border: 1px solid #ddd;
@@ -29,13 +32,16 @@
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 14px;
         }
+
         .message {
             padding: 8px 0;
             border-bottom: 1px solid #eee;
         }
+
         .message:last-child {
             border-bottom: none;
         }
+
         .info {
             padding: 10px;
             background-color: #e9f7fe;
@@ -44,14 +50,15 @@
         }
     </style>
 </head>
+
 <body>
     <h1>Meshtastic Stream</h1>
-    
+
     <div class="info">
         <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
         <p>Messages are streamed using Server-Sent Events (SSE) and will appear below as they arrive.</p>
     </div>
-    
+
     <div id="messages">
         <p>Waiting for messages...</p>
     </div>
@@ -59,91 +66,57 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const messagesDiv = document.getElementById('messages');
-            
+
             // Function to add a message to the UI
             function addMessage(text) {
-                const msgElement = document.createElement('div');
+                const msgElement = document.createElement('pre');
                 msgElement.className = 'message';
                 msgElement.textContent = text;
                 messagesDiv.appendChild(msgElement);
-                
+
                 // Auto-scroll to the bottom
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
             }
-            
+
             // Clear initial waiting message
             messagesDiv.innerHTML = '';
-            
+
             // Connect to SSE endpoint
             console.log('Connecting to SSE stream...');
             const eventSource = new EventSource('/api/stream');
-            
+
             // Handle connection open
             eventSource.onopen = () => {
                 console.log('SSE connection established');
                 addMessage('Connected to Meshtastic stream.');
             };
-            
+
             // Handle connection error
             eventSource.onerror = (error) => {
                 console.error('SSE connection error:', error);
                 addMessage('Error: Connection to server lost. Trying to reconnect...');
             };
-            
+
             // Handle 'info' events
             eventSource.addEventListener('info', (e) => {
                 console.log('Info event:', e.data);
                 addMessage(`Server info: ${e.data}`);
             });
-            
+
             // Handle 'message' events
             eventSource.addEventListener('message', (e) => {
                 console.log('Message event:', e.data);
                 try {
                     const packet = JSON.parse(e.data);
                     const timestamp = new Date(packet.received_at * 1000).toLocaleTimeString();
-                    
+
                     // Store the full packet data for later reference if needed
                     console.log('Full packet:', packet);
-                    
+
                     // Format the message with essential information
-                    let msgText = `[${timestamp}] From Node ${packet.from} to ${packet.to} (${packet.port_string})`;
-                    
-                    // Add packet ID and hop info if available
-                    if (packet.id) {
-                        msgText += ` • ID: ${packet.id}`;
-                    }
-                    
-                    if (packet.hop_limit && packet.hop_limit > 0) {
-                        msgText += ` • Hop: ${packet.hop_start}/${packet.hop_limit}`;
-                    }
-                    
-                    // Determine payload type and add appropriate info
-                    const payloadType = typeof packet.payload;
-                    
-                    if (payloadType === 'string') {
-                        // Text message
-                        msgText += ` • Message: "${packet.payload}"`;
-                    } else if (packet.payload && typeof packet.payload === 'object') {
-                        // Handle various object payload types
-                        if (Array.isArray(packet.payload)) {
-                            // Binary data as array
-                            msgText += ` • Binary data: ${packet.payload.length} bytes`;
-                        } else {
-                            // Structured data (protobuf object)
-                            msgText += ` • Data: ${Object.keys(packet.payload).length} fields`;
-                        }
-                    } else if (packet.payload === null) {
-                        msgText += ` • No payload`;
-                    } else {
-                        msgText += ` • Payload type: ${payloadType}`;
-                    }
-                    
-                    // Add channel ID if available
-                    if (packet.channel_id) {
-                        msgText += ` • Channel: ${packet.channel_id}`;
-                    }
-                    
+                    let msgText = `[${timestamp}] ${packet.port_string}\n\n`;
+                    msgText += JSON.stringify(packet, null, 2);
+
                     addMessage(msgText);
                 } catch (err) {
                     console.error('Error parsing message:', err);
@@ -153,4 +126,5 @@
         });
     </script>
 </body>
+
 </html>

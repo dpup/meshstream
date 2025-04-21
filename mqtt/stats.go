@@ -24,12 +24,8 @@ type MessageStats struct {
 
 // NewMessageStats creates a new MessageStats instance
 func NewMessageStats(broker *Broker, printInterval time.Duration, logger logging.Logger) *MessageStats {
-	// Use the provided logger or create a default one
-	if logger == nil {
-		logger = logging.NewDevLogger()
-	}
-	statsLogger := logger.Named("mqtt.stats")
-	
+	statsLogger := logger.Named("mqtt.MessageStats")
+
 	s := &MessageStats{
 		ByNode:           make(map[uint32]int),
 		ByPortType:       make(map[pb.PortNum]int),
@@ -37,7 +33,7 @@ func NewMessageStats(broker *Broker, printInterval time.Duration, logger logging
 		ticker:           time.NewTicker(printInterval),
 		logger:           statsLogger,
 	}
-	
+
 	// Create base subscriber with stats message handler
 	s.BaseSubscriber = NewBaseSubscriber(SubscriberConfig{
 		Name:       "MessageStats",
@@ -47,10 +43,10 @@ func NewMessageStats(broker *Broker, printInterval time.Duration, logger logging
 		StartHook:  func() { go s.runTicker() },
 		CloseHook:  func() { s.ticker.Stop() },
 	})
-	
+
 	// Start processing messages
 	s.Start()
-	
+
 	return s
 }
 
@@ -72,10 +68,10 @@ func (s *MessageStats) recordMessage(packet *Packet) {
 	defer s.Unlock()
 
 	s.TotalMessages++
-	
+
 	// Count by source node
 	s.ByNode[packet.From]++
-	
+
 	// Count by port type
 	s.ByPortType[packet.PortNum]++
 }
@@ -88,42 +84,41 @@ func (s *MessageStats) PrintStats() {
 	now := time.Now()
 	duration := now.Sub(s.LastStatsPrinted)
 	msgPerSec := float64(s.TotalMessages) / duration.Seconds()
-	
+
 	// Log the basic statistics with structured fields
-	s.logger.Infow("Message Statistics Summary", 
+	s.logger.Infow("Message Statistics Summary",
 		"total_messages", s.TotalMessages,
 		"messages_per_second", msgPerSec,
 		"duration_seconds", duration.Seconds(),
 	)
-	
+
 	// Create maps for structured node and port stats
 	nodeStats := make(map[string]int)
 	for nodeID, count := range s.ByNode {
 		nodeStats[fmt.Sprintf("node_%d", nodeID)] = count
 	}
-	
+
 	// Log node statistics with structured fields
-	s.logger.Infow("Messages by Node", 
+	s.logger.Infow("Messages by Node",
 		"node_counts", nodeStats,
 		"active_nodes", len(s.ByNode),
 	)
-	
+
 	// Create maps for structured port stats
 	portStats := make(map[string]int)
 	for portType, count := range s.ByPortType {
 		portStats[portType.String()] = count
 	}
-	
+
 	// Log port type statistics with structured fields
-	s.logger.Infow("Messages by Port Type", 
+	s.logger.Infow("Messages by Port Type",
 		"port_counts", portStats,
 		"active_ports", len(s.ByPortType),
 	)
-	
+
 	// Reset counters for rate calculation
 	s.TotalMessages = 0
 	s.ByNode = make(map[uint32]int)
 	s.ByPortType = make(map[pb.PortNum]int)
 	s.LastStatsPrinted = now
 }
-
