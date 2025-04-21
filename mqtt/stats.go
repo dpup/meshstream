@@ -23,16 +23,19 @@ type MessageStats struct {
 }
 
 // NewMessageStats creates a new MessageStats instance
-func NewMessageStats(broker *Broker, printInterval time.Duration) *MessageStats {
-	// Create a logger for stats
-	logger := logging.NewDevLogger().Named("mqtt.stats")
+func NewMessageStats(broker *Broker, printInterval time.Duration, logger logging.Logger) *MessageStats {
+	// Use the provided logger or create a default one
+	if logger == nil {
+		logger = logging.NewDevLogger()
+	}
+	statsLogger := logger.Named("mqtt.stats")
 	
 	s := &MessageStats{
 		ByNode:           make(map[uint32]int),
 		ByPortType:       make(map[pb.PortNum]int),
 		LastStatsPrinted: time.Now(),
 		ticker:           time.NewTicker(printInterval),
-		logger:           logger,
+		logger:           statsLogger,
 	}
 	
 	// Create base subscriber with stats message handler

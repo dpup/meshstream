@@ -34,18 +34,21 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(config Config) *Server {
-	// Create a named logger
-	logger := logging.NewDevLogger().Named("server")
+func New(config Config, logger logging.Logger) *Server {
+	// Use provided logger or create a default one
+	if logger == nil {
+		logger = logging.NewDevLogger()
+	}
+	serverLogger := logger.Named("server")
 	
 	if config.Broker == nil {
-		logger.Info("Warning: Server created without a broker, streaming will not work")
+		serverLogger.Info("Warning: Server created without a broker, streaming will not work")
 	}
 	
 	return &Server{
 		config:   config,
 		shutdown: make(chan struct{}),
-		logger:   logger,
+		logger:   serverLogger,
 	}
 }
 

@@ -14,6 +14,7 @@ type SubscriberConfig struct {
 	Processor  func(*Packet) // Function to process each packet
 	StartHook  func()      // Optional hook called when starting
 	CloseHook  func()      // Optional hook called when closing
+	Logger     logging.Logger // Logger instance to use
 }
 
 // BaseSubscriber implements common subscriber functionality
@@ -32,8 +33,13 @@ type BaseSubscriber struct {
 
 // NewBaseSubscriber creates a new base subscriber
 func NewBaseSubscriber(config SubscriberConfig) *BaseSubscriber {
-	// Create a logger for this subscriber
-	logger := logging.NewDevLogger().Named("mqtt.subscriber." + config.Name)
+	// Use provided logger or create a default one
+	var subscriberLogger logging.Logger
+	if config.Logger == nil {
+		subscriberLogger = logging.NewDevLogger().Named("mqtt.subscriber." + config.Name)
+	} else {
+		subscriberLogger = config.Logger.Named("mqtt.subscriber." + config.Name)
+	}
 	
 	return &BaseSubscriber{
 		broker:     config.Broker,
@@ -43,7 +49,7 @@ func NewBaseSubscriber(config SubscriberConfig) *BaseSubscriber {
 		startHook:  config.StartHook,
 		closeHook:  config.CloseHook,
 		BufferSize: config.BufferSize,
-		logger:     logger,
+		logger:     subscriberLogger,
 	}
 }
 

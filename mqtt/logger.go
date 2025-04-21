@@ -29,14 +29,17 @@ type MessageLogger struct {
 }
 
 // NewMessageLogger creates a new message logger that subscribes to the broker
-func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSeparator string) (*MessageLogger, error) {
+func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSeparator string, logger logging.Logger) (*MessageLogger, error) {
 	// Ensure log directory exists
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %v", err)
 	}
 	
-	// Create a logger with appropriate name
-	logger := logging.NewDevLogger().Named("mqtt.message_logger")
+	// Use provided logger or create a default one
+	if logger == nil {
+		logger = logging.NewDevLogger()
+	}
+	messageLoggerLogger := logger.Named("mqtt.message_logger")
 	
 	ml := &MessageLogger{
 		logDir:          logDir,
@@ -44,7 +47,7 @@ func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSep
 		files:           make(map[pb.PortNum]*os.File),
 		logToStdout:     logToStdout,
 		stdoutSeparator: stdoutSeparator,
-		logger:          logger,
+		logger:          messageLoggerLogger,
 	}
 	
 	// Create base subscriber with logger's message handler
@@ -54,6 +57,7 @@ func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSep
 		BufferSize: 100,
 		Processor:  ml.logMessage,
 		CloseHook:  ml.closeLogFiles,
+		Logger:     logger,
 	})
 	
 	// Start processing messages

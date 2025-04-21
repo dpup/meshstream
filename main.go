@@ -50,7 +50,7 @@ func main() {
 		Topic:    mqttTopicPrefix + "/#",
 	}
 	
-	mqttClient := mqtt.NewClient(mqttConfig)
+	mqttClient := mqtt.NewClient(mqttConfig, logger)
 	
 	// Connect to the MQTT broker
 	if err := mqttClient.Connect(); err != nil {
@@ -65,7 +65,7 @@ func main() {
 	
 	// Create a stats tracker that subscribes to the broker
 	// with statistics printed every 30 seconds
-	stats := mqtt.NewMessageStats(broker, 30*time.Second)
+	stats := mqtt.NewMessageStats(broker, 30*time.Second, logger)
 	
 	// Create a message logger that subscribes to the broker
 	// and also logs to stdout with a separator
@@ -74,6 +74,7 @@ func main() {
 		logsDir, 
 		true, // Enable logging to stdout
 		strings.Repeat("-", 80), // Use separator
+		logger,
 	)
 	if err != nil {
 		logger.Warnw("Failed to initialize message logger", "error", err)
@@ -84,7 +85,7 @@ func main() {
 		Host:   serverHost,
 		Port:   serverPort,
 		Broker: broker,
-	})
+	}, logger)
 	
 	// Start the server in a goroutine
 	go func() {

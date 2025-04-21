@@ -29,14 +29,18 @@ type Client struct {
 }
 
 // NewClient creates a new MQTT client with the provided configuration
-func NewClient(config Config) *Client {
-	logger := logging.NewDevLogger().Named("mqtt.client")
+func NewClient(config Config, logger logging.Logger) *Client {
+	// Use provided logger or create a default one
+	if logger == nil {
+		logger = logging.NewDevLogger()
+	}
+	clientLogger := logger.Named("mqtt.client")
 	
 	return &Client{
 		config:          config,
 		decodedMessages: make(chan *Packet, 100), // Buffer up to 100 messages
 		done:            make(chan struct{}),
-		logger:          logger,
+		logger:          clientLogger,
 	}
 }
 
