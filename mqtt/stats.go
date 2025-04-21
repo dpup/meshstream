@@ -103,8 +103,3 @@ func (s *MessageStats) PrintStats() {
 	s.LastStatsPrinted = now
 }
 
-// Close overrides the BaseSubscriber.Close method
-func (s *MessageStats) Close() {
-	// Call the base close method which will handle unsubscribe and stop the ticker
-	s.BaseSubscriber.Close()
-}

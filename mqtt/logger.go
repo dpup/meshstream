@@ -122,8 +122,3 @@ func (ml *MessageLogger) logMessage(packet *Packet) {
 	}
 }
 
-// Close overrides the BaseSubscriber.Close method
-func (ml *MessageLogger) Close() {
-	// Call the base close method which will handle unsubscribe and closeLogFiles
-	ml.BaseSubscriber.Close()
-}
