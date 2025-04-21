@@ -100,27 +100,48 @@
             eventSource.addEventListener('message', (e) => {
                 console.log('Message event:', e.data);
                 try {
-                    const data = JSON.parse(e.data);
-                    const timestamp = new Date(data.timestamp * 1000).toLocaleTimeString();
+                    const packet = JSON.parse(e.data);
+                    const timestamp = new Date(packet.received_at * 1000).toLocaleTimeString();
                     
-                    let msgText = `[${timestamp}] From Node ${data.from} to ${data.to} (${data.port})`;
+                    // Store the full packet data for later reference if needed
+                    console.log('Full packet:', packet);
+                    
+                    // Format the message with essential information
+                    let msgText = `[${timestamp}] From Node ${packet.from} to ${packet.to} (${packet.port_string})`;
                     
                     // Add packet ID and hop info if available
-                    if (data.id) {
-                        msgText += ` • ID: ${data.id}`;
+                    if (packet.id) {
+                        msgText += ` • ID: ${packet.id}`;
                     }
                     
-                    if (data.hop_limit && data.hop_limit > 0) {
-                        msgText += ` • Hop: ${data.hop_start}/${data.hop_limit}`;
+                    if (packet.hop_limit && packet.hop_limit > 0) {
+                        msgText += ` • Hop: ${packet.hop_start}/${packet.hop_limit}`;
                     }
                     
-                    // Add payload info
-                    if (data.payload_type === 'text' && data.payload) {
-                        msgText += ` • Message: "${data.payload}"`;
-                    } else if (data.payload_type === 'binary' && data.payload_size) {
-                        msgText += ` • Binary data: ${data.payload_size} bytes`;
-                    } else if (data.payload_type && data.payload_type !== 'none') {
-                        msgText += ` • Payload: ${data.payload_type}`;
+                    // Determine payload type and add appropriate info
+                    const payloadType = typeof packet.payload;
+                    
+                    if (payloadType === 'string') {
+                        // Text message
+                        msgText += ` • Message: "${packet.payload}"`;
+                    } else if (packet.payload && typeof packet.payload === 'object') {
+                        // Handle various object payload types
+                        if (Array.isArray(packet.payload)) {
+                            // Binary data as array
+                            msgText += ` • Binary data: ${packet.payload.length} bytes`;
+                        } else {
+                            // Structured data (protobuf object)
+                            msgText += ` • Data: ${Object.keys(packet.payload).length} fields`;
+                        }
+                    } else if (packet.payload === null) {
+                        msgText += ` • No payload`;
+                    } else {
+                        msgText += ` • Payload type: ${payloadType}`;
+                    }
+                    
+                    // Add channel ID if available
+                    if (packet.channel_id) {
+                        msgText += ` • Channel: ${packet.channel_id}`;
                     }
                     
                     addMessage(msgText);

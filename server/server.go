@@ -129,34 +129,20 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			
-			// Create a simplified packet for the frontend
-			packetData := map[string]interface{}{
-				"from":        packet.From,
-				"to":          packet.To,
-				"port":        packet.PortNum.String(),
-				"timestamp":   time.Now().Unix(),
-				"hop_limit":   packet.HopLimit,
-				"hop_start":   packet.HopStart,
-				"id":          packet.ID,
-				"channel_id":  packet.ChannelID,
+			// Create a serializable wrapper for the packet
+			// That includes both the entire packet and some extra fields for convenience
+			packetWrapper := struct {
+				*mqtt.Packet
+				ReceivedAt int64  `json:"received_at"`
+				PortString string `json:"port_string"`
+			}{
+				Packet:     packet,
+				ReceivedAt: time.Now().Unix(),
+				PortString: packet.PortNum.String(),
 			}
 			
-			// Add payload information if available
-			switch v := packet.Payload.(type) {
-			case string:
-				packetData["payload_type"] = "text"
-				packetData["payload"] = v
-			case []byte:
-				packetData["payload_type"] = "binary"
-				packetData["payload_size"] = len(v)
-			case nil:
-				packetData["payload_type"] = "none"
-			default:
-				packetData["payload_type"] = fmt.Sprintf("%T", v)
-			}
-			
-			// Convert the packet to JSON
-			data, err := json.Marshal(packetData)
+			// Convert the entire packet to JSON
+			data, err := json.Marshal(packetWrapper)
 			
 			if err != nil {
 				log.Printf("Error marshaling packet to JSON: %v", err)
