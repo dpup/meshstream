@@ -33,11 +33,12 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	} else {
 		// First decode the message based on its format
 		var formattedOutput string
-		if topicInfo.Format == "e" || topicInfo.Format == "map" {
+		switch topicInfo.Format {
+		case "e", "c", "map":
 			// Binary encoded protobuf message (both regular and map formats use the same decoder)
 			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
-		} else if topicInfo.Format == "json" {
+		case "json":
 			// JSON format message
 			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())
 			if err != nil {
@@ -46,7 +47,7 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 			} else {
 				formattedOutput = decoder.FormatTopicAndJSONData(topicInfo, jsonData)
 			}
-		} else {
+		default:
 			// Unsupported format
 			formattedOutput = decoder.FormatTopicAndRawData(topicInfo, msg.Payload())
 		}
