@@ -57,15 +57,18 @@ func main() {
 	// Create a message broker to distribute messages to multiple consumers
 	broker := mqtt.NewBroker(messagesChan)
 	
-	// Create a consumer channel for display with buffer size 10
-	displayChan := broker.Subscribe(10)
-	
 	// Create a stats tracker that subscribes to the broker
 	// with statistics printed every 30 seconds
 	stats := mqtt.NewMessageStats(broker, 30*time.Second)
 	
 	// Create a message logger that subscribes to the broker
-	messageLogger, err := mqtt.NewMessageLogger(broker, logsDir)
+	// and also logs to stdout with a separator
+	messageLogger, err := mqtt.NewMessageLogger(
+		broker, 
+		logsDir, 
+		true, // Enable logging to stdout
+		strings.Repeat("-", 80), // Use separator
+	)
 	if err != nil {
 		log.Printf("Warning: Failed to initialize message logger: %v", err)
 	}
@@ -77,39 +80,24 @@ func main() {
 	// Process messages until interrupt received
 	fmt.Println("Waiting for messages... Press Ctrl+C to exit")
 	fmt.Println("Statistics will be printed every 30 seconds")
-	fmt.Println("Specific message types will be logged to files in the ./logs directory")
+	fmt.Println("Messages will be logged to files in the ./logs directory")
 	
-	// Main event loop for display
-	for {
-		select {
-		case packet := <-displayChan:
-			if packet == nil {
-				log.Println("Received nil packet, subscriber channel may be closed")
-				continue
-			}
-			
-			// Format and print the decoded message
-			formattedOutput := decoder.FormatTopicAndPacket(packet.TopicInfo, packet.DecodedPacket)
-			fmt.Println(formattedOutput)
-			fmt.Println(strings.Repeat("-", 80))
-			
-		case <-sig:
-			// Got an interrupt signal, shutting down
-			fmt.Println("Shutting down...")
-			
-			// Close components in reverse order of creation
-			if messageLogger != nil {
-				messageLogger.Close()
-			}
-			
-			stats.Close()
-			
-			// Close the broker (which will close all subscriber channels)
-			broker.Close()
-			
-			// Then disconnect the MQTT client
-			mqttClient.Disconnect()
-			return
-		}
+	// Wait for interrupt signal
+	<-sig
+	
+	// Got an interrupt signal, shutting down
+	fmt.Println("Shutting down...")
+	
+	// Close components in reverse order of creation
+	if messageLogger != nil {
+		messageLogger.Close()
 	}
+	
+	stats.Close()
+	
+	// Close the broker (which will close all subscriber channels)
+	broker.Close()
+	
+	// Then disconnect the MQTT client
+	mqttClient.Disconnect()
 }

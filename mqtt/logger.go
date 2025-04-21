@@ -14,31 +14,35 @@ import (
 	pb "meshstream/proto/generated/meshtastic"
 )
 
-// MessageLogger logs messages of specific types to separate files
+// MessageLogger logs messages to files and optionally to stdout
 type MessageLogger struct {
-	logDir      string
-	broker      *Broker
-	subscriber  <-chan *Packet
-	loggers     map[pb.PortNum]*log.Logger
-	files       map[pb.PortNum]*os.File
-	mutex       sync.Mutex
-	done        chan struct{}
-	wg          sync.WaitGroup
+	logDir          string
+	broker          *Broker
+	subscriber      <-chan *Packet
+	loggers         map[pb.PortNum]*log.Logger
+	files           map[pb.PortNum]*os.File
+	mutex           sync.Mutex
+	done            chan struct{}
+	wg              sync.WaitGroup
+	logToStdout     bool  // Flag to enable console output
+	stdoutSeparator string // Separator for console output
 }
 
 // NewMessageLogger creates a new message logger that subscribes to the broker
-func NewMessageLogger(broker *Broker, logDir string) (*MessageLogger, error) {
+func NewMessageLogger(broker *Broker, logDir string, logToStdout bool, stdoutSeparator string) (*MessageLogger, error) {
 	// Ensure log directory exists
 	if err := os.MkdirAll(logDir, 0755); err != nil {
 		return nil, fmt.Errorf("failed to create log directory: %v", err)
 	}
 	
 	ml := &MessageLogger{
-		logDir:  logDir,
-		broker:  broker,
-		loggers: make(map[pb.PortNum]*log.Logger),
-		files:   make(map[pb.PortNum]*os.File),
-		done:    make(chan struct{}),
+		logDir:          logDir,
+		broker:          broker,
+		loggers:         make(map[pb.PortNum]*log.Logger),
+		files:           make(map[pb.PortNum]*os.File),
+		done:            make(chan struct{}),
+		logToStdout:     logToStdout,
+		stdoutSeparator: stdoutSeparator,
 	}
 	
 	// Subscribe to the broker with a large buffer
@@ -103,22 +107,29 @@ func (ml *MessageLogger) getLogger(portNum pb.PortNum) *log.Logger {
 	return logger
 }
 
-// logMessage logs a message to the appropriate file based on its port type
+// logMessage logs a message to the appropriate file and optionally to stdout
 func (ml *MessageLogger) logMessage(packet *Packet) {
-	// Log all message types by getting a logger for the packet's port type
+	// Format the message
+	formattedOutput := decoder.FormatTopicAndPacket(packet.TopicInfo, packet.DecodedPacket)
+	
+	// Add a timestamp and node info
+	logEntry := fmt.Sprintf("[Node %d] %s\n%s",
+		packet.From,
+		time.Now().Format(time.RFC3339),
+		formattedOutput)
+	
+	// Log to file
 	logger := ml.getLogger(packet.PortNum)
 	if logger != nil {
-		// Format the message
-		formattedOutput := decoder.FormatTopicAndPacket(packet.TopicInfo, packet.DecodedPacket)
-		
-		// Add a timestamp and node info
-		logEntry := fmt.Sprintf("[Node %d] %s\n%s\n",
-			packet.From,
-			time.Now().Format(time.RFC3339),
-			formattedOutput)
-		
-		// Write to the log
 		logger.Println(logEntry)
+	}
+	
+	// Log to stdout if enabled
+	if ml.logToStdout {
+		fmt.Println(formattedOutput)
+		if ml.stdoutSeparator != "" {
+			fmt.Println(ml.stdoutSeparator)
+		}
 	}
 }
 
