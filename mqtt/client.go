@@ -92,8 +92,9 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 		return
 	}
 
-	// For now, only handle "e" and "map" format messages
-	if topicInfo.Format == "e" || topicInfo.Format == "map" {
+	// Process different message formats
+	switch topicInfo.Format {
+	case "e", "c", "map":
 		// Binary encoded protobuf message
 		decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 		
@@ -114,10 +115,12 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 			// Channel buffer is full, log a warning and drop the message
 			log.Println("Warning: Message buffer full, dropping message")
 		}
-	} else if topicInfo.Format == "json" {
+	
+	case "json":
 		// TODO: Add support for JSON format messages in the future
 		log.Printf("Ignoring JSON format message from topic: %s\n", msg.Topic())
-	} else {
+	
+	default:
 		// Unsupported format, log and ignore
 		log.Printf("Unsupported format: %s from topic: %s\n", topicInfo.Format, msg.Topic())
 	}
