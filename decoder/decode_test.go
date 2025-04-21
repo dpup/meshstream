@@ -164,10 +164,10 @@ func TestDecodeMessageWithMapPayload(t *testing.T) {
 	}
 
 	// Format the output and check it contains expected components
-	formattedOutput := FormatTopicAndMapData(topicInfo, decodedPacket)
+	formattedOutput := FormatTopicAndPacket(topicInfo, decodedPacket)
 	
-	if !strings.Contains(formattedOutput, "Map Report") {
-		t.Error("Expected formatted output to contain 'Map Report'")
+	if !strings.Contains(formattedOutput, "Map Report Data") {
+		t.Error("Expected formatted output to contain 'Map Report Data'")
 	}
 
 	if !strings.Contains(formattedOutput, "Format: map") {

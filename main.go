@@ -33,16 +33,11 @@ var messagePubHandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Me
 	} else {
 		// First decode the message based on its format
 		var formattedOutput string
-		if topicInfo.Format == "e" {
-			// Binary encoded protobuf message
+		if topicInfo.Format == "e" || topicInfo.Format == "map" {
+			// Binary encoded protobuf message (both regular and map formats use the same decoder)
 			decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 			formattedOutput = decoder.FormatTopicAndPacket(topicInfo, decodedPacket)
-		} else if topicInfo.Format == "map" {
-				// Map format - unencrypted map packets
-				// These are ServiceEnvelope messages with MAP_REPORT_APP data
-				decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
-				formattedOutput = decoder.FormatTopicAndMapData(topicInfo, decodedPacket)
-			} else if topicInfo.Format == "json" {
+		} else if topicInfo.Format == "json" {
 			// JSON format message
 			jsonData, err := decoder.DecodeJSONMessage(msg.Payload())
 			if err != nil {
