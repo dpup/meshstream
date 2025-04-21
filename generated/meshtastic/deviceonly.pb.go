@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/deviceonly.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -773,9 +773,9 @@ const file_meshtastic_deviceonly_proto_rawDesc = "" +
 	"\x06config\x18\x03 \x01(\v2\x17.meshtastic.LocalConfigR\x06config\x12B\n" +
 	"\rmodule_config\x18\x04 \x01(\v2\x1d.meshtastic.LocalModuleConfigR\fmoduleConfig\x123\n" +
 	"\bchannels\x18\x05 \x01(\v2\x17.meshtastic.ChannelFileR\bchannels\x12&\n" +
-	"\x05owner\x18\x06 \x01(\v2\x10.meshtastic.UserR\x05ownerBm\x92?\v\xc2\x01\b<vector>\n" +
+	"\x05owner\x18\x06 \x01(\v2\x10.meshtastic.UserR\x05ownerBj\x92?\v\xc2\x01\b<vector>\n" +
 	"\x13com.geeksville.meshB\n" +
-	"DeviceOnlyZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"DeviceOnlyZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_deviceonly_proto_rawDescOnce sync.Once

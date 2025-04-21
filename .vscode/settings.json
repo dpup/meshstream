@@ -1,3 +1,6 @@
 {
-  "cSpell.words": ["meshstream", "Motherlode", "mqtt"]
+  "cSpell.words": ["meshstream", "Motherlode", "mqtt"],
+  "protoc": {
+    "options": ["-Iproto"]
+  }
 }

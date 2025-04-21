@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/config.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -2742,8 +2742,8 @@ const file_meshtastic_config_proto_rawDesc = "" +
 	"\x15debug_log_api_enabled\x18\x06 \x01(\bR\x12debugLogApiEnabled\x122\n" +
 	"\x15admin_channel_enabled\x18\b \x01(\bR\x13adminChannelEnabled\x1a\x12\n" +
 	"\x10SessionkeyConfigB\x11\n" +
-	"\x0fpayload_variantBa\n" +
-	"\x13com.geeksville.meshB\fConfigProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\x0fpayload_variantB^\n" +
+	"\x13com.geeksville.meshB\fConfigProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_config_proto_rawDescOnce sync.Once

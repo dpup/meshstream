@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/cannedmessages.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -74,8 +74,8 @@ const file_meshtastic_cannedmessages_proto_rawDesc = "" +
 	"\x1fmeshtastic/cannedmessages.proto\x12\n" +
 	"meshtastic\"7\n" +
 	"\x19CannedMessageModuleConfig\x12\x1a\n" +
-	"\bmessages\x18\x01 \x01(\tR\bmessagesBn\n" +
-	"\x13com.geeksville.meshB\x19CannedMessageConfigProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\bmessages\x18\x01 \x01(\tR\bmessagesBk\n" +
+	"\x13com.geeksville.meshB\x19CannedMessageConfigProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_cannedmessages_proto_rawDescOnce sync.Once

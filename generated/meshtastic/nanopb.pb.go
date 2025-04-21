@@ -11,7 +11,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/nanopb.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -771,8 +771,8 @@ const file_meshtastic_nanopb_proto_rawDesc = "" +
 	"\x0enanopb_fileopt\x12\x1c.google.protobuf.FileOptions\x18\xf2\a \x01(\v2\x0e.NanoPBOptionsR\rnanopbFileopt:U\n" +
 	"\rnanopb_msgopt\x12\x1f.google.protobuf.MessageOptions\x18\xf2\a \x01(\v2\x0e.NanoPBOptionsR\fnanopbMsgopt:T\n" +
 	"\x0enanopb_enumopt\x12\x1c.google.protobuf.EnumOptions\x18\xf2\a \x01(\v2\x0e.NanoPBOptionsR\rnanopbEnumopt:F\n" +
-	"\x06nanopb\x12\x1d.google.protobuf.FieldOptions\x18\xf2\a \x01(\v2\x0e.NanoPBOptionsR\x06nanopbB>\n" +
-	"\x18fi.kapsi.koti.jpa.nanopbZ\"github.com/meshtastic/go/generated"
+	"\x06nanopb\x12\x1d.google.protobuf.FieldOptions\x18\xf2\a \x01(\v2\x0e.NanoPBOptionsR\x06nanopbB;\n" +
+	"\x18fi.kapsi.koti.jpa.nanopbZ\x1fmeshstream/generated/meshtastic"
 
 var (
 	file_meshtastic_nanopb_proto_rawDescOnce sync.Once

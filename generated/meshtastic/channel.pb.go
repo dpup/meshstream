@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/channel.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -373,8 +373,8 @@ const file_meshtastic_channel_proto_rawDesc = "" +
 	"\x04Role\x12\f\n" +
 	"\bDISABLED\x10\x00\x12\v\n" +
 	"\aPRIMARY\x10\x01\x12\r\n" +
-	"\tSECONDARY\x10\x02Bb\n" +
-	"\x13com.geeksville.meshB\rChannelProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\tSECONDARY\x10\x02B_\n" +
+	"\x13com.geeksville.meshB\rChannelProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_channel_proto_rawDescOnce sync.Once

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package meshstream;
+
+import "meshtastic/mesh.proto";
+import "meshtastic/portnums.proto";
+import "meshtastic/telemetry.proto";
+import "meshtastic/mqtt.proto";
+import "meshtastic/remote_hardware.proto";
+import "meshtastic/admin.proto";
+import "meshtastic/paxcount.proto";
+
+option go_package = "proto/generated/meshstream;meshtreampb";
+
+// Packet represents a complete decoded MQTT message
+message Packet {
+  TopicInfo info = 2;
+  Data data = 1;
+}
+
+// TopicInfo contains parsed information about a Meshtastic MQTT topic
+message TopicInfo {
+  string full_topic = 1;
+  string region_path = 2;
+  string version = 3;
+  string format = 4;
+  string channel = 5;
+  string user_id = 6;
+}
+
+// Data provides a flattened structure for decoded Meshtastic packets
+message Data {
+  // From Service Envelope
+  string channel_id = 1;
+  string gateway_id = 2;
+
+  // From Mesh Packet
+  uint32 id = 3;
+  uint32 from = 4;
+  uint32 to = 5;
+  uint32 hop_limit = 6;
+  uint32 hop_start = 7;
+  bool want_ack = 8;
+  string priority = 9;
+  bool via_mqtt = 10;
+  uint32 next_hop = 11;
+  uint32 relay_node = 12;
+
+  // From Data
+  meshtastic.PortNum port_num = 13;
+  
+  // Payload is one of these types, depending on port_num
+  oneof payload {
+    string text_message = 14;                    // TEXT_MESSAGE_APP
+    bytes binary_data = 15;                      // Generic binary data for other port types
+    meshtastic.Position position = 16;           // POSITION_APP
+    meshtastic.User node_info = 17;              // NODEINFO_APP
+    meshtastic.Telemetry telemetry = 18;         // TELEMETRY_APP
+    meshtastic.Waypoint waypoint = 19;           // WAYPOINT_APP
+    meshtastic.RouteDiscovery route_discovery = 20; // TRACEROUTE_APP
+    meshtastic.NeighborInfo neighbor_info = 21;  // NEIGHBORINFO_APP
+    bytes compressed_text = 22;                  // TEXT_MESSAGE_COMPRESSED_APP
+    meshtastic.MapReport map_report = 23;        // MAP_REPORT_APP
+    meshtastic.HardwareMessage remote_hardware = 24; // REMOTE_HARDWARE_APP
+    meshtastic.Routing routing = 25;             // ROUTING_APP
+    meshtastic.AdminMessage admin = 26;          // ADMIN_APP
+    bytes audio_data = 27;                       // AUDIO_APP
+    string alert = 28;                           // ALERT_APP
+    string reply = 29;                           // REPLY_APP
+    bytes ip_tunnel = 30;                        // IP_TUNNEL_APP
+    meshtastic.Paxcount paxcounter = 31;         // PAXCOUNTER_APP
+    bytes serial_app = 32;                       // SERIAL_APP
+    bytes store_forward = 33;                    // STORE_FORWARD_APP
+    string range_test = 34;                      // RANGE_TEST_APP
+    bytes zps_app = 35;                          // ZPS_APP
+    bytes simulator = 36;                        // SIMULATOR_APP
+    bytes atak_plugin = 37;                      // ATAK_PLUGIN
+    bytes powerstress = 38;                      // POWERSTRESS_APP
+    bytes reticulum_tunnel = 39;                 // RETICULUM_TUNNEL_APP
+    bytes private_app = 40;                      // PRIVATE_APP, ATAK_FORWARDER
+    string detection_sensor = 41;                // DETECTION_SENSOR_APP
+  }
+
+  // Additional Data fields
+  uint32 request_id = 50;
+  uint32 reply_id = 51;
+  uint32 emoji = 52;
+  uint32 dest = 53;
+  uint32 source = 54;
+  bool want_response = 55;
+
+  // Error tracking
+  string decode_error = 60;
+}

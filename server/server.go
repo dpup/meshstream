@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"strconv"
 	"sync/atomic"
-	"time"
 
 	"github.com/dpup/prefab"
 	"github.com/dpup/prefab/logging"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"meshstream/mqtt"
 )
@@ -174,24 +174,19 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			// Create a serializable wrapper for the packet
-			// That includes both the entire packet and some extra fields for convenience
-			packetWrapper := struct {
-				*mqtt.Packet
-				ReceivedAt int64  `json:"received_at"`
-				PortString string `json:"port_string"`
-			}{
-				Packet:     packet,
-				ReceivedAt: time.Now().Unix(),
-				PortString: packet.PortNum.String(),
+			// Use protojson Marshaler for the protobuf parts of the packet
+			// Create a marshaler with pretty printing enabled
+			marshaler := protojson.MarshalOptions{
+				EmitUnpopulated: true,
+				Indent:          "  ",
+				UseProtoNames:   false, // Use camelCase names
 			}
 
-			// Convert the entire packet to JSON
-			data, err := json.Marshal(packetWrapper)
-
+			data, err := marshaler.Marshal(packet)
 			if err != nil {
 				logger.Errorw("Error marshaling packet to JSON", "error", err)
-				continue
+				http.Error(w, "Error marshaling packet", http.StatusInternalServerError)
+				return
 			}
 
 			// Send the event

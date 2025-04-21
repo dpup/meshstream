@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/admin.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1408,8 +1408,8 @@ const file_meshtastic_admin_proto_rawDesc = "" +
 	"\n" +
 	"short_name\x18\x04 \x01(\tR\tshortName\"~\n" +
 	"\x1eNodeRemoteHardwarePinsResponse\x12\\\n" +
-	"\x19node_remote_hardware_pins\x18\x01 \x03(\v2!.meshtastic.NodeRemoteHardwarePinR\x16nodeRemoteHardwarePinsB`\n" +
-	"\x13com.geeksville.meshB\vAdminProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\x19node_remote_hardware_pins\x18\x01 \x03(\v2!.meshtastic.NodeRemoteHardwarePinR\x16nodeRemoteHardwarePinsB]\n" +
+	"\x13com.geeksville.meshB\vAdminProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_admin_proto_rawDescOnce sync.Once

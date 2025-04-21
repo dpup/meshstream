@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/storeforward.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -545,8 +545,8 @@ const file_meshtastic_storeforward_proto_rawDesc = "" +
 	"\vCLIENT_PING\x10C\x12\x0f\n" +
 	"\vCLIENT_PONG\x10D\x12\x10\n" +
 	"\fCLIENT_ABORT\x10jB\t\n" +
-	"\avariantBj\n" +
-	"\x13com.geeksville.meshB\x15StoreAndForwardProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\avariantBg\n" +
+	"\x13com.geeksville.meshB\x15StoreAndForwardProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_storeforward_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/module_config.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -2439,8 +2439,8 @@ const file_meshtastic_module_config_proto_rawDesc = "" +
 	"\x15RemoteHardwarePinType\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x10\n" +
 	"\fDIGITAL_READ\x10\x01\x12\x11\n" +
-	"\rDIGITAL_WRITE\x10\x02Bg\n" +
-	"\x13com.geeksville.meshB\x12ModuleConfigProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\rDIGITAL_WRITE\x10\x02Bd\n" +
+	"\x13com.geeksville.meshB\x12ModuleConfigProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_module_config_proto_rawDescOnce sync.Once

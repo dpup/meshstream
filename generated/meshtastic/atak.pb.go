@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/atak.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -720,9 +720,9 @@ const file_meshtastic_atak_proto_rawDesc = "" +
 	"\x05Medic\x10\x05\x12\x13\n" +
 	"\x0fForwardObserver\x10\x06\x12\a\n" +
 	"\x03RTO\x10\a\x12\x06\n" +
-	"\x02K9\x10\bB_\n" +
+	"\x02K9\x10\bB\\\n" +
 	"\x13com.geeksville.meshB\n" +
-	"ATAKProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"ATAKProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_atak_proto_rawDescOnce sync.Once

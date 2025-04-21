@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/connection_status.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -429,8 +429,8 @@ const file_meshtastic_connection_status_proto_rawDesc = "" +
 	"\fis_connected\x18\x03 \x01(\bR\visConnected\"O\n" +
 	"\x16SerialConnectionStatus\x12\x12\n" +
 	"\x04baud\x18\x01 \x01(\rR\x04baud\x12!\n" +
-	"\fis_connected\x18\x02 \x01(\bR\visConnectedBe\n" +
-	"\x13com.geeksville.meshB\x10ConnStatusProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\fis_connected\x18\x02 \x01(\bR\visConnectedBb\n" +
+	"\x13com.geeksville.meshB\x10ConnStatusProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_connection_status_proto_rawDescOnce sync.Once

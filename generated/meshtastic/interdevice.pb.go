@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/interdevice.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -306,8 +306,8 @@ const file_meshtastic_interdevice_proto_rawDesc = "" +
 	"AHT20_TEMP\x10\xb3\x01\x12\x13\n" +
 	"\x0eAHT20_HUMIDITY\x10\xb4\x01\x12\x0f\n" +
 	"\n" +
-	"TVOC_INDEX\x10\xb5\x01Bf\n" +
-	"\x13com.geeksville.meshB\x11InterdeviceProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"TVOC_INDEX\x10\xb5\x01Bc\n" +
+	"\x13com.geeksville.meshB\x11InterdeviceProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_interdevice_proto_rawDescOnce sync.Once

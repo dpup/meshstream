@@ -4,6 +4,8 @@ go 1.24.1
 
 tool github.com/dpup/logista
 
+replace github.com/meshtastic/go/ => ./generated/
+
 require (
 	github.com/dpup/prefab v0.2.0
 	github.com/eclipse/paho.mqtt.golang v1.5.0

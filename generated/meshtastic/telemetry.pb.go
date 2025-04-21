@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/telemetry.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -1405,8 +1405,8 @@ const file_meshtastic_telemetry_proto_rawDesc = "" +
 	"\fDFROBOT_RAIN\x10#\x12\n" +
 	"\n" +
 	"\x06DPS310\x10$\x12\f\n" +
-	"\bRAK12035\x10%Bd\n" +
-	"\x13com.geeksville.meshB\x0fTelemetryProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\bRAK12035\x10%Ba\n" +
+	"\x13com.geeksville.meshB\x0fTelemetryProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_telemetry_proto_rawDescOnce sync.Once

@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/mqtt.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -272,9 +272,9 @@ const file_meshtastic_mqtt_proto_rawDesc = "" +
 	"longitudeI\x12\x1a\n" +
 	"\baltitude\x18\v \x01(\x05R\baltitude\x12-\n" +
 	"\x12position_precision\x18\f \x01(\rR\x11positionPrecision\x123\n" +
-	"\x16num_online_local_nodes\x18\r \x01(\rR\x13numOnlineLocalNodesB_\n" +
+	"\x16num_online_local_nodes\x18\r \x01(\rR\x13numOnlineLocalNodesB\\\n" +
 	"\x13com.geeksville.meshB\n" +
-	"MQTTProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"MQTTProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_mqtt_proto_rawDescOnce sync.Once

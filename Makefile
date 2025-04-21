@@ -1,11 +1,14 @@
 .PHONY: build run gen-proto clean tools
 
+ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
 # Build directories
 BIN_DIR := bin
 TOOLS_DIR := $(BIN_DIR)/tools
 
-# Tool commands
+# Proto compilation
 PROTOC_GEN_GO := $(TOOLS_DIR)/protoc-gen-go
+PROTO_FILES := $(shell find $(ROOT_DIR) -name "*.proto" | sed 's|$(ROOT_DIR)/||' )
 
 # Build the application
 build:
@@ -18,12 +21,13 @@ run: build
 
 # Generate Go code from Protocol Buffers
 gen-proto: tools
-	mkdir -p proto/generated
+	@mkdir -p $(ROOT_DIR)/generated
 	PATH="$(TOOLS_DIR):$$PATH" protoc \
-		-I./proto \
-		--go_out=./proto/generated \
+		-Iproto/ \
+		--go_out=generated/ \
 		--go_opt=paths=source_relative \
-		./proto/meshtastic/*.proto
+		$(PROTO_FILES)
+	@echo "Generated Go code from Protocol Buffers"
 
 # Clean generated files
 clean:

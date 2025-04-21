@@ -8,6 +8,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"meshstream/decoder"
+	mesh "meshstream/proto/generated"
 )
 
 // Config holds configuration for the MQTT client
@@ -32,7 +33,7 @@ type Client struct {
 func NewClient(config Config, logger logging.Logger) *Client {
 	return &Client{
 		config:          config,
-		decodedMessages: make(chan *Packet, 100), // Buffer up to 100 messages
+		decodedMessages: make(chan *Packet, 100),
 		done:            make(chan struct{}),
 		logger:          logger.Named("mqtt.client"),
 	}
@@ -79,8 +80,6 @@ func (c *Client) Messages() <-chan *Packet {
 	return c.decodedMessages
 }
 
-// These are intentionally left empty as we'll use the instance methods below
-
 // messageHandler processes incoming MQTT messages
 func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	c.logger.Debugf("Received message from topic: %s", msg.Topic())
@@ -103,10 +102,7 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 		decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
 
 		// Create packet with both the decoded packet and topic info
-		packet := &Packet{
-			DecodedPacket: decodedPacket,
-			TopicInfo:     topicInfo,
-		}
+		packet := NewPacket(decodedPacket, topicInfo)
 
 		// Send the decoded message to the channel, but don't block if buffer is full
 		select {

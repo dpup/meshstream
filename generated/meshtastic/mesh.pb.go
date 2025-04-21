@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/mesh.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -4589,9 +4589,9 @@ const file_meshtastic_mesh_proto_rawDesc = "" +
 	"\x16DETECTIONSENSOR_CONFIG\x10\x80\x10\x12\x16\n" +
 	"\x11PAXCOUNTER_CONFIG\x10\x80 \x12\x15\n" +
 	"\x10BLUETOOTH_CONFIG\x10\x80@\x12\x14\n" +
-	"\x0eNETWORK_CONFIG\x10\x80\x80\x01B_\n" +
+	"\x0eNETWORK_CONFIG\x10\x80\x80\x01B\\\n" +
 	"\x13com.geeksville.meshB\n" +
-	"MeshProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"MeshProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_mesh_proto_rawDescOnce sync.Once

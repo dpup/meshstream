@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/localonly.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -338,8 +338,8 @@ const file_meshtastic_localonly_proto_rawDesc = "" +
 	"\n" +
 	"paxcounter\x18\x0e \x01(\v2).meshtastic.ModuleConfig.PaxcounterConfigR\n" +
 	"paxcounter\x12\x18\n" +
-	"\aversion\x18\b \x01(\rR\aversionBd\n" +
-	"\x13com.geeksville.meshB\x0fLocalOnlyProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\aversion\x18\b \x01(\rR\aversionBa\n" +
+	"\x13com.geeksville.meshB\x0fLocalOnlyProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_localonly_proto_rawDescOnce sync.Once

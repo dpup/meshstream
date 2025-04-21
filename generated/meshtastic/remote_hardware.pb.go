@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/remote_hardware.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -179,8 +179,8 @@ const file_meshtastic_remote_hardware_proto_rawDesc = "" +
 	"\rGPIOS_CHANGED\x10\x03\x12\x0e\n" +
 	"\n" +
 	"READ_GPIOS\x10\x04\x12\x14\n" +
-	"\x10READ_GPIOS_REPLY\x10\x05Bc\n" +
-	"\x13com.geeksville.meshB\x0eRemoteHardwareZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\x10READ_GPIOS_REPLY\x10\x05B`\n" +
+	"\x13com.geeksville.meshB\x0eRemoteHardwareZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_remote_hardware_proto_rawDescOnce sync.Once

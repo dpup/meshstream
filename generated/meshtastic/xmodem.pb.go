@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/xmodem.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -172,8 +172,8 @@ const file_meshtastic_xmodem_proto_rawDesc = "" +
 	"\x03ACK\x10\x06\x12\a\n" +
 	"\x03NAK\x10\x15\x12\a\n" +
 	"\x03CAN\x10\x18\x12\t\n" +
-	"\x05CTRLZ\x10\x1aBa\n" +
-	"\x13com.geeksville.meshB\fXmodemProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\x05CTRLZ\x10\x1aB^\n" +
+	"\x13com.geeksville.meshB\fXmodemProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_xmodem_proto_rawDescOnce sync.Once

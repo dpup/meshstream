@@ -4,7 +4,7 @@
 // 	protoc        v5.29.3
 // source: meshtastic/device_ui.proto
 
-package generated
+package meshtastic
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
@@ -743,8 +743,8 @@ const file_meshtastic_device_ui_proto_rawDesc = "" +
 	"\tSLOVENIAN\x10\x0f\x12\r\n" +
 	"\tUKRAINIAN\x10\x10\x12\x16\n" +
 	"\x12SIMPLIFIED_CHINESE\x10\x1e\x12\x17\n" +
-	"\x13TRADITIONAL_CHINESE\x10\x1fBc\n" +
-	"\x13com.geeksville.meshB\x0eDeviceUIProtosZ\"github.com/meshtastic/go/generated\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
+	"\x13TRADITIONAL_CHINESE\x10\x1fB`\n" +
+	"\x13com.geeksville.meshB\x0eDeviceUIProtosZ\x1fmeshstream/generated/meshtastic\xaa\x02\x14Meshtastic.Protobufs\xba\x02\x00b\x06proto3"
 
 var (
 	file_meshtastic_device_ui_proto_rawDescOnce sync.Once
