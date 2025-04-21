@@ -1,8 +1,18 @@
-# Meshtastic MQTT Protocol Structure
+# Meshstream development guide
 
-## Topic Structure
+## Dev commands
+
+- `make build`
+- `make gen-proto`
+- `make clean`
+- `make run` <-- Do not execute the program yourself.
+
+## Meshtastic MQTT Protocol Structure
+
+### Topic Structure
 
 The Meshtastic MQTT topic structure follows this pattern:
+
 ```
 msh/REGION_PATH/2/e/CHANNELNAME/USERID
 ```
@@ -16,18 +26,22 @@ msh/REGION_PATH/2/e/CHANNELNAME/USERID
   - `!` followed by hex characters for MAC address based IDs
   - `+` followed by phone number for Signal-based IDs
 
-## Message Types
+### Message Types
 
-### Encoded Messages (ServiceEnvelope)
+#### Encoded Messages (ServiceEnvelope)
+
 Topic pattern: `msh/REGION_PATH/2/e/CHANNELNAME/USERID`
+
 - ServiceEnvelope protobuf messages
 - Contains:
   - A MeshPacket (can be encrypted or unencrypted)
   - channel_id: The global channel ID it was sent on
   - gateway_id: Node ID of the gateway that relayed the message
 
-### JSON Messages
+#### JSON Messages
+
 Topic pattern: `msh/REGION_PATH/2/json/CHANNELNAME/USERID`
+
 - Structured JSON payloads with fields like:
   - `id`: Message ID
   - `from`: Node ID of sender
@@ -37,11 +51,12 @@ Topic pattern: `msh/REGION_PATH/2/json/CHANNELNAME/USERID`
 
 Note: JSON format is not supported on nRF52 platform devices.
 
-### Special Topics
+#### Special Topics
+
 - MQTT Downlink: `msh/REGION_PATH/2/json/mqtt/`
   - Used for sending instructions to gateway nodes
 
-## Important Notes
+### Important Notes
 
 - The public MQTT server implements a zero-hop policy (only direct messages)
 - JSON messages may include specific data types like:
