@@ -4,27 +4,28 @@ import (
 	"sync"
 
 	"github.com/dpup/prefab/logging"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // SubscriberConfig holds configuration for creating a subscriber
 type SubscriberConfig struct {
-	Name       string         // Descriptive name for the subscriber
-	Broker     *Broker        // The broker to subscribe to
-	BufferSize int            // Channel buffer size
-	Processor  func(*Packet)  // Function to process each packet
-	StartHook  func()         // Optional hook called when starting
-	CloseHook  func()         // Optional hook called when closing
-	Logger     logging.Logger // Logger instance to use
+	Name       string                       // Descriptive name for the subscriber
+	Broker     *Broker                      // The broker to subscribe to
+	BufferSize int                          // Channel buffer size
+	Processor  func(*meshtreampb.Packet)    // Function to process each packet
+	StartHook  func()                       // Optional hook called when starting
+	CloseHook  func()                       // Optional hook called when closing
+	Logger     logging.Logger               // Logger instance to use
 }
 
 // BaseSubscriber implements common subscriber functionality
 type BaseSubscriber struct {
 	broker     *Broker
-	channel    <-chan *Packet
+	channel    <-chan *meshtreampb.Packet
 	done       chan struct{}
 	wg         sync.WaitGroup
 	name       string
-	processor  func(*Packet)
+	processor  func(*meshtreampb.Packet)
 	startHook  func()
 	closeHook  func()
 	BufferSize int

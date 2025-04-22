@@ -8,6 +8,7 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"meshstream/decoder"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // Config holds configuration for the MQTT client
@@ -23,7 +24,7 @@ type Config struct {
 type Client struct {
 	config          Config
 	client          mqtt.Client
-	decodedMessages chan *Packet
+	decodedMessages chan *meshtreampb.Packet
 	done            chan struct{}
 	logger          logging.Logger
 }
@@ -32,7 +33,7 @@ type Client struct {
 func NewClient(config Config, logger logging.Logger) *Client {
 	return &Client{
 		config:          config,
-		decodedMessages: make(chan *Packet, 100),
+		decodedMessages: make(chan *meshtreampb.Packet, 100),
 		done:            make(chan struct{}),
 		logger:          logger.Named("mqtt.client"),
 	}
@@ -40,7 +41,6 @@ func NewClient(config Config, logger logging.Logger) *Client {
 
 // Connect establishes a connection to the MQTT broker
 func (c *Client) Connect() error {
-	// Create MQTT client options
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s:1883", c.config.Broker))
 	opts.SetClientID(c.config.ClientID)
@@ -75,7 +75,7 @@ func (c *Client) Disconnect() {
 
 // Messages returns a channel of decoded messages
 // The consumer should read from this channel to receive decoded messages
-func (c *Client) Messages() <-chan *Packet {
+func (c *Client) Messages() <-chan *meshtreampb.Packet {
 	return c.decodedMessages
 }
 

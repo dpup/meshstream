@@ -7,6 +7,7 @@ import (
 	"github.com/dpup/prefab/logging"
 
 	pb "meshstream/generated/meshtastic"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // MessageLogger logs messages using the provided logger
@@ -41,7 +42,7 @@ func NewMessageLogger(broker *Broker, briefMode bool, logger logging.Logger) (*M
 }
 
 // getBriefSummary returns a brief summary of the packet
-func (ml *MessageLogger) getBriefSummary(packet *Packet) string {
+func (ml *MessageLogger) getBriefSummary(packet *meshtreampb.Packet) string {
 	var summary string
 
 	if packet.Data.DecodeError != "" {
@@ -95,7 +96,7 @@ func (ml *MessageLogger) getBriefSummary(packet *Packet) string {
 }
 
 // logMessage logs a message using the structured logger
-func (ml *MessageLogger) logMessage(packet *Packet) {
+func (ml *MessageLogger) logMessage(packet *meshtreampb.Packet) {
 	// Get a brief summary for structured logging
 	briefSummary := ml.getBriefSummary(packet)
 

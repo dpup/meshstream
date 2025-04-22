@@ -8,6 +8,7 @@ import (
 	"github.com/dpup/prefab/logging"
 
 	pb "meshstream/generated/meshtastic"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // MessageStats tracks statistics about received messages
@@ -64,7 +65,7 @@ func (s *MessageStats) runTicker() {
 }
 
 // recordMessage records a message in the statistics
-func (s *MessageStats) recordMessage(packet *Packet) {
+func (s *MessageStats) recordMessage(packet *meshtreampb.Packet) {
 	s.Lock()
 	defer s.Unlock()
 

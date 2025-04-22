@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dpup/prefab/logging"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // TestClientConfig verifies that the client can be created with a config
@@ -60,7 +61,7 @@ func TestMessagesChannel(t *testing.T) {
 
 	// Test we can read from the channel
 	go func() {
-		msg := &Packet{}
+		msg := &meshtreampb.Packet{}
 		client.decodedMessages <- msg
 	}()
 

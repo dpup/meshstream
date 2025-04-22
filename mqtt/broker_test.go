@@ -13,7 +13,7 @@ import (
 // TestBrokerSubscribeUnsubscribe tests the basic subscribe and unsubscribe functionality
 func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	// Create a test source channel
-	sourceChan := make(chan *Packet, 10)
+	sourceChan := make(chan *meshtreampb.Packet, 10)
 	
 	// Create a broker with the source channel
 	testLogger := logging.NewDevLogger().Named("test")
@@ -37,11 +37,9 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	// and exact packet matching may not work reliably
 	
 	// First packet with ID 1
-	packet1 := &Packet{
-		Packet: &meshtreampb.Packet{
-			Data: &meshtreampb.Data{Id: 1},
-			Info: &meshtreampb.TopicInfo{},
-		},
+	packet1 := &meshtreampb.Packet{
+		Data: &meshtreampb.Data{Id: 1},
+		Info: &meshtreampb.TopicInfo{},
 	}
 	
 	// Send the packet
@@ -79,11 +77,9 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	}
 
 	// Second packet with ID 2
-	packet2 := &Packet{
-		Packet: &meshtreampb.Packet{
-			Data: &meshtreampb.Data{Id: 2},
-			Info: &meshtreampb.TopicInfo{},
-		},
+	packet2 := &meshtreampb.Packet{
+		Data: &meshtreampb.Data{Id: 2},
+		Info: &meshtreampb.TopicInfo{},
 	}
 	
 	// Send the second packet
@@ -103,7 +99,7 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 // TestBrokerMultipleSubscribers tests broadcasting to many subscribers
 func TestBrokerMultipleSubscribers(t *testing.T) {
 	// Create a test source channel
-	sourceChan := make(chan *Packet, 10)
+	sourceChan := make(chan *meshtreampb.Packet, 10)
 	
 	// Create a broker with the source channel
 	testLogger := logging.NewDevLogger().Named("test")
@@ -112,17 +108,15 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 
 	// Create multiple subscribers
 	const numSubscribers = 10
-	subscribers := make([]<-chan *Packet, numSubscribers)
+	subscribers := make([]<-chan *meshtreampb.Packet, numSubscribers)
 	for i := 0; i < numSubscribers; i++ {
 		subscribers[i] = broker.Subscribe(5)
 	}
 
 	// Send a test packet with ID 42
-	testPacket := &Packet{
-		Packet: &meshtreampb.Packet{
-			Data: &meshtreampb.Data{Id: 42},
-			Info: &meshtreampb.TopicInfo{},
-		},
+	testPacket := &meshtreampb.Packet{
+		Data: &meshtreampb.Data{Id: 42},
+		Info: &meshtreampb.TopicInfo{},
 	}
 	sourceChan <- testPacket
 
@@ -131,7 +125,7 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 	wg.Add(numSubscribers)
 
 	for i, subscriber := range subscribers {
-		go func(idx int, ch <-chan *Packet) {
+		go func(idx int, ch <-chan *meshtreampb.Packet) {
 			defer wg.Done()
 			select {
 			case received := <-ch:
@@ -151,7 +145,7 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 // TestBrokerSlowSubscriber tests that a slow subscriber doesn't block others
 func TestBrokerSlowSubscriber(t *testing.T) {
 	// Create a test source channel
-	sourceChan := make(chan *Packet, 10)
+	sourceChan := make(chan *meshtreampb.Packet, 10)
 	
 	// Create a broker with the source channel
 	testLogger := logging.NewDevLogger().Named("test")
@@ -174,17 +168,13 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 	}
 
 	// Send two packets quickly to fill the slow subscriber's buffer
-	testPacket1 := &Packet{
-		Packet: &meshtreampb.Packet{
-			Data: &meshtreampb.Data{Id: 101},
-			Info: &meshtreampb.TopicInfo{},
-		},
+	testPacket1 := &meshtreampb.Packet{
+		Data: &meshtreampb.Data{Id: 101},
+		Info: &meshtreampb.TopicInfo{},
 	}
-	testPacket2 := &Packet{
-		Packet: &meshtreampb.Packet{
-			Data: &meshtreampb.Data{Id: 102},
-			Info: &meshtreampb.TopicInfo{},
-		},
+	testPacket2 := &meshtreampb.Packet{
+		Data: &meshtreampb.Data{Id: 102},
+		Info: &meshtreampb.TopicInfo{},
 	}
 	
 	sourceChan <- testPacket1
@@ -227,7 +217,7 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 // TestBrokerCloseWithSubscribers tests closing the broker with active subscribers
 func TestBrokerCloseWithSubscribers(t *testing.T) {
 	// Create a test source channel
-	sourceChan := make(chan *Packet, 10)
+	sourceChan := make(chan *meshtreampb.Packet, 10)
 	
 	// Create a broker with the source channel
 	testLogger := logging.NewDevLogger().Named("test")

@@ -4,12 +4,13 @@ import (
 	"sync"
 
 	"github.com/dpup/prefab/logging"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // Broker distributes messages from a source channel to multiple subscriber channels
 type Broker struct {
-	sourceChan      <-chan *Packet            // Source of packets (e.g., from MQTT client)
-	subscribers     map[chan *Packet]struct{} // Active subscribers
+	sourceChan      <-chan *meshtreampb.Packet            // Source of packets (e.g., from MQTT client)
+	subscribers     map[chan *meshtreampb.Packet]struct{} // Active subscribers
 	subscriberMutex sync.RWMutex              // Lock for modifying the subscribers map
 	done            chan struct{}             // Signal to stop the dispatch loop
 	wg              sync.WaitGroup            // Wait group to ensure clean shutdown
@@ -17,10 +18,10 @@ type Broker struct {
 }
 
 // NewBroker creates a new broker that distributes messages from sourceChannel to subscribers
-func NewBroker(sourceChannel <-chan *Packet, logger logging.Logger) *Broker {
+func NewBroker(sourceChannel <-chan *meshtreampb.Packet, logger logging.Logger) *Broker {
 	broker := &Broker{
 		sourceChan:  sourceChannel,
-		subscribers: make(map[chan *Packet]struct{}),
+		subscribers: make(map[chan *meshtreampb.Packet]struct{}),
 		done:        make(chan struct{}),
 		logger:      logger.Named("mqtt.broker"),
 	}
@@ -34,9 +35,9 @@ func NewBroker(sourceChannel <-chan *Packet, logger logging.Logger) *Broker {
 
 // Subscribe creates and returns a new subscriber channel
 // The bufferSize parameter controls how many messages can be buffered in the channel
-func (b *Broker) Subscribe(bufferSize int) <-chan *Packet {
+func (b *Broker) Subscribe(bufferSize int) <-chan *meshtreampb.Packet {
 	// Create a new channel for this subscriber
-	subscriberChan := make(chan *Packet, bufferSize)
+	subscriberChan := make(chan *meshtreampb.Packet, bufferSize)
 
 	// Register the new subscriber
 	b.subscriberMutex.Lock()
@@ -48,7 +49,7 @@ func (b *Broker) Subscribe(bufferSize int) <-chan *Packet {
 }
 
 // Unsubscribe removes a subscriber and closes its channel
-func (b *Broker) Unsubscribe(ch <-chan *Packet) {
+func (b *Broker) Unsubscribe(ch <-chan *meshtreampb.Packet) {
 	b.subscriberMutex.Lock()
 	defer b.subscriberMutex.Unlock()
 
@@ -80,7 +81,7 @@ func (b *Broker) Close() {
 	for ch := range b.subscribers {
 		close(ch)
 	}
-	b.subscribers = make(map[chan *Packet]struct{})
+	b.subscribers = make(map[chan *meshtreampb.Packet]struct{})
 }
 
 // dispatchLoop continuously reads from the source channel and distributes to subscribers
@@ -108,10 +109,10 @@ func (b *Broker) dispatchLoop() {
 }
 
 // broadcast sends a packet to all active subscribers without blocking
-func (b *Broker) broadcast(packet *Packet) {
+func (b *Broker) broadcast(packet *meshtreampb.Packet) {
 	// Take a read lock to get a snapshot of the subscribers
 	b.subscriberMutex.RLock()
-	subscribers := make([]chan *Packet, 0, len(b.subscribers))
+	subscribers := make([]chan *meshtreampb.Packet, 0, len(b.subscribers))
 	for ch := range b.subscribers {
 		subscribers = append(subscribers, ch)
 	}
@@ -120,7 +121,7 @@ func (b *Broker) broadcast(packet *Packet) {
 	// Distribute to all subscribers
 	for _, ch := range subscribers {
 		// Use a goroutine and recover to ensure sending to a closed channel doesn't panic
-		go func(ch chan *Packet) {
+		go func(ch chan *meshtreampb.Packet) {
 			defer func() {
 				if r := recover(); r != nil {
 					// This can happen if the channel was closed after we took a snapshot

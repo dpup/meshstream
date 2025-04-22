@@ -12,21 +12,21 @@ format: |
 
   {{$timestamp }} {{ $level }} [{{ $logger }}] {{ $message }}
   {{if .packet -}}
-  {{- $packet := .packet -}}
-  {{"Channel:" | dim }} {{ $packet.ChannelID | color "green" }}
-  {{ "From:" | dim }} {{ $packet.From | mult 1 }} {{ "To:" | dim }} {{ $packet.To | mult 1 }}
-  {{ "Gateway:" | dim }} {{ $packet.GatewayID | color "yellow" }}
-  {{ "Priority:" | dim }} {{ $packet.Priority }}
-  {{ "PortNum:" | dim }} {{ $packet.PortNum }}
+  {{- $data := .packet.data -}}
+  {{"Channel:" | dim }} {{ $data.ChannelID | color "green" }}
+  {{ "From:" | dim }} {{ $data.From | mult 1 }} {{ "To:" | dim }} {{ $data.To | mult 1 }}
+  {{ "Gateway:" | dim }} {{ $data.GatewayID | color "yellow" }}
+  {{ "Priority:" | dim }} {{ $data.Priority }}
+  {{ "PortNum:" | dim }} {{ $data.PortNum }}
 
-  {{- if $packet.HopLimit }}
-  {{ "Hop:" | dim }} {{ $packet.HopStart }}/{{ $packet.HopLimit }}
+  {{- if $data.HopLimit }}
+  {{ "Hop:" | dim }} {{ $data.HopStart }}/{{ $data.HopLimit }}
   {{- end }}
-  {{- if $packet.DecodeError }}
-  {{ "Error:" | dim }} {{ $packet.DecodeError | color "red" }}
+  {{- if $data.DecodeError }}
+  {{ "Error:" | dim }} {{ $data.DecodeError | color "red" }}
   {{- end }}
   {{ "Payload:" | dim }} 
-  {{ $packet.Payload | table }}
+  {{ $data.Payload | table }}
 
   {{end -}}
 
