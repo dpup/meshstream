@@ -1,8 +1,8 @@
-import { Link, Outlet } from '@tanstack/react-router';
+import { Link, Outlet } from "@tanstack/react-router";
 
 export function Root() {
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-neutral-100">
       <header className="bg-blue-600 text-white shadow-md">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
@@ -12,7 +12,7 @@ export function Root() {
                 to="/"
                 className="hover:underline"
                 activeProps={{
-                  className: 'font-bold underline',
+                  className: "font-bold underline",
                 }}
               >
                 Home
@@ -21,7 +21,7 @@ export function Root() {
                 to="/packets"
                 className="hover:underline"
                 activeProps={{
-                  className: 'font-bold underline',
+                  className: "font-bold underline",
                 }}
               >
                 Packets

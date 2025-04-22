@@ -7,6 +7,9 @@ export const IS_DEV = import.meta.env.DEV;
 export const IS_PROD = import.meta.env.PROD;
 export const APP_ENV = import.meta.env.VITE_APP_ENV || 'development';
 
+// Site configuration
+export const SITE_TITLE = import.meta.env.VITE_SITE_TITLE || 'ERSN Mesh';
+
 // API URL configuration
 const getApiBaseUrl = (): string => {
   // In production, use the same domain (empty string base URL)

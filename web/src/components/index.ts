@@ -3,3 +3,6 @@ export * from './MessageDisplay';
 export * from './PacketDetails';
 export * from './Filter';
 export * from './InfoMessage';
+export * from './ConnectionStatus';
+export * from './Nav';
+export * from './Separator';

@@ -1,36 +1,39 @@
-import { Link, Outlet } from '@tanstack/react-router';
+import { Outlet } from "@tanstack/react-router";
+import { useState, useEffect } from "react";
+import { Nav } from "../components";
+import { streamPackets, StreamEvent } from "../lib/api";
 
 export default function Root() {
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("Connecting...");
+
+  useEffect(() => {
+    // Set up Server-Sent Events connection
+    const cleanup = streamPackets(
+      // Event handler for all event types
+      (event: StreamEvent) => {
+        if (event.type === "info") {
+          // Handle info events (connection status, etc.)
+          setConnectionStatus(event.data);
+        }
+      },
+      // On error
+      () => {
+        setConnectionStatus("Connection error. Reconnecting...");
+      }
+    );
+
+    // Clean up connection when component unmounts
+    return cleanup;
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <header className="bg-blue-600 text-white shadow-md">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold">Meshstream</h1>
-            <nav className="space-x-4">
-              <Link
-                to="/"
-                className="hover:underline"
-                activeProps={{
-                  className: 'font-bold underline',
-                }}
-              >
-                Home
-              </Link>
-              <Link
-                to="/packets"
-                className="hover:underline"
-                activeProps={{
-                  className: 'font-bold underline',
-                }}
-              >
-                Packets
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-6">
+    <div className="flex min-h-screen bg-neutral-800">
+      {/* Sidebar Navigation */}
+      <Nav connectionStatus={connectionStatus} />
+      
+      {/* Main Content Area */}
+      <main className="ml-64 flex-1 p-6">
         <Outlet />
       </main>
     </div>

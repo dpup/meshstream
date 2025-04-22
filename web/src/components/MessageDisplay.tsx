@@ -1,24 +1,44 @@
-import React from 'react';
+import React from "react";
+import { Packet } from "../lib/types";
 
 interface MessageDisplayProps {
-  message: any; // Will be properly typed once we have the protobuf structures
+  message: Packet;
 }
 
 export const MessageDisplay: React.FC<MessageDisplayProps> = ({ message }) => {
-  // The data structure will be refined as we integrate with the protobuf definitions
+  const { data } = message;
+
+  const getMessageContent = () => {
+    if (data.text_message) {
+      return data.text_message;
+    } else if (data.position) {
+      return `Position: ${data.position.latitude}, ${data.position.longitude}`;
+    } else if (data.node_info) {
+      return `Node Info: ${data.node_info.longName || data.node_info.shortName}`;
+    } else if (data.telemetry) {
+      return "Telemetry data";
+    } else if (data.decode_error) {
+      return `Error: ${data.decode_error}`;
+    }
+    return "Unknown message type";
+  };
+
   return (
-    <div className="p-4 border rounded shadow-sm bg-white">
+    <div className="p-4 border border-neutral-700 rounded bg-neutral-800 shadow-inner">
       <div className="flex justify-between mb-2">
-        <span className="font-medium">{message.from || 'Unknown'}</span>
-        <span className="text-gray-500 text-sm">
-          {message.timestamp ? new Date(message.timestamp).toLocaleString() : 'No timestamp'}
+        <span className="font-medium text-neutral-200">
+          From: {data.from || "Unknown"}
+        </span>
+        <span className="text-neutral-400 text-sm">
+          ID: {data.id || "No ID"}
         </span>
       </div>
-      <div className="mb-2">
-        {message.text || 'No content'}
-      </div>
-      <div className="text-xs text-gray-500">
-        ID: {message.id || 'No ID'}
+      <div className="mb-2 text-neutral-300">{getMessageContent()}</div>
+      <div className="mt-3 flex justify-between items-center">
+        <span className="text-xs text-neutral-500">
+          Channel: {message.info.channel}
+        </span>
+        <span className="text-xs text-neutral-500">Type: {data.port_num}</span>
       </div>
     </div>
   );
