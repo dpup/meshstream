@@ -1,0 +1,25 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!abcd1234",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!abcd1234"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!abcd1234",
+    "id": 1234567890,
+    "from": 3663120160,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "DEFAULT",
+    "portNum": "TEXT_MESSAGE_APP",
+    "textMessage": "Hello from the Meshtastic network! This is a test message.",
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}

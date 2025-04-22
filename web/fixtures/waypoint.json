@@ -1,0 +1,33 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!fghi6789",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!fghi6789"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!fghi6789",
+    "id": 6789012345,
+    "from": 3663120160,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "RELIABLE",
+    "portNum": "WAYPOINT_APP",
+    "waypoint": {
+      "id": 12345,
+      "latitudeI": 373724560,
+      "longitudeI": -1220465670,
+      "name": "Trailhead Parking",
+      "description": "Parking area for the Ridge Trail access point",
+      "icon": 5,
+      "expire": 0
+    },
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}

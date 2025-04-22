@@ -1,0 +1,40 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!bcde2345",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!bcde2345"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!bcde2345",
+    "id": 2345678901,
+    "from": 2727688952,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "BACKGROUND",
+    "portNum": "POSITION_APP",
+    "position": {
+      "latitudeI": 373066340,
+      "longitudeI": -1220381680,
+      "altitude": 25,
+      "time": 1745300044,
+      "locationSource": "LOC_MANUAL",
+      "timestamp": 1745300044,
+      "satsInView": 7,
+      "fixQuality": 2,
+      "precisionBits": 16,
+      "hdop": 128,
+      "pdop": 172,
+      "groundSpeed": 0,
+      "groundTrack": 0,
+      "seqNumber": 1289
+    },
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}

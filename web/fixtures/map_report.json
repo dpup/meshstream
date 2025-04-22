@@ -1,0 +1,79 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!efgh5678",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!efgh5678"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!efgh5678",
+    "id": 5678901234,
+    "from": 3893757127,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "DEFAULT",
+    "portNum": "MAP_REPORT_APP",
+    "mapReport": {
+      "nodes": [
+        {
+          "num": 3893757127,
+          "user": {
+            "id": "!efgh5678",
+            "longName": "San Jose Base",
+            "shortName": "SJB",
+            "hwModel": "TBEAM",
+            "role": "ROUTER"
+          },
+          "position": {
+            "latitudeI": 372811070,
+            "longitudeI": -1218522900,
+            "time": 1745300041
+          },
+          "snr": 9.5,
+          "lastHeard": 1745300041
+        },
+        {
+          "num": 3471856931,
+          "user": {
+            "id": "!cdef3456",
+            "longName": "Cupertino Ridge North",
+            "shortName": "CRN",
+            "hwModel": "RAK4631",
+            "role": "ROUTER"
+          },
+          "position": {
+            "latitudeI": 373066340,
+            "longitudeI": -1220381680,
+            "time": 1745300040
+          },
+          "snr": 7.2,
+          "lastHeard": 1745300040
+        },
+        {
+          "num": 2727688952,
+          "user": {
+            "id": "!bcde2345",
+            "longName": "Mountain View Relay",
+            "shortName": "MVR",
+            "hwModel": "T_ECHO",
+            "role": "ROUTER"
+          },
+          "position": {
+            "latitudeI": 373724560,
+            "longitudeI": -1220465670,
+            "time": 1745300039
+          },
+          "snr": 8.7,
+          "lastHeard": 1745300039
+        }
+      ]
+    },
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}

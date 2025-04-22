@@ -1,0 +1,39 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!cdef3456",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!cdef3456"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!cdef3456",
+    "id": 3456789012,
+    "from": 3471856931,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "DEFAULT",
+    "portNum": "NODEINFO_APP",
+    "nodeInfo": {
+      "id": "!cdef3456",
+      "longName": "Cupertino Ridge North",
+      "shortName": "CRN",
+      "macaddr": "01:23:45:67:89:AB",
+      "hwModel": "RAK4631",
+      "hasGps": true,
+      "role": "ROUTER",
+      "snr": 9,
+      "batteryLevel": 87,
+      "voltage": 3.95,
+      "channelUtilization": 8.5,
+      "airUtilTx": 1.2,
+      "lastHeard": 1745300040
+    },
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": true
+  }
+}

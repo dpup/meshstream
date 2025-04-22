@@ -1,0 +1,26 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!ghij7890",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!ghij7890"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!ghij7890",
+    "id": 7890123456,
+    "from": 4102453487,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "priority": "DEFAULT",
+    "portNum": "UNKNOWN",
+    "decodeError": "Failed to decrypt payload: invalid packet format",
+    "binaryData": "SGVsbG8gV29ybGQh",
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}
