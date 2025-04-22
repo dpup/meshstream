@@ -2,6 +2,14 @@
  * API client functions for interacting with the Meshstream server
  */
 import { API_ENDPOINTS } from "./config";
+import {
+  Packet,
+  StreamEvent,
+  StreamEventHandler,
+  InfoEvent,
+  MessageEvent,
+  BadDataEvent,
+} from "./types";
 
 export interface ApiResponse<T> {
   data?: T;
@@ -11,7 +19,7 @@ export interface ApiResponse<T> {
 /**
  * Fetch a list of the most recent packets from the server
  */
-export async function fetchRecentPackets(): Promise<ApiResponse<any[]>> {
+export async function fetchRecentPackets(): Promise<ApiResponse<Packet[]>> {
   try {
     const response = await fetch(API_ENDPOINTS.RECENT_PACKETS);
     if (!response.ok) {
@@ -24,27 +32,14 @@ export async function fetchRecentPackets(): Promise<ApiResponse<any[]>> {
   }
 }
 
-/**
- * Type definitions for SSE events
- */
-export interface InfoEvent {
-  type: "info";
-  data: string;
-}
-
-export interface MessageEvent {
-  type: "message";
-  data: any; // Will be the parsed JSON message
-}
-
-export interface BadDataEvent {
-  type: "bad_data";
-  data: string; // Raw data that failed to parse
-}
-
-export type StreamEvent = InfoEvent | MessageEvent | BadDataEvent;
-
-export type StreamEventHandler = (event: StreamEvent) => void;
+// Re-export types
+export type { 
+  InfoEvent, 
+  MessageEvent, 
+  BadDataEvent, 
+  StreamEvent,
+  StreamEventHandler,
+};
 
 /**
  * Establish a Server-Sent Events connection to receive real-time packets
@@ -88,7 +83,7 @@ export function streamPackets(
  */
 function handleEventData(data: string, callback: StreamEventHandler): void {
   try {
-    const parsedData = JSON.parse(data);
+    const parsedData = JSON.parse(data) as Packet;
 
     callback({
       type: "message",
