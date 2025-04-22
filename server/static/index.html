@@ -1,36 +1,82 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meshtastic Stream</title>
+    <meta name="description" content="Meshstream - A web interface for viewing Meshtastic network traffic">
+    <title>Meshstream</title>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 40px 20px;
             line-height: 1.6;
-            max-width: 960px;
+            max-width: 800px;
             margin: 0 auto;
+            text-align: center;
+            background-color: #f9fafb;
+            color: #1f2937;
+            display: flex;
+            flex-direction: column;
+            min-height: 90vh;
+            justify-content: center;
         }
 
         h1 {
-            color: #333;
-            border-bottom: 1px solid #eee;
-            padding-bottom: 10px;
+            color: #2563eb;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        p {
+            margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            margin-bottom: 2rem;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+
+        .tab {
+            margin: 0 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .tab.active {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        .view {
+            display: none;
+        }
+
+        .view.active {
+            display: block;
         }
 
         #messages {
             margin-top: 20px;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            padding: 10px;
-            height: 500px;
+            border-radius: 8px;
+            padding: 15px;
+            height: 400px;
             overflow-y: auto;
-            background-color: #f9f9f9;
+            background-color: #ffffff;
             font-family: 'Monaco', 'Consolas', monospace;
             font-size: 14px;
+            text-align: left;
         }
 
         .message {
@@ -42,28 +88,81 @@
             border-bottom: none;
         }
 
-        .info {
-            padding: 10px;
-            background-color: #e9f7fe;
-            border-radius: 4px;
-            margin-bottom: 20px;
+        .cta {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            background-color: #2563eb;
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-decoration: none;
+            border-radius: 0.375rem;
+            transition: background-color 0.2s;
+        }
+
+        .cta:hover {
+            background-color: #1d4ed8;
+        }
+
+        .note {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #4b5563;
         }
     </style>
 </head>
-
 <body>
-    <h1>Meshtastic Stream</h1>
-
-    <div class="info">
-        <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
-        <p>Messages are streamed using Server-Sent Events (SSE) and will appear below as they arrive.</p>
-    </div>
-
-    <div id="messages">
-        <p>Waiting for messages...</p>
+    <div class="container">
+        <h1>Meshstream</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showView('simple')">Simple View</div>
+            <div class="tab" onclick="showView('dev')">Development</div>
+        </div>
+        
+        <div id="simple-view" class="view active">
+            <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
+            <div id="messages">
+                <p>Waiting for messages...</p>
+            </div>
+        </div>
+        
+        <div id="dev-view" class="view">
+            <p>
+                A web interface for viewing Meshtastic network traffic.
+                This is a placeholder page for the production build.
+            </p>
+            <a href="http://localhost:3000" class="cta">Open Development Server</a>
+            <p class="note">
+                For production deployment, build the web application with <code>make web-build</code>
+                to replace this placeholder with the full application.
+            </p>
+        </div>
     </div>
 
     <script>
+        function showView(viewName) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(view => {
+                view.classList.remove('active');
+            });
+            
+            // Show selected view
+            document.getElementById(viewName + '-view').classList.add('active');
+            
+            // Update tab styling
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Find and activate the clicked tab
+            document.querySelectorAll('.tab').forEach(tab => {
+                if (tab.textContent.toLowerCase().includes(viewName)) {
+                    tab.classList.add('active');
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             const messagesDiv = document.getElementById('messages');
 
@@ -126,5 +225,4 @@
         });
     </script>
 </body>
-
 </html>

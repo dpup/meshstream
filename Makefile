@@ -1,10 +1,12 @@
-.PHONY: build run gen-proto clean tools
+.PHONY: build run gen-proto clean tools web-run web-build web-test web-lint
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Build directories
 BIN_DIR := bin
 TOOLS_DIR := $(BIN_DIR)/tools
+WEB_DIR := $(ROOT_DIR)/web
+WEB_DIST_DIR := $(ROOT_DIR)/dist/static
 
 # Proto compilation
 PROTOC_GEN_GO := $(TOOLS_DIR)/protoc-gen-go
@@ -44,3 +46,22 @@ $(TOOLS_DIR):
 # Install the protoc-gen-go tool
 $(PROTOC_GEN_GO): $(TOOLS_DIR)
 	GOBIN=$(abspath $(TOOLS_DIR)) go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+
+# Web application commands
+# Run the web application in development mode
+web-run:
+	cd $(WEB_DIR) && pnpm dev
+
+# Build the web application for production
+web-build:
+	cd $(WEB_DIR) && pnpm build
+	mkdir -p $(WEB_DIST_DIR)
+	cp -r $(WEB_DIR)/dist/* $(WEB_DIST_DIR)/
+
+# Run tests for the web application
+web-test:
+	cd $(WEB_DIR) && pnpm test
+
+# Run linting for the web application
+web-lint:
+	cd $(WEB_DIR) && pnpm lint
