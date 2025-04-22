@@ -8,7 +8,6 @@ import (
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 
 	"meshstream/decoder"
-	mesh "meshstream/proto/generated"
 )
 
 // Config holds configuration for the MQTT client
@@ -99,10 +98,10 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 	switch topicInfo.Format {
 	case "e", "c", "map":
 		// Binary encoded protobuf message
-		decodedPacket := decoder.DecodeMessage(msg.Payload(), topicInfo)
+		data := decoder.DecodeMessage(msg.Payload(), topicInfo)
 
-		// Create packet with both the decoded packet and topic info
-		packet := NewPacket(decodedPacket, topicInfo)
+		// Create packet with both the data and topic info
+		packet := NewPacket(data, topicInfo)
 
 		// Send the decoded message to the channel, but don't block if buffer is full
 		select {

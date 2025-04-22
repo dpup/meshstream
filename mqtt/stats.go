@@ -7,7 +7,7 @@ import (
 
 	"github.com/dpup/prefab/logging"
 
-	pb "meshstream/proto/generated/meshtastic"
+	pb "meshstream/generated/meshtastic"
 )
 
 // MessageStats tracks statistics about received messages
@@ -71,10 +71,10 @@ func (s *MessageStats) recordMessage(packet *Packet) {
 	s.TotalMessages++
 
 	// Count by source node
-	s.ByNode[packet.From]++
+	s.ByNode[packet.Data.From]++
 
 	// Count by port type
-	s.ByPortType[packet.PortNum]++
+	s.ByPortType[packet.Data.PortNum]++
 }
 
 // PrintStats logs current statistics using the structured logger

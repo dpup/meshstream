@@ -6,13 +6,13 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	mesh "meshstream/proto/generated"
-	pb "meshstream/proto/generated/meshtastic"
+	meshtreampb "meshstream/generated/meshstream"
+	pb "meshstream/generated/meshtastic"
 )
 
 // ParseTopic parses a Meshtastic MQTT topic into its components
-func ParseTopic(topic string) (*mesh.TopicInfo, error) {
-	info := &mesh.TopicInfo{
+func ParseTopic(topic string) (*meshtreampb.TopicInfo, error) {
+	info := &meshtreampb.TopicInfo{
 		FullTopic: topic,
 	}
 
@@ -75,78 +75,78 @@ func DecodeEncodedMessage(payload []byte) (*pb.ServiceEnvelope, error) {
 	return &serviceEnvelope, nil
 }
 
-// DecodeMessage creates a DecodedPacket from a binary encoded message
-func DecodeMessage(payload []byte, topicInfo *mesh.TopicInfo) *mesh.DecodedPacket {
-	decoded := &mesh.DecodedPacket{}
+// DecodeMessage creates a Data object from a binary encoded message
+func DecodeMessage(payload []byte, topicInfo *meshtreampb.TopicInfo) *meshtreampb.Data {
+	data := &meshtreampb.Data{}
 
 	// First decode the envelope
 	envelope, err := DecodeEncodedMessage(payload)
 	if err != nil {
-		decoded.DecodeError = err.Error()
-		return decoded
+		data.DecodeError = err.Error()
+		return data
 	}
 
 	// Extract envelope fields
-	decoded.ChannelId = envelope.GetChannelId()
-	decoded.GatewayId = envelope.GetGatewayId()
+	data.ChannelId = envelope.GetChannelId()
+	data.GatewayId = envelope.GetGatewayId()
 
 	// Extract mesh packet fields if available
 	packet := envelope.GetPacket()
 	if packet == nil {
-		decoded.DecodeError = "no mesh packet in envelope"
-		return decoded
+		data.DecodeError = "no mesh packet in envelope"
+		return data
 	}
 
 	// Extract mesh packet fields
-	decoded.Id = packet.GetId()
-	decoded.From = packet.GetFrom()
-	decoded.To = packet.GetTo()
-	decoded.HopLimit = packet.GetHopLimit()
-	decoded.HopStart = packet.GetHopStart()
-	decoded.WantAck = packet.GetWantAck()
-	decoded.Priority = packet.GetPriority().String()
-	decoded.ViaMqtt = packet.GetViaMqtt()
-	decoded.NextHop = packet.GetNextHop()
-	decoded.RelayNode = packet.GetRelayNode()
+	data.Id = packet.GetId()
+	data.From = packet.GetFrom()
+	data.To = packet.GetTo()
+	data.HopLimit = packet.GetHopLimit()
+	data.HopStart = packet.GetHopStart()
+	data.WantAck = packet.GetWantAck()
+	data.Priority = packet.GetPriority().String()
+	data.ViaMqtt = packet.GetViaMqtt()
+	data.NextHop = packet.GetNextHop()
+	data.RelayNode = packet.GetRelayNode()
 
 	// Process the payload
 	if packet.GetDecoded() != nil {
 		// Packet has already been decoded
-		decodeDataPayload(decoded, packet.GetDecoded())
+		decodeDataPayload(data, packet.GetDecoded())
 	} else if packet.GetEncrypted() != nil {
 		// Packet is encrypted, try to decrypt it
-		decodeEncryptedPayload(decoded, packet.GetEncrypted(), envelope.GetChannelId(), packet.GetId(), packet.GetFrom())
+		decodeEncryptedPayload(data, packet.GetEncrypted(), envelope.GetChannelId(), packet.GetId(), packet.GetFrom())
 	} else {
-		decoded.DecodeError = "packet has no payload"
+		data.DecodeError = "packet has no payload"
 	}
 
-	return decoded
+	return data
 }
 
 // decodeDataPayload extracts information from a Data message
-func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
+func decodeDataPayload(data *meshtreampb.Data, pbData *pb.Data) {
 	// Extract data fields
-	decoded.PortNum = data.GetPortnum()
-	decoded.RequestId = data.GetRequestId()
-	decoded.ReplyId = data.GetReplyId()
-	decoded.Emoji = data.GetEmoji()
-	decoded.Dest = data.GetDest()
-	decoded.Source = data.GetSource()
-	decoded.WantResponse = data.GetWantResponse()
+	data.PortNum = pbData.GetPortnum()
+	data.RequestId = pbData.GetRequestId()
+	data.ReplyId = pbData.GetReplyId()
+	data.Emoji = pbData.GetEmoji()
+	data.Dest = pbData.GetDest()
+	data.Source = pbData.GetSource()
+	data.WantResponse = pbData.GetWantResponse()
 
 	// Process the payload based on port type
-	payload := data.GetPayload()
+	payload := pbData.GetPayload()
 
-	switch data.GetPortnum() {
+	switch pbData.GetPortnum() {
 	case pb.PortNum_TEXT_MESSAGE_APP:
 		// Text message - store as string
-		decoded.Payload = &mesh.DecodedPacket_TextMessage{
+		data.Payload = &meshtreampb.Data_TextMessage{
 			TextMessage: string(payload),
 		}
 
 	case pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP:
 		// Compressed text - store the raw bytes
-		decoded.Payload = &mesh.DecodedPacket_CompressedText{
+		data.Payload = &meshtreampb.Data_CompressedText{
 			CompressedText: payload,
 		}
 
@@ -154,9 +154,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Position data
 		var position pb.Position
 		if err := proto.Unmarshal(payload, &position); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal Position data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal Position data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_Position{
+			data.Payload = &meshtreampb.Data_Position{
 				Position: &position,
 			}
 		}
@@ -165,9 +165,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Node information
 		var user pb.User
 		if err := proto.Unmarshal(payload, &user); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal User data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal User data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_NodeInfo{
+			data.Payload = &meshtreampb.Data_NodeInfo{
 				NodeInfo: &user,
 			}
 		}
@@ -176,9 +176,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Telemetry data
 		var telemetry pb.Telemetry
 		if err := proto.Unmarshal(payload, &telemetry); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal Telemetry data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal Telemetry data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_Telemetry{
+			data.Payload = &meshtreampb.Data_Telemetry{
 				Telemetry: &telemetry,
 			}
 		}
@@ -187,9 +187,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Waypoint data
 		var waypoint pb.Waypoint
 		if err := proto.Unmarshal(payload, &waypoint); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal Waypoint data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal Waypoint data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_Waypoint{
+			data.Payload = &meshtreampb.Data_Waypoint{
 				Waypoint: &waypoint,
 			}
 		}
@@ -198,9 +198,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Map report data
 		var mapReport pb.MapReport
 		if err := proto.Unmarshal(payload, &mapReport); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal MapReport data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal MapReport data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_MapReport{
+			data.Payload = &meshtreampb.Data_MapReport{
 				MapReport: &mapReport,
 			}
 		}
@@ -209,9 +209,9 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Traceroute data
 		var routeDiscovery pb.RouteDiscovery
 		if err := proto.Unmarshal(payload, &routeDiscovery); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal RouteDiscovery data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal RouteDiscovery data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_RouteDiscovery{
+			data.Payload = &meshtreampb.Data_RouteDiscovery{
 				RouteDiscovery: &routeDiscovery,
 			}
 		}
@@ -220,54 +220,98 @@ func decodeDataPayload(decoded *mesh.DecodedPacket, data *pb.Data) {
 		// Neighbor information data
 		var neighborInfo pb.NeighborInfo
 		if err := proto.Unmarshal(payload, &neighborInfo); err != nil {
-			decoded.DecodeError = fmt.Sprintf("failed to unmarshal NeighborInfo data: %v", err)
+			data.DecodeError = fmt.Sprintf("failed to unmarshal NeighborInfo data: %v", err)
 		} else {
-			decoded.Payload = &mesh.DecodedPacket_NeighborInfo{
+			data.Payload = &meshtreampb.Data_NeighborInfo{
 				NeighborInfo: &neighborInfo,
+			}
+		}
+
+	case pb.PortNum_REMOTE_HARDWARE_APP:
+		// Remote hardware data
+		var hardware pb.HardwareMessage
+		if err := proto.Unmarshal(payload, &hardware); err != nil {
+			data.DecodeError = fmt.Sprintf("failed to unmarshal HardwareMessage data: %v", err)
+		} else {
+			data.Payload = &meshtreampb.Data_RemoteHardware{
+				RemoteHardware: &hardware,
+			}
+		}
+
+	case pb.PortNum_ROUTING_APP:
+		// Routing data
+		var routing pb.Routing
+		if err := proto.Unmarshal(payload, &routing); err != nil {
+			data.DecodeError = fmt.Sprintf("failed to unmarshal Routing data: %v", err)
+		} else {
+			data.Payload = &meshtreampb.Data_Routing{
+				Routing: &routing,
+			}
+		}
+
+	case pb.PortNum_ADMIN_APP:
+		// Admin data
+		var admin pb.AdminMessage
+		if err := proto.Unmarshal(payload, &admin); err != nil {
+			data.DecodeError = fmt.Sprintf("failed to unmarshal AdminMessage data: %v", err)
+		} else {
+			data.Payload = &meshtreampb.Data_Admin{
+				Admin: &admin,
+			}
+		}
+
+	case pb.PortNum_PAXCOUNTER_APP:
+		// Paxcount data
+		var paxcount pb.Paxcount
+		if err := proto.Unmarshal(payload, &paxcount); err != nil {
+			data.DecodeError = fmt.Sprintf("failed to unmarshal Paxcount data: %v", err)
+		} else {
+			data.Payload = &meshtreampb.Data_Paxcounter{
+				Paxcounter: &paxcount,
 			}
 		}
 
 	default:
 		// For other types, just store the raw bytes
-		decoded.Payload = &mesh.DecodedPacket_BinaryData{
+		data.Payload = &meshtreampb.Data_BinaryData{
 			BinaryData: payload,
 		}
 	}
 }
 
 // decodeEncryptedPayload tries to decrypt and decode encrypted payloads
-func decodeEncryptedPayload(decoded *mesh.DecodedPacket, encrypted []byte, channelId string, packetId, fromNode uint32) {
+func decodeEncryptedPayload(data *meshtreampb.Data, encrypted []byte, channelId string, packetId, fromNode uint32) {
 	// Attempt to decrypt the payload using the channel key
 	if channelId == "" {
-		decoded.DecodeError = "encrypted packet has no channel ID"
+		data.DecodeError = "encrypted packet has no channel ID"
 		return
 	}
 
 	channelKey := GetChannelKey(channelId)
 	decrypted, err := XOR(encrypted, channelKey, packetId, fromNode)
 	if err != nil {
-		decoded.DecodeError = fmt.Sprintf("failed to decrypt payload: %v", err)
+		data.DecodeError = fmt.Sprintf("failed to decrypt payload: %v", err)
 		return
 	}
 
 	// Try to parse as a Data message
-	var data pb.Data
-	if err := proto.Unmarshal(decrypted, &data); err != nil {
+	var pbData pb.Data
+	if err := proto.Unmarshal(decrypted, &pbData); err != nil {
 		// If we can't parse as Data, check if it's ASCII text
 		if IsASCII(decrypted) {
-			decoded.PortNum = pb.PortNum_TEXT_MESSAGE_APP
-			decoded.Payload = &mesh.DecodedPacket_TextMessage{
+			data.PortNum = pb.PortNum_TEXT_MESSAGE_APP
+			data.Payload = &meshtreampb.Data_TextMessage{
 				TextMessage: string(decrypted),
 			}
 		} else {
-			decoded.DecodeError = fmt.Sprintf("failed to parse decrypted data: %v", err)
-			decoded.Payload = &mesh.DecodedPacket_BinaryData{
+			data.DecodeError = fmt.Sprintf("failed to parse decrypted data: %v", err)
+			data.Payload = &meshtreampb.Data_BinaryData{
 				BinaryData: decrypted,
 			}
 		}
 	} else {
 		// Successfully decoded the payload
-		decodeDataPayload(decoded, &data)
+		decodeDataPayload(data, &pbData)
 	}
 }
 

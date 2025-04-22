@@ -6,7 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	pb "meshstream/proto/generated/meshtastic"
+	meshtreampb "meshstream/generated/meshstream"
+	pb "meshstream/generated/meshtastic"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -127,38 +128,35 @@ func TestDecodeMessageWithMapPayload(t *testing.T) {
 	}
 
 	// Create a topic info structure for a map topic
-	topicInfo := &TopicInfo{
+	topicInfo := &meshtreampb.TopicInfo{
 		FullTopic:  "msh/US/bayarea/2/map/LongFast/!1234abcd",
 		RegionPath: "US/bayarea",
 		Version:    "2",
 		Format:     "map",
 		Channel:    "LongFast",
-		UserID:     "!1234abcd",
+		UserId:     "!1234abcd",
 	}
 
 	// Call the actual DecodeMessage function we want to test
-	decodedPacket := DecodeMessage(data, topicInfo)
+	decodedData := DecodeMessage(data, topicInfo)
 
 	// Check that the decoding was successful
-	if decodedPacket.DecodeError != nil {
-		t.Errorf("Expected successful decoding, but got error: %v", decodedPacket.DecodeError)
+	if decodedData.DecodeError != "" {
+		t.Errorf("Expected successful decoding, but got error: %v", decodedData.DecodeError)
 	}
 
 	// Verify the decoded packet has the expected format
-	if decodedPacket.PortNum != pb.PortNum_MAP_REPORT_APP {
-		t.Errorf("Expected PortNum to be MAP_REPORT_APP, got %s", decodedPacket.PortNum)
+	if decodedData.PortNum != pb.PortNum_MAP_REPORT_APP {
+		t.Errorf("Expected PortNum to be MAP_REPORT_APP, got %s", decodedData.PortNum)
 	}
 
-	// These fields are no longer used
-	// Only verify that key metadata was correctly extracted
-
 	// Verify that key metadata was correctly extracted
-	if decodedPacket.From == 0 {
+	if decodedData.From == 0 {
 		t.Error("Expected From field to be non-zero")
 	}
 
 	// Format the output and check it contains expected components
-	formattedOutput := FormatTopicAndPacket(topicInfo, decodedPacket)
+	formattedOutput := FormatTopicAndPacket(topicInfo, decodedData)
 	
 	// Print out the formatted output to debug
 	t.Logf("Formatted output: %s", formattedOutput)

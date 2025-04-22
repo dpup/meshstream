@@ -7,7 +7,7 @@ import (
 
 	"github.com/dpup/prefab/logging"
 
-	"meshstream/decoder"
+	meshtreampb "meshstream/generated/meshstream"
 )
 
 // TestBrokerSubscribeUnsubscribe tests the basic subscribe and unsubscribe functionality
@@ -38,8 +38,10 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	
 	// First packet with ID 1
 	packet1 := &Packet{
-		DecodedPacket: &decoder.DecodedPacket{ID: 1},
-		TopicInfo:     &decoder.TopicInfo{},
+		Packet: &meshtreampb.Packet{
+			Data: &meshtreampb.Data{Id: 1},
+			Info: &meshtreampb.TopicInfo{},
+		},
 	}
 	
 	// Send the packet
@@ -48,8 +50,8 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	// Both subscribers should receive the packet
 	select {
 	case received := <-subscriber1:
-		if received.ID != 1 {
-			t.Errorf("Expected subscriber1 to receive packet with ID 1, got %d", received.ID)
+		if received.Data.Id != 1 {
+			t.Errorf("Expected subscriber1 to receive packet with ID 1, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("subscriber1 didn't receive packet within timeout")
@@ -57,8 +59,8 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 
 	select {
 	case received := <-subscriber2:
-		if received.ID != 1 {
-			t.Errorf("Expected subscriber2 to receive packet with ID 1, got %d", received.ID)
+		if received.Data.Id != 1 {
+			t.Errorf("Expected subscriber2 to receive packet with ID 1, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("subscriber2 didn't receive packet within timeout")
@@ -78,8 +80,10 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 
 	// Second packet with ID 2
 	packet2 := &Packet{
-		DecodedPacket: &decoder.DecodedPacket{ID: 2},
-		TopicInfo:     &decoder.TopicInfo{},
+		Packet: &meshtreampb.Packet{
+			Data: &meshtreampb.Data{Id: 2},
+			Info: &meshtreampb.TopicInfo{},
+		},
 	}
 	
 	// Send the second packet
@@ -88,8 +92,8 @@ func TestBrokerSubscribeUnsubscribe(t *testing.T) {
 	// The second subscriber should receive the packet
 	select {
 	case received := <-subscriber2:
-		if received.ID != 2 {
-			t.Errorf("Expected subscriber2 to receive packet with ID 2, got %d", received.ID)
+		if received.Data.Id != 2 {
+			t.Errorf("Expected subscriber2 to receive packet with ID 2, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("subscriber2 didn't receive second packet within timeout")
@@ -115,8 +119,10 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 
 	// Send a test packet with ID 42
 	testPacket := &Packet{
-		DecodedPacket: &decoder.DecodedPacket{ID: 42},
-		TopicInfo:     &decoder.TopicInfo{},
+		Packet: &meshtreampb.Packet{
+			Data: &meshtreampb.Data{Id: 42},
+			Info: &meshtreampb.TopicInfo{},
+		},
 	}
 	sourceChan <- testPacket
 
@@ -129,8 +135,8 @@ func TestBrokerMultipleSubscribers(t *testing.T) {
 			defer wg.Done()
 			select {
 			case received := <-ch:
-				if received.ID != 42 {
-					t.Errorf("subscriber %d expected packet ID 42, got %d", idx, received.ID)
+				if received.Data.Id != 42 {
+					t.Errorf("subscriber %d expected packet ID 42, got %d", idx, received.Data.Id)
 				}
 			case <-time.After(100 * time.Millisecond):
 				t.Errorf("subscriber %d didn't receive packet within timeout", idx)
@@ -169,12 +175,16 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 
 	// Send two packets quickly to fill the slow subscriber's buffer
 	testPacket1 := &Packet{
-		DecodedPacket: &decoder.DecodedPacket{ID: 101},
-		TopicInfo:     &decoder.TopicInfo{},
+		Packet: &meshtreampb.Packet{
+			Data: &meshtreampb.Data{Id: 101},
+			Info: &meshtreampb.TopicInfo{},
+		},
 	}
 	testPacket2 := &Packet{
-		DecodedPacket: &decoder.DecodedPacket{ID: 102},
-		TopicInfo:     &decoder.TopicInfo{},
+		Packet: &meshtreampb.Packet{
+			Data: &meshtreampb.Data{Id: 102},
+			Info: &meshtreampb.TopicInfo{},
+		},
 	}
 	
 	sourceChan <- testPacket1
@@ -187,8 +197,8 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 	// The normal subscriber should receive both packets
 	select {
 	case received := <-normalSubscriber:
-		if received.ID != 101 {
-			t.Errorf("normalSubscriber expected packet ID 101, got %d", received.ID)
+		if received.Data.Id != 101 {
+			t.Errorf("normalSubscriber expected packet ID 101, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("normalSubscriber didn't receive first packet within timeout")
@@ -196,8 +206,8 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 
 	select {
 	case received := <-normalSubscriber:
-		if received.ID != 102 {
-			t.Errorf("normalSubscriber expected packet ID 102, got %d", received.ID)
+		if received.Data.Id != 102 {
+			t.Errorf("normalSubscriber expected packet ID 102, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("normalSubscriber didn't receive second packet within timeout")
@@ -206,8 +216,8 @@ func TestBrokerSlowSubscriber(t *testing.T) {
 	// The slow subscriber should receive at least the first packet
 	select {
 	case received := <-slowSubscriber:
-		if received.ID != 101 {
-			t.Errorf("slowSubscriber expected packet ID 101, got %d", received.ID)
+		if received.Data.Id != 101 {
+			t.Errorf("slowSubscriber expected packet ID 101, got %d", received.Data.Id)
 		}
 	case <-time.After(100 * time.Millisecond):
 		t.Error("slowSubscriber didn't receive first packet within timeout")
