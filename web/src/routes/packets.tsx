@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAppDispatch } from '../hooks';
 import { PacketList } from '../components/PacketList';
+import { InfoMessage } from '../components/InfoMessage';
 import { addPacket } from '../store/slices/packetSlice';
 import { streamPackets, StreamEvent } from '../lib/api';
 
@@ -37,10 +38,10 @@ export function PacketsRoute() {
       <h2 className="text-2xl font-bold mb-4">Mesh Network Packets</h2>
       
       {/* Connection status indicator */}
-      <div className="mb-4 p-2 bg-blue-50 border border-blue-200 rounded">
-        <span className="font-medium">Status: </span>
-        <span>{connectionStatus}</span>
-      </div>
+      <InfoMessage 
+        message={`Status: ${connectionStatus}`} 
+        type={connectionStatus.includes('error') ? 'error' : 'info'} 
+      />
       
       <p className="mb-4">
         This page displays real-time packets from the Meshtastic mesh network.

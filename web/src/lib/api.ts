@@ -1,7 +1,7 @@
 /**
  * API client functions for interacting with the Meshstream server
  */
-import { API_ENDPOINTS } from './config';
+import { API_ENDPOINTS } from "./config";
 
 export interface ApiResponse<T> {
   data?: T;
@@ -28,16 +28,21 @@ export async function fetchRecentPackets(): Promise<ApiResponse<any[]>> {
  * Type definitions for SSE events
  */
 export interface InfoEvent {
-  type: 'info';
+  type: "info";
   data: string;
 }
 
 export interface MessageEvent {
-  type: 'message';
+  type: "message";
   data: any; // Will be the parsed JSON message
 }
 
-export type StreamEvent = InfoEvent | MessageEvent;
+export interface BadDataEvent {
+  type: "bad_data";
+  data: string; // Raw data that failed to parse
+}
+
+export type StreamEvent = InfoEvent | MessageEvent | BadDataEvent;
 
 export type StreamEventHandler = (event: StreamEvent) => void;
 
@@ -45,40 +50,35 @@ export type StreamEventHandler = (event: StreamEvent) => void;
  * Establish a Server-Sent Events connection to receive real-time packets
  */
 export function streamPackets(
-  onEvent: StreamEventHandler, 
+  onEvent: StreamEventHandler,
   onError?: (error: Event) => void
 ): () => void {
   const evtSource = new EventSource(API_ENDPOINTS.STREAM);
-  
-  // Handle general messages (fallback)
-  evtSource.onmessage = (event) => {
-    handleEventData('message', event.data, onEvent);
-  };
-  
+
   // Handle info events specifically
-  evtSource.addEventListener('info', (event) => {
+  evtSource.addEventListener("info", (event) => {
     // Info events are just strings
     onEvent({
-      type: 'info',
-      data: event.data
+      type: "info",
+      data: event.data,
     });
   });
-  
+
   // Handle message events specifically
-  evtSource.addEventListener('message', (event) => {
-    handleEventData('message', event.data, onEvent);
+  evtSource.addEventListener("message", (event) => {
+    handleEventData(event.data, onEvent);
   });
-  
+
   // Handle errors
   if (onError) {
     evtSource.onerror = onError;
   } else {
     evtSource.onerror = () => {
-      console.error('EventSource failed');
+      console.error("EventSource failed");
       evtSource.close();
     };
   }
-  
+
   // Return cleanup function
   return () => evtSource.close();
 }
@@ -86,36 +86,19 @@ export function streamPackets(
 /**
  * Helper to handle event data based on type
  */
-function handleEventData(
-  type: 'info' | 'message', 
-  data: string, 
-  callback: StreamEventHandler
-): void {
+function handleEventData(data: string, callback: StreamEventHandler): void {
   try {
-    if (type === 'info') {
-      // Info events are plain text
-      callback({
-        type: 'info',
-        data
-      });
-    } else {
-      // Message events are JSON
-      try {
-        const parsedData = JSON.parse(data);
-        callback({
-          type: 'message',
-          data: parsedData
-        });
-      } catch (error) {
-        // If JSON parsing fails, treat it as a plain text message
-        console.warn('Failed to parse message as JSON:', error);
-        callback({
-          type: 'info',
-          data
-        });
-      }
-    }
+    const parsedData = JSON.parse(data);
+
+    callback({
+      type: "message",
+      data: parsedData,
+    });
   } catch (error) {
-    console.error('Error handling event data:', error);
+    console.warn("Failed to parse message as JSON:", error, "Raw data:", data);
+    callback({
+      type: "bad_data",
+      data,
+    });
   }
 }

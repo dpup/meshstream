@@ -178,7 +178,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			// Create a marshaler with pretty printing enabled
 			marshaler := protojson.MarshalOptions{
 				EmitUnpopulated: true,
-				Indent:          "  ",
+				Multiline:       false,
 				UseProtoNames:   false, // Use camelCase names
 			}
 
