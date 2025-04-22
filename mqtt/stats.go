@@ -7,8 +7,8 @@ import (
 
 	"github.com/dpup/prefab/logging"
 
-	pb "meshstream/generated/meshtastic"
 	meshtreampb "meshstream/generated/meshstream"
+	pb "meshstream/generated/meshtastic"
 )
 
 // MessageStats tracks statistics about received messages
@@ -89,21 +89,21 @@ func (s *MessageStats) PrintStats() {
 
 	// Log the basic statistics with structured fields
 	s.logger.Infow("Message Statistics Summary",
-		"total_messages", s.TotalMessages,
-		"messages_per_second", msgPerSec,
-		"duration_seconds", duration.Seconds(),
+		"totalMessages", s.TotalMessages,
+		"messagesPerSecond", msgPerSec,
+		"durationSeconds", duration.Seconds(),
 	)
 
 	// Create maps for structured node and port stats
 	nodeStats := make(map[string]int)
 	for nodeID, count := range s.ByNode {
-		nodeStats[fmt.Sprintf("node_%d", nodeID)] = count
+		nodeStats[fmt.Sprintf("node.%d", nodeID)] = count
 	}
 
 	// Log node statistics with structured fields
 	s.logger.Infow("Messages by Node",
-		"node_counts", nodeStats,
-		"active_nodes", len(s.ByNode),
+		"nodeCounts", nodeStats,
+		"activeNodes", len(s.ByNode),
 	)
 
 	// Create maps for structured port stats
@@ -114,8 +114,8 @@ func (s *MessageStats) PrintStats() {
 
 	// Log port type statistics with structured fields
 	s.logger.Infow("Messages by Port Type",
-		"port_counts", portStats,
-		"active_ports", len(s.ByPortType),
+		"portCounts", portStats,
+		"activePorts", len(s.ByPortType),
 	)
 
 	// Reset counters for rate calculation

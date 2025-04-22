@@ -1,13 +1,15 @@
 package mqtt
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/dpup/prefab/logging"
+	"google.golang.org/protobuf/encoding/protojson"
 
-	pb "meshstream/generated/meshtastic"
 	meshtreampb "meshstream/generated/meshstream"
+	pb "meshstream/generated/meshtastic"
 )
 
 // MessageLogger logs messages using the provided logger
@@ -124,7 +126,31 @@ func (ml *MessageLogger) logMessage(packet *meshtreampb.Packet) {
 		}
 		ml.logger.Infow(briefSummary, fields...)
 	} else {
-		ml.logger.Infow(briefSummary, "packet", packet)
-	}
+		// Convert the protobuf message to a structured map for logging
+		// Use protojson to properly handle all fields and nested messages
+		marshaler := protojson.MarshalOptions{
+			EmitUnpopulated: false,
+			UseProtoNames:   false, // Use camelCase names for consistency with other logging
+		}
 
+		// Marshal the packet to JSON
+		packetJSON, err := marshaler.Marshal(packet)
+		if err != nil {
+			ml.logger.Warnw("Failed to marshal packet to JSON", "error", err)
+			ml.logger.Infow(briefSummary, "packet", packet)
+			return
+		}
+
+		// Unmarshal back to a map for structured logging
+		var packetMap map[string]interface{}
+		err = json.Unmarshal(packetJSON, &packetMap)
+		if err != nil {
+			ml.logger.Warnw("Failed to unmarshal packet JSON to map", "error", err)
+			ml.logger.Infow(briefSummary, "packet", packet)
+			return
+		}
+
+		// Log with the structured map
+		ml.logger.Infow(briefSummary, "packet", packetMap)
+	}
 }
