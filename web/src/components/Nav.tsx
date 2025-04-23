@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { Separator } from "./Separator";
 import { SITE_TITLE } from "../lib/config";
+import { Info, Layers, LayoutDashboard, Radio } from "lucide-react";
 
 interface NavProps {
   connectionStatus: string;
@@ -11,37 +12,64 @@ interface NavProps {
 export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
   return (
     <aside className="w-64 text-neutral-100 h-screen fixed left-0 top-0 flex flex-col">
-      {/* Logo section */}
-      <div className="p-4 mb-2">
-        <h1 className="text-xl font-bold">{SITE_TITLE}</h1>
+      {/* Logo and title section */}
+      <div className="p-4 flex items-center">
+        <div className="bg-pink-400 rounded-md mr-3 p-1.5 flex items-center justify-center">
+          <Layers className="h-5 w-5 text-neutral-800" />
+        </div>
+        <h1 className="text-xl font-thin tracking-wide">{SITE_TITLE}</h1>
       </div>
 
-      <Separator />
+      <Separator className="mt-1" />
 
-      <nav className="flex-1 pt-4">
-        <ul className="space-y-2">
+      <nav className="flex-1">
+        <ul className="space-y-1">
           <li>
             <Link
               to="/"
-              className="block px-4 py-2 hover:bg-neutral-800 transition-colors"
+              className="flex items-center px-4 py-2.5 transition-colors"
+              inactiveProps={{
+                className: "text-neutral-400 hover:text-neutral-200 font-thin",
+              }}
               activeProps={{
-                className:
-                  "block px-4 py-2 bg-neutral-800 border-l-4 border-neutral-500",
+                exact: true,
+                className: "text-neutral-200 font-normal",
               }}
             >
-              Home
+              <LayoutDashboard className="h-4 w-4 mr-3" />
+              Dashboard
             </Link>
           </li>
           <li>
             <Link
               to="/packets"
-              className="block px-4 py-2 hover:bg-neutral-800 transition-colors"
+              className="flex items-center px-4 py-2.5 transition-colors "
+              inactiveProps={{
+                className: "text-neutral-400 hover:text-neutral-200 font-thin",
+              }}
               activeProps={{
-                className:
-                  "block px-4 py-2 bg-neutral-800 border-l-4 border-neutral-500",
+                exact: true,
+                className: "text-neutral-200 font-normal",
               }}
             >
-              Packets
+              <Radio className="h-4 w-4 mr-3" />
+              Stream
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/info"
+              className="flex items-center px-4 py-2.5 transition-colors "
+              inactiveProps={{
+                className: "text-neutral-400 hover:text-neutral-200 font-thin",
+              }}
+              activeProps={{
+                exact: true,
+                className: "text-neutral-200 font-normal",
+              }}
+            >
+              <Info className="h-4 w-4 mr-3" />
+              Information
             </Link>
           </li>
         </ul>

@@ -28,12 +28,14 @@
     "@tanstack/react-router": "^1.116.0",
     "@tanstack/router-devtools": "^1.116.0",
     "@tanstack/router-vite-plugin": "^1.116.1",
+    "clsx": "^2.1.1",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.503.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-leaflet": "^5.0.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "tailwind-merge": "^3.2.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.4",

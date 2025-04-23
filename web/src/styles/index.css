@@ -4,10 +4,28 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Set default background and text colors */
+/* Set default background and text colors and font family */
 @layer base {
   html, body {
     @apply bg-neutral-800;
     @apply text-neutral-200;
+    @apply font-sans;
+  }
+
+  /* Apply the custom fonts to headings for better visibility */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-sans;
+    @apply font-medium;
+  }
+}
+
+@layer utilities {
+  .border-inset {
+    @apply border-1;
+    @apply border-b-neutral-700;
+    @apply border-r-neutral-700;
+    @apply border-t-neutral-950;
+    @apply border-l-neutral-950;
+    @apply rounded-sm;
   }
 }
