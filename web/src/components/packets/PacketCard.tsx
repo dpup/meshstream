@@ -53,7 +53,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
       </div>
 
       {/* Card Content */}
-      <div className="p-6">
+      <div className="p-6 font-mono text-sm">
         {children}
       </div>
     </div>

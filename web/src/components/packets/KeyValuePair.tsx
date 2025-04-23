@@ -13,10 +13,10 @@ export const KeyValuePair: React.FC<KeyValuePairProps> = ({
 }) => {
   return (
     <div>
-      <div className={`text-xs text-neutral-400 ${large ? 'mb-1' : ''}`}>
+      <div className={`text-xs tracking-wide text-neutral-400 uppercase ${large ? 'mb-1' : ''}`}>
         {label}
       </div>
-      <div className={large ? "font-medium text-base" : ""}>
+      <div className={`${large ? "text-base font-medium tracking-wide" : "tracking-tight"}`}>
         {value || "—"}
       </div>
     </div>
@@ -29,7 +29,7 @@ interface KeyValueGridProps {
 
 export const KeyValueGrid: React.FC<KeyValueGridProps> = ({ children }) => {
   return (
-    <div className="grid grid-cols-2 gap-3 max-w-md">
+    <div className="grid grid-cols-2 gap-x-6 gap-y-3 max-w-xl">
       {children}
     </div>
   );

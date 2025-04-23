@@ -18,7 +18,7 @@ export const TextMessagePacket: React.FC<TextMessagePacketProps> = ({ packet }) 
       label="Text Message"
       backgroundColor="bg-blue-950/5"
     >
-      <div className="max-w-md">
+      <div className="max-w-lg bg-neutral-800/30 p-3 rounded-md tracking-tight break-words">
         {data.textMessage || "Empty message"}
       </div>
     </PacketCard>
