@@ -2,6 +2,8 @@ import React from "react";
 import { Packet } from "../../lib/types";
 import { MapPin } from "lucide-react";
 import { PacketCard } from "./PacketCard";
+import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
+import { Map } from "../Map";
 
 interface PositionPacketProps {
   packet: Packet;
@@ -19,44 +21,66 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
   const latitude = position.latitudeI ? position.latitudeI * 1e-7 : undefined;
   const longitude = position.longitudeI ? position.longitudeI * 1e-7 : undefined;
 
+  // Format time without seconds
+  const formattedTime = position.time 
+    ? new Date(position.time * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+    : 'N/A';
+
   return (
     <PacketCard
       packet={packet}
-      icon={<MapPin className="h-4 w-4 text-neutral-100" />}
+      icon={<MapPin />}
       iconBgColor="bg-emerald-500"
       label="Position"
+      backgroundColor="bg-emerald-950/5"
     >
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <div className="text-xs text-neutral-400">Latitude</div>
-          <div>{latitude !== undefined ? latitude.toFixed(6) : 'N/A'}</div>
+          <KeyValueGrid>
+            <KeyValuePair 
+              label="Latitude" 
+              value={latitude !== undefined ? latitude.toFixed(6) : 'N/A'} 
+            />
+            <KeyValuePair 
+              label="Longitude" 
+              value={longitude !== undefined ? longitude.toFixed(6) : 'N/A'} 
+            />
+            {position.altitude && (
+              <KeyValuePair 
+                label="Altitude" 
+                value={`${position.altitude.toFixed(1)}m`} 
+              />
+            )}
+            {position.time && (
+              <KeyValuePair 
+                label="Time" 
+                value={formattedTime} 
+              />
+            )}
+            {position.locationSource && (
+              <KeyValuePair 
+                label="Source" 
+                value={position.locationSource.replace('LOC_', '')} 
+              />
+            )}
+            {position.satsInView && (
+              <KeyValuePair 
+                label="Satellites" 
+                value={position.satsInView} 
+              />
+            )}
+          </KeyValueGrid>
         </div>
-        <div>
-          <div className="text-xs text-neutral-400">Longitude</div>
-          <div>{longitude !== undefined ? longitude.toFixed(6) : 'N/A'}</div>
-        </div>
-        {position.altitude && (
-          <div>
-            <div className="text-xs text-neutral-400">Altitude</div>
-            <div>{position.altitude.toFixed(1)}m</div>
-          </div>
-        )}
-        {position.time && (
-          <div>
-            <div className="text-xs text-neutral-400">Time</div>
-            <div>{new Date(position.time * 1000).toLocaleTimeString()}</div>
-          </div>
-        )}
-        {position.locationSource && (
-          <div>
-            <div className="text-xs text-neutral-400">Source</div>
-            <div>{position.locationSource.replace('LOC_', '')}</div>
-          </div>
-        )}
-        {position.satsInView && (
-          <div>
-            <div className="text-xs text-neutral-400">Satellites</div>
-            <div>{position.satsInView}</div>
+        
+        {latitude !== undefined && longitude !== undefined && (
+          <div className="h-[240px] w-full rounded-lg overflow-hidden">
+            <Map 
+              latitude={latitude} 
+              longitude={longitude} 
+              width={400}
+              height={240}
+              flush={true}
+            />
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import React from "react";
 import { Packet, PortNum, PortNumByName } from "../../lib/types";
 import { Package } from "lucide-react";
 import { PacketCard } from "./PacketCard";
+import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
 
 interface GenericPacketProps {
   packet: Packet;
@@ -25,44 +26,73 @@ export const GenericPacket: React.FC<GenericPacketProps> = ({ packet }) => {
     }
     
     // Determine what type of payload is present
-    if (data.binaryData) return "Binary data";
-    if (data.waypoint) return "Waypoint";
-    if (data.compressedText) return "Compressed text";
-    if (data.mapReport) return "Map report";
-    if (data.remoteHardware) return "Remote hardware";
-    if (data.routing) return "Routing";
-    if (data.admin) return "Admin";
-    if (data.audioData) return "Audio";
+    if (data.binaryData) return "Binary Data";
+    if (data.compressedText) return "Compressed Text";
+    if (data.remoteHardware) return "Remote Hardware Control";
+    if (data.routing) return "Routing Information";
+    if (data.admin) return "Admin Command";
+    if (data.audioData) return "Audio Data";
     if (data.alert) return `Alert: ${data.alert}`;
     if (data.reply) return `Reply: ${data.reply}`;
     
-    return "Unknown data";
+    return "Unknown Data Format";
   };
+  
+  const portName = getPortName(data.portNum);
   
   return (
     <PacketCard
       packet={packet}
-      icon={<Package className="h-4 w-4 text-neutral-100" />}
-      iconBgColor="bg-neutral-500"
-      label={getPortName(data.portNum)}
+      icon={<Package />}
+      iconBgColor="bg-slate-500"
+      label={portName.replace("_APP", "")}
+      backgroundColor="bg-slate-950/5"
     >
-      <div className="grid grid-cols-2 gap-2">
-        <div>
-          <div className="text-xs text-neutral-400">Port</div>
-          <div>{getPortName(data.portNum)}</div>
-        </div>
-        <div>
-          <div className="text-xs text-neutral-400">Payload</div>
-          <div>{getPayloadDescription()}</div>
-        </div>
-        <div>
-          <div className="text-xs text-neutral-400">To</div>
-          <div>{data.to || "Broadcast"}</div>
-        </div>
-        <div>
-          <div className="text-xs text-neutral-400">Hop Limit</div>
-          <div>{data.hopLimit}</div>
-        </div>
+      <div className="max-w-md">
+        <KeyValueGrid>
+          <KeyValuePair
+            label="Port"
+            value={portName}
+          />
+          <KeyValuePair
+            label="Payload"
+            value={getPayloadDescription()}
+          />
+          <KeyValuePair
+            label="To"
+            value={data.to === 4294967295 ? "Broadcast" : data.to.toString()}
+          />
+          <KeyValuePair
+            label="Hop Limit"
+            value={data.hopLimit}
+          />
+        </KeyValueGrid>
+        
+        {data.binaryData && (
+          <div className="mt-3">
+            <div className="text-xs text-neutral-400 mb-1">Binary Data</div>
+            <div className="font-mono text-neutral-300 text-sm bg-neutral-800/50 p-2 rounded overflow-auto">
+              {data.binaryData}
+            </div>
+          </div>
+        )}
+        
+        {data.routing && (
+          <div className="mt-3">
+            <div className="text-xs text-neutral-400 mb-1">Routing Information</div>
+            <div className="bg-neutral-800/50 p-2 rounded">
+              {data.routing.errorReason !== undefined && (
+                <div>Error: {PortNum[data.routing.errorReason] || data.routing.errorReason}</div>
+              )}
+              {data.routing.routeRequest && (
+                <div>Route Request: {data.routing.routeRequest.route?.join(' → ')}</div>
+              )}
+              {data.routing.routeReply && (
+                <div>Route Reply: {data.routing.routeReply.route?.join(' → ')}</div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </PacketCard>
   );

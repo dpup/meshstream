@@ -2,6 +2,7 @@ import React from "react";
 import { Packet } from "../../lib/types";
 import { BarChart } from "lucide-react";
 import { PacketCard } from "./PacketCard";
+import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
 
 interface TelemetryPacketProps {
   packet: Packet;
@@ -15,41 +16,118 @@ export const TelemetryPacket: React.FC<TelemetryPacketProps> = ({ packet }) => {
     return null;
   }
   
-  // Helper function to display telemetry fields
-  const renderTelemetryFields = () => {
-    const entries = Object.entries(telemetry).filter(([key]) => key !== 'time');
+  // Helper function to render device metrics
+  const renderDeviceMetrics = () => {
+    if (!telemetry.deviceMetrics) return null;
     
-    if (entries.length === 0) {
-      return <div>No telemetry data available</div>;
-    }
-    
+    const metrics = telemetry.deviceMetrics;
     return (
-      <div className="grid grid-cols-2 gap-2">
-        {entries.map(([key, value]) => (
-          <div key={key}>
-            <div className="text-xs text-neutral-400">{key.charAt(0).toUpperCase() + key.slice(1)}</div>
-            <div>{typeof value === 'number' ? value.toFixed(2) : String(value)}</div>
-          </div>
-        ))}
-        
-        {telemetry.time && (
-          <div className="col-span-2">
-            <div className="text-xs text-neutral-400">Time</div>
-            <div>{new Date(telemetry.time * 1000).toLocaleString()}</div>
-          </div>
-        )}
+      <div className="mb-4">
+        <h4 className="text-sm font-medium text-neutral-300 mb-2">Device</h4>
+        <KeyValueGrid>
+          {metrics.batteryLevel !== undefined && (
+            <KeyValuePair
+              label="Battery"
+              value={`${metrics.batteryLevel}%`}
+            />
+          )}
+          {metrics.voltage !== undefined && (
+            <KeyValuePair
+              label="Voltage"
+              value={`${metrics.voltage.toFixed(2)}V`}
+            />
+          )}
+          {metrics.channelUtilization !== undefined && (
+            <KeyValuePair
+              label="Channel Util."
+              value={`${metrics.channelUtilization.toFixed(1)}%`}
+            />
+          )}
+          {metrics.uptimeSeconds !== undefined && (
+            <KeyValuePair
+              label="Uptime"
+              value={formatUptime(metrics.uptimeSeconds)}
+            />
+          )}
+        </KeyValueGrid>
       </div>
     );
+  };
+  
+  // Helper function to render environment metrics
+  const renderEnvironmentMetrics = () => {
+    if (!telemetry.environmentMetrics) return null;
+    
+    const metrics = telemetry.environmentMetrics;
+    return (
+      <div>
+        <h4 className="text-sm font-medium text-neutral-300 mb-2">Environment</h4>
+        <KeyValueGrid>
+          {metrics.temperature !== undefined && (
+            <KeyValuePair
+              label="Temperature"
+              value={`${metrics.temperature.toFixed(1)}°C`}
+            />
+          )}
+          {metrics.relativeHumidity !== undefined && (
+            <KeyValuePair
+              label="Humidity"
+              value={`${metrics.relativeHumidity.toFixed(1)}%`}
+            />
+          )}
+          {metrics.barometricPressure !== undefined && (
+            <KeyValuePair
+              label="Pressure"
+              value={`${(metrics.barometricPressure/100).toFixed(1)} hPa`}
+            />
+          )}
+          {metrics.lux !== undefined && (
+            <KeyValuePair
+              label="Light"
+              value={`${metrics.lux.toFixed(0)} lux`}
+            />
+          )}
+        </KeyValueGrid>
+      </div>
+    );
+  };
+  
+  // Format uptime in a readable way
+  const formatUptime = (seconds: number): string => {
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    
+    if (days > 0) {
+      return `${days}d ${hours}h`;
+    }
+    if (hours > 0) {
+      return `${hours}h ${mins}m`;
+    }
+    return `${mins}m`;
   };
   
   return (
     <PacketCard
       packet={packet}
-      icon={<BarChart className="h-4 w-4 text-neutral-100" />}
+      icon={<BarChart />}
       iconBgColor="bg-amber-500"
       label="Telemetry"
+      backgroundColor="bg-amber-950/5"
     >
-      {renderTelemetryFields()}
+      <div className="max-w-md">
+        {telemetry.time && (
+          <div className="mb-3">
+            <KeyValuePair
+              label="Time"
+              value={new Date(telemetry.time * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+            />
+          </div>
+        )}
+        
+        {renderDeviceMetrics()}
+        {renderEnvironmentMetrics()}
+      </div>
     </PacketCard>
   );
 };

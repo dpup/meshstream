@@ -7,6 +7,7 @@ interface PacketCardProps {
   iconBgColor: string;
   label: string;
   children: ReactNode;
+  backgroundColor?: string;
 }
 
 export const PacketCard: React.FC<PacketCardProps> = ({
@@ -15,29 +16,45 @@ export const PacketCard: React.FC<PacketCardProps> = ({
   iconBgColor,
   label,
   children,
+  backgroundColor = "bg-neutral-500/5",
 }) => {
   const { data } = packet;
 
   return (
-    <div className="max-w-4xl p-4 effect-inset bg-neutral-500/5 rounded-lg border border-neutral-950/60">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center">
-          <div className={`rounded-md ${iconBgColor} p-1.5 mr-3`}>{icon}</div>
-          <span className="font-medium text-neutral-200">
-            From:{" "}
-            {data.from ? `!${data.from.toString(16).toLowerCase()}` : "Unknown"}
-          </span>
+    <div className={`max-w-4xl effect-inset ${backgroundColor} rounded-lg border border-neutral-950/60 hover:shadow-md transition-shadow duration-200 overflow-hidden`}>
+      {/* Card Header with all metadata */}
+      <div className="px-5 py-3 border-b border-neutral-800/50">
+        <div className="flex flex-wrap justify-between items-center gap-2">
+          {/* Left side: Icon, From, Channel */}
+          <div className="flex items-center text-xs">
+            <div className={`${iconBgColor} p-1.5 rounded-full mr-3 shadow-sm flex-shrink-0`}>
+              {React.cloneElement(icon as React.ReactElement, { 
+                className: "h-3.5 w-3.5 text-white" 
+              })}
+            </div>
+            <span className="font-semibold text-neutral-200 tracking-wide mr-3">
+              {data.from ? `!${data.from.toString(16).toLowerCase()}` : "Unknown"}
+            </span>
+            <span className="text-neutral-400">
+              Channel: {packet.info.channel}
+            </span>
+          </div>
+          
+          {/* Right side: ID and Type */}
+          <div className="flex items-center gap-3 text-xs">
+            <span className="text-neutral-400">
+              ID: {data.id || "None"}
+            </span>
+            <span className="px-2 py-0.5 bg-neutral-700/50 text-neutral-300 rounded-full text-xs">
+              {label}
+            </span>
+          </div>
         </div>
-        <span className="text-neutral-400 text-sm">
-          ID: {data.id || "No ID"}
-        </span>
       </div>
 
-      <div className="mb-3 text-neutral-300 pl-9">{children}</div>
-
-      <div className="mt-3 flex justify-between items-center text-xs text-neutral-500">
-        <span>Channel: {packet.info.channel}</span>
-        <span>{label}</span>
+      {/* Card Content */}
+      <div className="p-6">
+        {children}
       </div>
     </div>
   );

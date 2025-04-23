@@ -13,11 +13,14 @@ export const TextMessagePacket: React.FC<TextMessagePacketProps> = ({ packet }) 
   return (
     <PacketCard
       packet={packet}
-      icon={<MessageSquareText className="h-4 w-4 text-neutral-100" />}
+      icon={<MessageSquareText />}
       iconBgColor="bg-blue-500"
       label="Text Message"
+      backgroundColor="bg-blue-950/5"
     >
-      {data.textMessage || "Empty message"}
+      <div className="max-w-md">
+        {data.textMessage || "Empty message"}
+      </div>
     </PacketCard>
   );
 };

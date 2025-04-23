@@ -5,6 +5,8 @@ import { PositionPacket } from "./PositionPacket";
 import { NodeInfoPacket } from "./NodeInfoPacket";
 import { TelemetryPacket } from "./TelemetryPacket";
 import { ErrorPacket } from "./ErrorPacket";
+import { WaypointPacket } from "./WaypointPacket";
+import { MapReportPacket } from "./MapReportPacket";
 import { GenericPacket } from "./GenericPacket";
 
 interface PacketRendererProps {
@@ -37,6 +39,12 @@ export const PacketRenderer: React.FC<PacketRendererProps> = ({ packet }) => {
 
     case PortNum.TELEMETRY_APP:
       return <TelemetryPacket packet={packet} />;
+      
+    case PortNum.WAYPOINT_APP:
+      return <WaypointPacket packet={packet} />;
+      
+    case PortNum.MAP_REPORT_APP:
+      return <MapReportPacket packet={packet} />;
 
     default:
       return <GenericPacket packet={packet} />;

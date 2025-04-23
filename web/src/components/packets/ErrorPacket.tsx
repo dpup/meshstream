@@ -17,12 +17,24 @@ export const ErrorPacket: React.FC<ErrorPacketProps> = ({ packet }) => {
   return (
     <PacketCard
       packet={packet}
-      icon={<AlertTriangle className="h-4 w-4 text-neutral-100" />}
+      icon={<AlertTriangle />}
       iconBgColor="bg-red-500"
       label="Error"
+      backgroundColor="bg-red-950/5"
     >
-      <div className="text-red-400">
-        {data.decodeError}
+      <div className="max-w-md">
+        <div className="text-red-400 mb-2 font-medium">
+          {data.decodeError}
+        </div>
+        
+        {data.binaryData && (
+          <div className="mt-3">
+            <div className="text-xs text-neutral-400 mb-1">Raw Data</div>
+            <div className="font-mono text-neutral-300 text-sm bg-neutral-800/50 p-2 rounded overflow-auto">
+              {data.binaryData}
+            </div>
+          </div>
+        )}
       </div>
     </PacketCard>
   );

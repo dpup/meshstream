@@ -1,9 +1,13 @@
+import React from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import { PageWrapper } from "../components/PageWrapper";
 import { TextMessagePacket } from "../components/packets/TextMessagePacket";
 import { PositionPacket } from "../components/packets/PositionPacket";
 import { NodeInfoPacket } from "../components/packets/NodeInfoPacket";
 import { TelemetryPacket } from "../components/packets/TelemetryPacket";
 import { ErrorPacket } from "../components/packets/ErrorPacket";
+import { WaypointPacket } from "../components/packets/WaypointPacket";
+import { MapReportPacket } from "../components/packets/MapReportPacket";
 import { GenericPacket } from "../components/packets/GenericPacket";
 
 // Import sample data
@@ -12,6 +16,12 @@ import positionData from "../../fixtures/position.json";
 import nodeInfoData from "../../fixtures/nodeinfo.json";
 import telemetryData from "../../fixtures/telemetry.json";
 import decodeErrorData from "../../fixtures/decode_error.json";
+import waypointData from "../../fixtures/waypoint.json";
+import mapReportData from "../../fixtures/map_report.json";
+
+export const Route = createFileRoute("/demo")({
+  component: DemoPage,
+});
 
 export function DemoPage() {
   return (
@@ -54,6 +64,20 @@ export function DemoPage() {
           </h3>
           <TelemetryPacket packet={telemetryData} />
         </section>
+        
+        <section>
+          <h3 className="text-md font-medium mb-4 text-neutral-300">
+            Waypoint Packet
+          </h3>
+          <WaypointPacket packet={waypointData} />
+        </section>
+        
+        <section>
+          <h3 className="text-md font-medium mb-4 text-neutral-300">
+            Map Report Packet
+          </h3>
+          <MapReportPacket packet={mapReportData} />
+        </section>
 
         <section>
           <h3 className="text-md font-medium mb-4 text-neutral-300">
@@ -64,23 +88,16 @@ export function DemoPage() {
 
         <section>
           <h3 className="text-md font-medium mb-4 text-neutral-300">
-            Generic Packet
+            Generic Packet (Unknown Type)
           </h3>
           <GenericPacket
             packet={{
               ...textMessageData,
               data: {
                 ...textMessageData.data,
-                portNum: "WAYPOINT_APP",
+                portNum: "UNKNOWN_APP",
                 textMessage: undefined,
-                waypoint: {
-                  id: 12345,
-                  latitudeI: 373066340,
-                  longitudeI: -1220381680,
-                  name: "Trailhead",
-                  description: "Mountain trail entrance point",
-                  icon: 128204,
-                },
+                binaryData: "SGVsbG8gV29ybGQh",
               },
             }}
           />
