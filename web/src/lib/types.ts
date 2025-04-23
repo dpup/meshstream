@@ -306,6 +306,9 @@ export interface Data {
 
   // Error tracking
   decodeError?: string;
+  
+  // Reception timestamp (added by decoder)
+  rxTime?: number;
 }
 
 // Packet represents a complete decoded MQTT message

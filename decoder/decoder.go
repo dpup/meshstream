@@ -3,6 +3,7 @@ package decoder
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -77,7 +78,10 @@ func DecodeEncodedMessage(payload []byte) (*pb.ServiceEnvelope, error) {
 
 // DecodeMessage creates a Data object from a binary encoded message
 func DecodeMessage(payload []byte, topicInfo *meshtreampb.TopicInfo) *meshtreampb.Data {
-	data := &meshtreampb.Data{}
+	data := &meshtreampb.Data{
+		// Add reception timestamp (Unix timestamp in seconds)
+		RxTime: uint64(time.Now().Unix()),
+	}
 
 	// First decode the envelope
 	envelope, err := DecodeEncodedMessage(payload)

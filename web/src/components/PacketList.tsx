@@ -43,6 +43,36 @@ export const PacketList: React.FC = () => {
     },
     [hashString]
   );
+  
+  // Get the earliest reception time from the packets
+  const getEarliestTime = useCallback((): string => {
+    if (packets.length === 0) return "";
+    
+    // Find the packet with the earliest rxTime or time
+    let earliestTime: number | undefined;
+    
+    packets.forEach(packet => {
+      // Check for rxTime first, then fall back to other timestamp fields
+      const packetTime = packet.data.rxTime || 
+                        (packet.data.telemetry?.time) || 
+                        undefined;
+      
+      if (packetTime && (!earliestTime || packetTime < earliestTime)) {
+        earliestTime = packetTime;
+      }
+    });
+    
+    if (!earliestTime) {
+      return "unknown time";
+    }
+    
+    // Format the time in a nice way
+    const date = new Date(earliestTime * 1000);
+    return date.toLocaleTimeString([], {
+      hour: '2-digit', 
+      minute: '2-digit'
+    });
+  }, [packets]);
 
   // We don't need to track packet keys in state anymore since we use data.id
   // and it's deterministic - removing this effect to prevent the infinite loop issue
@@ -102,7 +132,12 @@ export const PacketList: React.FC = () => {
     <div>
       <div className="flex justify-between items-center mb-2">
         <div className="text-sm text-neutral-400 px-2">
-          {packets.length} packets received, since 6:00am
+          {packets.length} packets received
+          {packets.length > 0 && (
+            <>
+              , since {getEarliestTime()}
+            </>
+          )}
         </div>
         <div className="flex items-center space-x-3">
           {/* Show buffered count when paused */}

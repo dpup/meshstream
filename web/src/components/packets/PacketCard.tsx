@@ -53,9 +53,19 @@ export const PacketCard: React.FC<PacketCardProps> = ({
             )}
           </div>
 
-          {/* Right side: ID and Type */}
+          {/* Right side: ID, Time, and Type */}
           <div className="flex items-center gap-3 text-xs">
-            <span className="text-neutral-400">{data.id || "None"}</span>
+            <div className="flex items-center">
+              <span className="text-neutral-400">{data.id || "None"}</span>
+              {data.rxTime && (
+                <span className="text-neutral-500 ml-2">
+                  {new Date(data.rxTime * 1000).toLocaleTimeString([], {
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                  })}
+                </span>
+              )}
+            </div>
             <span className="px-2 py-0.5 bg-neutral-700/50 text-neutral-300 rounded-full text-xs">
               {label}
             </span>

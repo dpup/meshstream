@@ -91,4 +91,7 @@ message Data {
 
   // Error tracking
   string decode_error = 60;
+  
+  // Reception timestamp (added by decoder)
+  uint64 rx_time = 61;
 }

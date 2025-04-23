@@ -26,13 +26,16 @@ export const TelemetryPacket: React.FC<TelemetryPacketProps> = ({ packet }) => {
     key => telemetry.environmentMetrics![key as keyof typeof telemetry.environmentMetrics] !== undefined
   );
   
+  // Use the reception timestamp if available, otherwise fall back to the telemetry time
+  const timestamp = data.rxTime || telemetry.time;
+  
   // Return the appropriate component based on telemetry type
   if (hasDeviceMetrics && telemetry.deviceMetrics) {
     return (
       <DeviceMetricsPacket 
         packet={packet} 
         metrics={telemetry.deviceMetrics} 
-        timestamp={telemetry.time}
+        timestamp={timestamp}
       />
     );
   }
@@ -42,7 +45,7 @@ export const TelemetryPacket: React.FC<TelemetryPacketProps> = ({ packet }) => {
       <EnvironmentMetricsPacket 
         packet={packet} 
         metrics={telemetry.environmentMetrics} 
-        timestamp={telemetry.time}
+        timestamp={timestamp}
       />
     );
   }
@@ -58,8 +61,8 @@ export const TelemetryPacket: React.FC<TelemetryPacketProps> = ({ packet }) => {
     >
       <div className="text-neutral-400 text-sm">
         Unknown telemetry data received at{' '}
-        {telemetry.time 
-          ? new Date(telemetry.time * 1000).toLocaleTimeString() 
+        {timestamp 
+          ? new Date(timestamp * 1000).toLocaleTimeString() 
           : 'unknown time'
         }
       </div>

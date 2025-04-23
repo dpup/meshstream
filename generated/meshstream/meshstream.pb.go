@@ -220,7 +220,9 @@ type Data struct {
 	Source       uint32 `protobuf:"varint,54,opt,name=source,proto3" json:"source,omitempty"`
 	WantResponse bool   `protobuf:"varint,55,opt,name=want_response,json=wantResponse,proto3" json:"want_response,omitempty"`
 	// Error tracking
-	DecodeError   string `protobuf:"bytes,60,opt,name=decode_error,json=decodeError,proto3" json:"decode_error,omitempty"`
+	DecodeError string `protobuf:"bytes,60,opt,name=decode_error,json=decodeError,proto3" json:"decode_error,omitempty"`
+	// Reception timestamp (added by decoder)
+	RxTime        uint64 `protobuf:"varint,61,opt,name=rx_time,json=rxTime,proto3" json:"rx_time,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -654,6 +656,13 @@ func (x *Data) GetDecodeError() string {
 	return ""
 }
 
+func (x *Data) GetRxTime() uint64 {
+	if x != nil {
+		return x.RxTime
+	}
+	return 0
+}
+
 type isData_Payload interface {
 	isData_Payload()
 }
@@ -843,7 +852,7 @@ const file_meshstream_meshstream_proto_rawDesc = "" +
 	"\aversion\x18\x03 \x01(\tR\aversion\x12\x16\n" +
 	"\x06format\x18\x04 \x01(\tR\x06format\x12\x18\n" +
 	"\achannel\x18\x05 \x01(\tR\achannel\x12\x17\n" +
-	"\auser_id\x18\x06 \x01(\tR\x06userId\"\xfb\r\n" +
+	"\auser_id\x18\x06 \x01(\tR\x06userId\"\x94\x0e\n" +
 	"\x04Data\x12\x1d\n" +
 	"\n" +
 	"channel_id\x18\x01 \x01(\tR\tchannelId\x12\x1d\n" +
@@ -906,7 +915,8 @@ const file_meshstream_meshstream_proto_rawDesc = "" +
 	"\x04dest\x185 \x01(\rR\x04dest\x12\x16\n" +
 	"\x06source\x186 \x01(\rR\x06source\x12#\n" +
 	"\rwant_response\x187 \x01(\bR\fwantResponse\x12!\n" +
-	"\fdecode_error\x18< \x01(\tR\vdecodeErrorB\t\n" +
+	"\fdecode_error\x18< \x01(\tR\vdecodeError\x12\x17\n" +
+	"\arx_time\x18= \x01(\x04R\x06rxTimeB\t\n" +
 	"\apayloadB(Z&proto/generated/meshstream;meshtreampbb\x06proto3"
 
 var (
