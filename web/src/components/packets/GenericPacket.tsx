@@ -1,5 +1,5 @@
 import React from "react";
-import { Packet, PortNum, PortNumByName } from "../../lib/types";
+import { Packet, PortNum } from "../../lib/types";
 import { Package } from "lucide-react";
 import { PacketCard } from "./PacketCard";
 import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";

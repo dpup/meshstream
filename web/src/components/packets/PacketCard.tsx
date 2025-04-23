@@ -8,7 +8,6 @@ interface PacketCardProps {
   iconBgColor: string;
   label: string;
   children: ReactNode;
-  backgroundColor?: string;
 }
 
 export const PacketCard: React.FC<PacketCardProps> = ({
@@ -17,12 +16,11 @@ export const PacketCard: React.FC<PacketCardProps> = ({
   iconBgColor,
   label,
   children,
-  backgroundColor = "bg-neutral-500/5",
 }) => {
   const { data } = packet;
 
   return (
-    <div className="max-w-4xl effect-inset rounded-lg border border-neutral-950/60 hover:bg-neutral-800 transition-shadow duration-200 overflow-hidden">
+    <div className="max-w-4xl effect-inset rounded-lg border border-neutral-950/60 bg-neutral-800 overflow-hidden">
       {/* Card Header with all metadata */}
       <div className="p-4 border-b border-neutral-700/50 shadow-inner">
         <div className="flex flex-wrap justify-between items-center gap-2">
@@ -60,8 +58,8 @@ export const PacketCard: React.FC<PacketCardProps> = ({
               {data.rxTime && (
                 <span className="text-neutral-500 ml-2">
                   {new Date(data.rxTime * 1000).toLocaleTimeString([], {
-                    hour: '2-digit', 
-                    minute: '2-digit'
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </span>
               )}

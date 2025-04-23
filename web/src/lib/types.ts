@@ -189,6 +189,7 @@ export interface NeighborInfo {
 export interface MapReport {
   // This would need to be defined based on the actual data structure
   // Currently not defined in the proto files
+  [key: string]: unknown;
 }
 
 export interface HardwareMessage {
@@ -228,11 +229,13 @@ export interface Routing {
 export interface AdminMessage {
   // This would need to be defined based on the admin.proto
   // Only include what's actually used in your application
+  [key: string]: unknown;
 }
 
 export interface Paxcount {
   // This would need to be defined based on the paxcount.proto
   // Only include what's actually used in your application
+  [key: string]: unknown;
 }
 
 // TopicInfo contains parsed information about a Meshtastic MQTT topic

@@ -43,66 +43,40 @@ export const PacketList: React.FC = () => {
     },
     [hashString]
   );
-  
+
   // Get the earliest reception time from the packets
   const getEarliestTime = useCallback((): string => {
     if (packets.length === 0) return "";
-    
+
     // Find the packet with the earliest rxTime or time
     let earliestTime: number | undefined;
-    
-    packets.forEach(packet => {
+
+    packets.forEach((packet) => {
       // Check for rxTime first, then fall back to other timestamp fields
-      const packetTime = packet.data.rxTime || 
-                        (packet.data.telemetry?.time) || 
-                        undefined;
-      
+      const packetTime =
+        packet.data.rxTime || packet.data.telemetry?.time || undefined;
+
       if (packetTime && (!earliestTime || packetTime < earliestTime)) {
         earliestTime = packetTime;
       }
     });
-    
+
     if (!earliestTime) {
       return "unknown time";
     }
-    
+
     // Format the time in a nice way
     const date = new Date(earliestTime * 1000);
     return date.toLocaleTimeString([], {
-      hour: '2-digit', 
-      minute: '2-digit'
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }, [packets]);
 
   // We don't need to track packet keys in state anymore since we use data.id
   // and it's deterministic - removing this effect to prevent the infinite loop issue
 
-  if (loading) {
-    return (
-      <div className="p-4 flex items-center justify-center h-40 text-neutral-300">
-        <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
-        Loading...
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 text-red-400 border border-red-800 rounded bg-neutral-900">
-        Error: {error}
-      </div>
-    );
-  }
-
-  if (packets.length === 0 && bufferedPackets.length === 0) {
-    return (
-      <div className="p-6 text-neutral-400 text-center border border-neutral-700 rounded bg-neutral-900">
-        No packets received yet
-      </div>
-    );
-  }
-
-  // Calculate pagination
+  // Calculate pagination regardless of state
   const totalPages = Math.ceil(packets.length / PACKETS_PER_PAGE);
   const startIndex = (currentPage - 1) * PACKETS_PER_PAGE;
   const endIndex = startIndex + PACKETS_PER_PAGE;
@@ -129,102 +103,128 @@ export const PacketList: React.FC = () => {
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-sm text-neutral-400 px-2">
-          {packets.length} packets received
-          {packets.length > 0 && (
-            <>
-              , since {getEarliestTime()}
-            </>
-          )}
+    <div className="flex flex-col h-full">
+      <div className="sticky top-0 z-10">
+        <div className="flex justify-between items-center mb-2">
+          <div className="text-sm text-neutral-400 px-2">
+            {packets.length} packets received
+            {packets.length > 0 && <>, since {getEarliestTime()}</>}
+          </div>
+          <div className="flex items-center space-x-3">
+            {/* Show buffered count when paused */}
+            {streamPaused && bufferedPackets.length > 0 && (
+              <div className="flex items-center text-sm text-amber-400">
+                <Archive className="h-4 w-4 mr-1.5" />
+                {bufferedPackets.length} new
+              </div>
+            )}
+
+            {/* Stream control toggle */}
+            <StreamControl
+              isPaused={streamPaused}
+              onToggle={handleToggleStream}
+            />
+
+            {/* Clear button */}
+            <button
+              onClick={handleClearPackets}
+              className="flex items-center space-x-2 px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md text-neutral-400 hover:bg-neutral-700/50"
+            >
+              <Trash2 className="h-4 w-4 mr-1.5" />
+              <span className="text-sm font-medium">Clear</span>
+            </button>
+          </div>
         </div>
-        <div className="flex items-center space-x-3">
-          {/* Show buffered count when paused */}
-          {streamPaused && bufferedPackets.length > 0 && (
-            <div className="flex items-center text-sm text-amber-400">
-              <Archive className="h-4 w-4 mr-1.5" />
-              {bufferedPackets.length} new
+        <Separator className="mx-0" />
+      </div>
+
+      <div className="flex-1 overflow-y-auto">
+        {loading && (
+          <div className="p-4 flex items-center justify-center h-40 text-neutral-300">
+            <RefreshCw className="h-5 w-5 mr-2 animate-spin" />
+            Loading...
+          </div>
+        )}
+
+        {error && (
+          <div className="p-4 text-red-400 border border-red-800 rounded bg-neutral-900">
+            Error: {error}
+          </div>
+        )}
+
+        {!loading &&
+          !error &&
+          packets.length === 0 &&
+          bufferedPackets.length === 0 && (
+            <div className="p-6 max-w-4xl effect-inset rounded-lg border border-neutral-950/60 hover:bg-neutral-800">
+              Waiting for packets
             </div>
           )}
 
-          {/* Stream control toggle */}
-          <StreamControl
-            isPaused={streamPaused}
-            onToggle={handleToggleStream}
-          />
-
-          {/* Clear button */}
-          <button
-            onClick={handleClearPackets}
-            className="flex items-center space-x-2 px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md text-neutral-400 hover:bg-neutral-700/50"
-          >
-            <Trash2 className="h-4 w-4 mr-1.5" />
-            <span className="text-sm font-medium">Clear</span>
-          </button>
-        </div>
+        {!loading && !error && packets.length > 0 && (
+          <ul className="space-y-12">
+            {currentPackets.map((packet, index) => (
+              <li key={getPacketKey(packet, index)}>
+                <PacketRenderer packet={packet} />
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-      <Separator className="mx-0" />
 
-      <ul className="space-y-12">
-        {currentPackets.map((packet, index) => (
-          <li key={getPacketKey(packet, index)}>
-            <PacketRenderer packet={packet} />
-          </li>
-        ))}
-      </ul>
-
-      {/* Empty state when no packets are visible but stream is paused */}
-      {packets.length === 0 && streamPaused && bufferedPackets.length > 0 && (
-        <div className="p-6 text-amber-400 text-center border border-amber-900 bg-neutral-800 rounded my-4">
-          Stream is paused with {bufferedPackets.length} buffered messages.
-          <button
-            onClick={handleToggleStream}
-            className="block mx-auto mt-2 px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 rounded transition-colors"
-          >
-            Resume to view
-          </button>
-        </div>
-      )}
-
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex justify-between items-center mt-6 text-sm">
-          <button
-            onClick={() =>
-              setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
-            }
-            disabled={currentPage === 1}
-            className={`px-3 py-1.5 rounded ${
-              currentPage === 1
-                ? "text-neutral-500 cursor-not-allowed"
-                : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
-            }`}
-          >
-            Previous
-          </button>
-
-          <div className="text-neutral-400">
-            Page {currentPage} of {totalPages}
+      <div className="mt-auto">
+        {/* Empty state when no packets are visible but stream is paused */}
+        {packets.length === 0 && streamPaused && bufferedPackets.length > 0 && (
+          <div className="p-6 text-amber-400 text-center border border-amber-900 bg-neutral-800 rounded mb-4">
+            Stream is paused with {bufferedPackets.length} buffered messages.
+            <button
+              onClick={handleToggleStream}
+              className="block mx-auto mt-2 px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 rounded transition-colors"
+            >
+              Resume to view
+            </button>
           </div>
+        )}
 
-          <button
-            onClick={() =>
-              setCurrentPage(
-                currentPage < totalPages ? currentPage + 1 : totalPages
-              )
-            }
-            disabled={currentPage === totalPages}
-            className={`px-3 py-1.5 rounded ${
-              currentPage === totalPages
-                ? "text-neutral-500 cursor-not-allowed"
-                : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
-            }`}
-          >
-            Next
-          </button>
-        </div>
-      )}
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center text-sm sticky bottom-0 bg-neutral-50/5 py-2">
+            <button
+              onClick={() =>
+                setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+              }
+              disabled={currentPage === 1}
+              className={`px-3 py-1.5 rounded ${
+                currentPage === 1
+                  ? "text-neutral-500 cursor-not-allowed"
+                  : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
+              }`}
+            >
+              Previous
+            </button>
+
+            <div className="text-neutral-400">
+              Page {currentPage} of {totalPages}
+            </div>
+
+            <button
+              onClick={() =>
+                setCurrentPage(
+                  currentPage < totalPages ? currentPage + 1 : totalPages
+                )
+              }
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1.5 rounded ${
+                currentPage === totalPages
+                  ? "text-neutral-500 cursor-not-allowed"
+                  : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

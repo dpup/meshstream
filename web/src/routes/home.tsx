@@ -1,5 +1,4 @@
 import { InfoMessage, Separator, PageWrapper } from "../components";
-import { SITE_TITLE } from "../lib/config";
 
 export function IndexPage() {
   return (
