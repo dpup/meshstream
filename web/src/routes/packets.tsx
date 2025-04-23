@@ -27,19 +27,6 @@ export function PacketsRoute() {
   return (
     <div className="bg-neutral-700 rounded-lg shadow-inner">
       <div className="p-6">
-        <h2 className="text-2xl font-bold mb-4 text-neutral-100">
-          Mesh Network Packets
-        </h2>
-
-        <InfoMessage
-          message="This page displays real-time packets from the Meshtastic mesh network."
-          type="info"
-        />
-      </div>
-
-      <Separator className="my-2" />
-
-      <div className="p-6">
         <PacketList />
       </div>
     </div>
