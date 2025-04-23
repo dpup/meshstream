@@ -22,10 +22,20 @@
 @layer utilities {
   .border-inset {
     @apply border-1;
-    @apply border-b-neutral-700;
-    @apply border-r-neutral-700;
-    @apply border-t-neutral-950;
-    @apply border-l-neutral-950;
-    @apply rounded-sm;
+    @apply border-b-neutral-400/30;
+    @apply border-r-neutral-400/30;
+    @apply border-t-neutral-950/60;
+    @apply border-l-neutral-950/60;
+    @apply rounded-md;
+    @apply shadow-md;
+  }
+  .border-outset {
+    @apply border-1;
+    @apply border-t-neutral-300/30;
+    @apply border-l-neutral-300/30;
+    @apply border-b-neutral-950/60;
+    @apply border-r-neutral-950/60;
+    @apply rounded-md;
+    @apply shadow-md;
   }
 }

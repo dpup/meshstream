@@ -1,7 +1,6 @@
 import { useEffect } from "react";
 import { useAppDispatch } from "../hooks";
-import { PacketList } from "../components/PacketList";
-import { InfoMessage, Separator } from "../components";
+import { PacketList, PageWrapper } from "../components";
 import { addPacket } from "../store/slices/packetSlice";
 import { streamPackets, StreamEvent } from "../lib/api";
 
@@ -25,10 +24,8 @@ export function PacketsRoute() {
   }, [dispatch]);
 
   return (
-    <div className="bg-neutral-700 rounded-lg shadow-inner">
-      <div className="p-6">
-        <PacketList />
-      </div>
-    </div>
+    <PageWrapper>
+      <PacketList />
+    </PageWrapper>
   );
 }

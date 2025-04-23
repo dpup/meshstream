@@ -7,3 +7,4 @@ export * from './ConnectionStatus';
 export * from './Nav';
 export * from './Separator';
 export * from './StreamControl';
+export * from './PageWrapper';
