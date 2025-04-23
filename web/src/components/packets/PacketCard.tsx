@@ -27,7 +27,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
       <div className="p-4 border-b border-neutral-700/50 shadow-inner">
         <div className="flex flex-wrap justify-between items-center gap-2">
           {/* Left side: Icon, From, Channel */}
-          <div className="flex items-center text-xs">
+          <div className="flex items-center text-xs space-x-1">
             <div
               className={cn(
                 iconBgColor,
@@ -38,12 +38,19 @@ export const PacketCard: React.FC<PacketCardProps> = ({
                 className: "h-3.5 w-3.5 text-white",
               })}
             </div>
-            <span className="font-semibold text-neutral-200 tracking-wide mr-3">
+            <span className="font-semibold text-neutral-200 tracking-wide">
               {data.from
                 ? `!${data.from.toString(16).toLowerCase()}`
                 : "Unknown"}
             </span>
+            <span className="text-neutral-500">on</span>
             <span className="text-neutral-400">{packet.info.channel}</span>
+            {data.gatewayId && (
+              <>
+                <span className="text-neutral-500">via</span>
+                <span className="text-neutral-400">{data.gatewayId}</span>
+              </>
+            )}
           </div>
 
           {/* Right side: ID and Type */}

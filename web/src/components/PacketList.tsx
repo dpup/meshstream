@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { useAppSelector, useAppDispatch } from "../hooks";
 import { PacketRenderer } from "./packets/PacketRenderer";
 import { StreamControl } from "./StreamControl";
-import { Trash2, RefreshCw, Archive, Radio } from "lucide-react";
+import { Trash2, RefreshCw, Archive } from "lucide-react";
 import { clearPackets, toggleStreamPause } from "../store/slices/packetSlice";
 import { Packet } from "../lib/types";
 import { Separator } from "./Separator";
 
 // Number of packets to show per page
-const PACKETS_PER_PAGE = 10;
+const PACKETS_PER_PAGE = 100;
 
 export const PacketList: React.FC = () => {
   const { packets, bufferedPackets, loading, error, streamPaused } =
