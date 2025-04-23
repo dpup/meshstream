@@ -17,7 +17,7 @@ export const TextMessagePacket: React.FC<TextMessagePacketProps> = ({ packet }) 
             <MessageSquareText className="h-4 w-4 text-neutral-100" />
           </div>
           <span className="font-medium text-neutral-200">
-            From: {data.from || "Unknown"}
+            From: {data.from ? `!${data.from.toString(16).toLowerCase()}` : "Unknown"}
           </span>
         </div>
         <span className="text-neutral-400 text-sm">

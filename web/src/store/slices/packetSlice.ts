@@ -10,6 +10,7 @@ interface PacketState {
   error: string | null;
   streamPaused: boolean;
   bufferedPackets: Packet[]; // Holds packets received while paused
+  seenPackets: Record<string, boolean>; // Tracks already seen packet IDs to prevent duplicates
 }
 
 const initialState: PacketState = {
@@ -18,6 +19,7 @@ const initialState: PacketState = {
   error: null,
   streamPaused: false,
   bufferedPackets: [],
+  seenPackets: {}, // Empty object to track seen packets
 };
 
 const packetSlice = createSlice({
@@ -29,8 +31,26 @@ const packetSlice = createSlice({
       state.error = null;
     },
     fetchPacketsSuccess(state, action: PayloadAction<Packet[]>) {
+      // Track unique packets and update the seen packets object
+      const uniquePackets: Packet[] = [];
+      
+      action.payload.forEach(packet => {
+        if (packet.data.from !== undefined && packet.data.id !== undefined) {
+          const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
+          const packetKey = `${nodeId}_${packet.data.id}`;
+          
+          if (!state.seenPackets[packetKey]) {
+            state.seenPackets[packetKey] = true;
+            uniquePackets.push(packet);
+          }
+        } else {
+          // If we don't have from or id (rare), just add the packet
+          uniquePackets.push(packet);
+        }
+      });
+      
       // Limit initial load to MAX_PACKETS
-      state.packets = action.payload.slice(-MAX_PACKETS);
+      state.packets = uniquePackets.slice(-MAX_PACKETS);
       state.loading = false;
     },
     fetchPacketsFailure(state, action: PayloadAction<string>) {
@@ -38,9 +58,29 @@ const packetSlice = createSlice({
       state.loading = false;
     },
     addPacket(state, action: PayloadAction<Packet>) {
+      const packet = action.payload;
+      
+      // Skip packets without valid from/id
+      if (packet.data.from === undefined || packet.data.id === undefined) {
+        return;
+      }
+      
+      // Create a Meshtastic node ID format
+      const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
+      const packetKey = `${nodeId}_${packet.data.id}`;
+      
+      // Check if we've already seen this packet
+      if (state.seenPackets[packetKey]) {
+        // Packet is a duplicate, ignore it
+        return;
+      }
+      
+      // Mark this packet as seen
+      state.seenPackets[packetKey] = true;
+      
       if (state.streamPaused) {
         // When paused, add to buffer instead of main list
-        state.bufferedPackets.unshift(action.payload);
+        state.bufferedPackets.unshift(packet);
         
         // Ensure buffer doesn't grow too large
         if (state.bufferedPackets.length > MAX_PACKETS) {
@@ -48,7 +88,7 @@ const packetSlice = createSlice({
         }
       } else {
         // Normal flow - add to main list
-        state.packets.unshift(action.payload);
+        state.packets.unshift(packet);
         
         // Remove oldest packets if we exceed the limit
         if (state.packets.length > MAX_PACKETS) {
@@ -59,6 +99,7 @@ const packetSlice = createSlice({
     clearPackets(state) {
       state.packets = [];
       state.bufferedPackets = [];
+      state.seenPackets = {}; // Reset the seen packets object
     },
     toggleStreamPause(state) {
       state.streamPaused = !state.streamPaused;

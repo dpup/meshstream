@@ -16,9 +16,6 @@ export const PacketList: React.FC = () => {
   const dispatch = useAppDispatch();
   const [currentPage, setCurrentPage] = useState(1);
   
-  // A unique ID is attached to each rendered packet element
-  const [packetKeys, setPacketKeys] = useState<Record<string, string>>({});
-  
   // Generate a reproducible hash code for a string
   const hashString = useCallback((str: string): string => {
     let hash = 0;
@@ -31,42 +28,21 @@ export const PacketList: React.FC = () => {
     return Math.abs(hash).toString(36);
   }, []);
   
-  // Create a consistent, unique fingerprint for a packet
-  const createPacketFingerprint = useCallback((packet: Packet): string => {
-    // Combine multiple fields to maximize uniqueness
-    const parts = [
-      packet.data.from?.toString() ?? 'unknown',
-      packet.data.id?.toString() ?? 'noid',
-      packet.data.portNum?.toString() ?? 'noport',
-      packet.info.channel ?? 'nochannel',
-      packet.info.userId ?? 'nouser',
-      // Include a hash of raw JSON data for extra uniqueness
-      hashString(JSON.stringify(packet)),
-    ];
-    return parts.join('_');
+  // Create a packet key using data.id and from address
+  // This should match the key generation logic in the reducer
+  const createPacketKey = useCallback((packet: Packet): string => {
+    if (packet.data.id !== undefined && packet.data.from !== undefined) {
+      // Use Meshtastic node ID format (! followed by lowercase hex) and packet ID
+      const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
+      return `${nodeId}_${packet.data.id}`;
+    } else {
+      // Fallback to hash-based key if no ID or from (should be rare)
+      return `hash_${hashString(JSON.stringify(packet))}`;
+    }
   }, [hashString]);
   
-  // Update the packet keys whenever the packets change
-  useEffect(() => {
-    // Store new packet keys
-    const newKeys: Record<string, string> = {...packetKeys};
-    
-    // Assign keys to any packets that don't already have them
-    packets.forEach((packet) => {
-      const fingerprint = createPacketFingerprint(packet);
-      
-      // Only create new keys for packets we haven't seen before
-      if (!newKeys[fingerprint]) {
-        const randomPart = Math.random().toString(36).substring(2, 10);
-        newKeys[fingerprint] = `${fingerprint}_${randomPart}`;
-      }
-    });
-    
-    // Only update state if we actually added new keys
-    if (Object.keys(newKeys).length !== Object.keys(packetKeys).length) {
-      setPacketKeys(newKeys);
-    }
-  }, [packets, createPacketFingerprint]);
+  // We don't need to track packet keys in state anymore since we use data.id
+  // and it's deterministic - removing this effect to prevent the infinite loop issue
 
   if (loading) {
     return (
@@ -103,8 +79,6 @@ export const PacketList: React.FC = () => {
     if (window.confirm("Are you sure you want to clear all packets?")) {
       dispatch(clearPackets());
       setCurrentPage(1);
-      // Clear the packet keys too
-      setPacketKeys({});
     }
   };
 
@@ -116,11 +90,9 @@ export const PacketList: React.FC = () => {
     }
   };
 
-  // Get the key for a packet
+  // Get the key for a packet - directly use createPacketKey
   const getPacketKey = (packet: Packet, index: number): string => {
-    const fingerprint = createPacketFingerprint(packet);
-    // Fallback to index-based key if no fingerprint key exists
-    return packetKeys[fingerprint] || `packet_${index}_${Date.now()}`;
+    return createPacketKey(packet) || `fallback_${index}`;
   };
 
   return (
