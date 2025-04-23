@@ -13,7 +13,7 @@ export const StreamControl: React.FC<StreamControlProps> = ({
   return (
     <button
       onClick={onToggle}
-      className={`flex items-center space-x-2 px-3 py-1.5 rounded-md transition-colors ${
+      className={`flex items-center space-x-2 px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md transition-colors ${
         isPaused
           ? "bg-neutral-700 text-amber-400 hover:bg-neutral-600"
           : "bg-neutral-700 text-green-400 hover:bg-neutral-600"
@@ -22,11 +22,7 @@ export const StreamControl: React.FC<StreamControlProps> = ({
       <span className="text-sm font-medium">
         {isPaused ? "Paused" : "Streaming"}
       </span>
-      {isPaused ? (
-        <Play className="h-4 w-4" />
-      ) : (
-        <Pause className="h-4 w-4" />
-      )}
+      {isPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
     </button>
   );
 };

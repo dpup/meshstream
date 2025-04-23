@@ -48,7 +48,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
   const { icon, text, colorClass } = getStatusInfo();
 
   return (
-    <div className="flex items-center space-x-2 bg-neutral-800 p-4 border-inset">
+    <div className="flex items-center space-x-2 p-4 rounded-xl bg-zinc-800 border border-neutral-950/80 effect-inset">
       {icon}
       <span className={cn("text-sm tracking-wide font-thin", colorClass)}>
         {text}

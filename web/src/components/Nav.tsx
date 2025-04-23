@@ -75,8 +75,6 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
         </ul>
       </nav>
 
-      <Separator />
-
       <div className="px-4 py-2 pb-6">
         <ConnectionStatus status={connectionStatus} />
       </div>

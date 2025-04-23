@@ -2,45 +2,48 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useAppSelector, useAppDispatch } from "../hooks";
 import { PacketRenderer } from "./packets/PacketRenderer";
 import { StreamControl } from "./StreamControl";
-import { Trash2, RefreshCw, Archive } from "lucide-react";
+import { Trash2, RefreshCw, Archive, Radio } from "lucide-react";
 import { clearPackets, toggleStreamPause } from "../store/slices/packetSlice";
 import { Packet } from "../lib/types";
+import { Separator } from "./Separator";
 
 // Number of packets to show per page
 const PACKETS_PER_PAGE = 10;
 
 export const PacketList: React.FC = () => {
-  const { packets, bufferedPackets, loading, error, streamPaused } = useAppSelector(
-    (state) => state.packets
-  );
+  const { packets, bufferedPackets, loading, error, streamPaused } =
+    useAppSelector((state) => state.packets);
   const dispatch = useAppDispatch();
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // Generate a reproducible hash code for a string
   const hashString = useCallback((str: string): string => {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32bit integer
     }
     // Make sure hash is always positive and convert to string
     return Math.abs(hash).toString(36);
   }, []);
-  
+
   // Create a packet key using data.id and from address
   // This should match the key generation logic in the reducer
-  const createPacketKey = useCallback((packet: Packet): string => {
-    if (packet.data.id !== undefined && packet.data.from !== undefined) {
-      // Use Meshtastic node ID format (! followed by lowercase hex) and packet ID
-      const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
-      return `${nodeId}_${packet.data.id}`;
-    } else {
-      // Fallback to hash-based key if no ID or from (should be rare)
-      return `hash_${hashString(JSON.stringify(packet))}`;
-    }
-  }, [hashString]);
-  
+  const createPacketKey = useCallback(
+    (packet: Packet): string => {
+      if (packet.data.id !== undefined && packet.data.from !== undefined) {
+        // Use Meshtastic node ID format (! followed by lowercase hex) and packet ID
+        const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
+        return `${nodeId}_${packet.data.id}`;
+      } else {
+        // Fallback to hash-based key if no ID or from (should be rare)
+        return `hash_${hashString(JSON.stringify(packet))}`;
+      }
+    },
+    [hashString]
+  );
+
   // We don't need to track packet keys in state anymore since we use data.id
   // and it's deterministic - removing this effect to prevent the infinite loop issue
 
@@ -97,14 +100,10 @@ export const PacketList: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-normal text-neutral-200">
-          Packets{" "}
-          <span className="text-sm text-neutral-400">
-            ({packets.length} total)
-          </span>
-        </h2>
-
+      <div className="flex justify-between items-end mb-2">
+        <div className="text-sm text-neutral-400 px-2">
+          {packets.length} packets received, since 6:00am
+        </div>
         <div className="flex items-center space-x-3">
           {/* Show buffered count when paused */}
           {streamPaused && bufferedPackets.length > 0 && (
@@ -123,13 +122,14 @@ export const PacketList: React.FC = () => {
           {/* Clear button */}
           <button
             onClick={handleClearPackets}
-            className="flex items-center px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 rounded transition-colors text-neutral-200"
+            className="flex items-center space-x-2 px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md text-neutral-400 hover:bg-neutral-700/50"
           >
             <Trash2 className="h-4 w-4 mr-1.5" />
-            Clear
+            <span className="text-sm font-medium">Clear</span>
           </button>
         </div>
       </div>
+      <Separator className="mx-0" />
 
       <ul className="space-y-3">
         {currentPackets.map((packet, index) => (
@@ -156,7 +156,9 @@ export const PacketList: React.FC = () => {
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-6 text-sm">
           <button
-            onClick={() => setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)}
+            onClick={() =>
+              setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+            }
             disabled={currentPage === 1}
             className={`px-3 py-1.5 rounded ${
               currentPage === 1

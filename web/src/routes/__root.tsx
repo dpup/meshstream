@@ -28,12 +28,12 @@ export default function Root() {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-neutral-800">
+    <div className="flex min-h-screen bg-neutral-900">
       {/* Sidebar Navigation */}
       <Nav connectionStatus={connectionStatus} />
-      
+
       {/* Main Content Area */}
-      <main className="ml-64 flex-1 p-6">
+      <main className="ml-64 flex-1 py-6">
         <Outlet />
       </main>
     </div>

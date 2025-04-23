@@ -3,7 +3,7 @@ import { SITE_TITLE } from "../lib/config";
 
 export function IndexPage() {
   return (
-    <PageWrapper title={`Welcome to ${SITE_TITLE}`}>
+    <PageWrapper>
       <div>
         <p className="mb-4 text-neutral-200">
           This application provides a real-time view of Meshtastic network

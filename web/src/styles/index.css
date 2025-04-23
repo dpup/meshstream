@@ -38,4 +38,12 @@
     @apply rounded-md;
     @apply shadow-md;
   }
+  .effect-outset {
+    @apply shadow-inner;
+    @apply [box-shadow:inset_0_1px_0_0_rgba(255,255,255,0.15),inset_0_-1px_0_0_rgba(0,0,0,0.3)];
+  }
+  .effect-inset {
+    @apply shadow-inner;
+    @apply [box-shadow:inset_0_1px_2px_0_rgba(0,0,0,0.3),inset_0_-1px_1px_0_rgba(255,255,255,0.15)];
+  }
 }

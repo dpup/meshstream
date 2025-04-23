@@ -1,3 +1,4 @@
+import { cn } from "@/lib/cn";
 import React from "react";
 
 interface SeparatorProps {
@@ -7,7 +8,10 @@ interface SeparatorProps {
 export const Separator: React.FC<SeparatorProps> = ({ className = "" }) => {
   return (
     <div
-      className={`mx-4 h-px border-t-1 border-t-neutral-900 border-b-1 border-b-neutral-700/80 my-3 ${className}`}
+      className={cn(
+        "mx-4 h-px border-t-1 border-t-neutral-950/80 border-b-1 border-b-[rgba(255,255,255,0.15)] my-3",
+        className
+      )}
     ></div>
   );
 };
