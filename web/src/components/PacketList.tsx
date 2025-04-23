@@ -131,7 +131,7 @@ export const PacketList: React.FC = () => {
       </div>
       <Separator className="mx-0" />
 
-      <ul className="space-y-3">
+      <ul className="space-y-12">
         {currentPackets.map((packet, index) => (
           <li key={getPacketKey(packet, index)}>
             <PacketRenderer packet={packet} />

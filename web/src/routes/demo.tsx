@@ -14,7 +14,8 @@ import { GenericPacket } from "../components/packets/GenericPacket";
 import textMessageData from "../../fixtures/text_message.json";
 import positionData from "../../fixtures/position.json";
 import nodeInfoData from "../../fixtures/nodeinfo.json";
-import telemetryData from "../../fixtures/telemetry.json";
+import telemetryData1 from "../../fixtures/telemetry1.json";
+import telemetryData2 from "../../fixtures/telemetry2.json";
 import decodeErrorData from "../../fixtures/decode_error.json";
 import waypointData from "../../fixtures/waypoint.json";
 import mapReportData from "../../fixtures/map_report.json";
@@ -60,18 +61,25 @@ export function DemoPage() {
 
         <section>
           <h3 className="text-md font-medium mb-4 text-neutral-300">
-            Telemetry Packet
+            Telemetry Packet (Device Metrics)
           </h3>
-          <TelemetryPacket packet={telemetryData} />
+          <TelemetryPacket packet={telemetryData1} />
         </section>
-        
+
+        <section>
+          <h3 className="text-md font-medium mb-4 text-neutral-300">
+            Telemetry Packet (Environmental Data)
+          </h3>
+          <TelemetryPacket packet={telemetryData2} />
+        </section>
+
         <section>
           <h3 className="text-md font-medium mb-4 text-neutral-300">
             Waypoint Packet
           </h3>
           <WaypointPacket packet={waypointData} />
         </section>
-        
+
         <section>
           <h3 className="text-md font-medium mb-4 text-neutral-300">
             Map Report Packet

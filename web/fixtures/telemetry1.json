@@ -1,0 +1,38 @@
+{
+  "info": {
+    "fullTopic": "msh/US/bayarea/2/e/LongFast/!defg4567",
+    "regionPath": "US/bayarea",
+    "version": "2",
+    "format": "e",
+    "channel": "LongFast",
+    "userId": "!defg4567"
+  },
+  "data": {
+    "channelId": "LongFast",
+    "gatewayId": "!defg4567",
+    "id": 4567890123,
+    "from": 3149439480,
+    "to": 4294967295,
+    "hopLimit": 3,
+    "hopStart": 3,
+    "wantAck": false,
+    "priority": "UNSET",
+    "viaMqtt": true,
+    "nextHop": 0,
+    "relayNode": 0,
+    "portNum": "TELEMETRY_APP",
+    "telemetry": {
+      "time": 1745300043,
+      "deviceMetrics": {
+        "batteryLevel": 88,
+        "voltage": 4.19,
+        "channelUtilization": 13.37,
+        "airUtilTx": 2.58,
+        "uptimeSeconds": 189327
+      }
+    },
+    "requestId": 0,
+    "replyId": 0,
+    "wantResponse": false
+  }
+}

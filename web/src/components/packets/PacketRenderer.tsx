@@ -4,6 +4,8 @@ import { TextMessagePacket } from "./TextMessagePacket";
 import { PositionPacket } from "./PositionPacket";
 import { NodeInfoPacket } from "./NodeInfoPacket";
 import { TelemetryPacket } from "./TelemetryPacket";
+import { DeviceMetricsPacket } from "./DeviceMetricsPacket";
+import { EnvironmentMetricsPacket } from "./EnvironmentMetricsPacket";
 import { ErrorPacket } from "./ErrorPacket";
 import { WaypointPacket } from "./WaypointPacket";
 import { MapReportPacket } from "./MapReportPacket";
