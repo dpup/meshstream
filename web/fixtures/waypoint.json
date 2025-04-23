@@ -15,7 +15,11 @@
     "to": 4294967295,
     "hopLimit": 3,
     "hopStart": 3,
+    "wantAck": true,
     "priority": "RELIABLE",
+    "viaMqtt": true,
+    "nextHop": 0,
+    "relayNode": 0,
     "portNum": "WAYPOINT_APP",
     "waypoint": {
       "id": 12345,

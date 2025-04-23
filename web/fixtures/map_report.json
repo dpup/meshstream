@@ -15,7 +15,11 @@
     "to": 4294967295,
     "hopLimit": 3,
     "hopStart": 3,
+    "wantAck": false,
     "priority": "DEFAULT",
+    "viaMqtt": true,
+    "nextHop": 0,
+    "relayNode": 0,
     "portNum": "MAP_REPORT_APP",
     "mapReport": {
       "nodes": [

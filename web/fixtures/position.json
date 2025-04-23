@@ -15,7 +15,11 @@
     "to": 4294967295,
     "hopLimit": 3,
     "hopStart": 3,
+    "wantAck": false,
     "priority": "BACKGROUND",
+    "viaMqtt": true,
+    "nextHop": 0,
+    "relayNode": 0,
     "portNum": "POSITION_APP",
     "position": {
       "latitudeI": 373066340,

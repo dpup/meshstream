@@ -100,7 +100,7 @@ export const PacketList: React.FC = () => {
 
   return (
     <div>
-      <div className="flex justify-between items-end mb-2">
+      <div className="flex justify-between items-center mb-2">
         <div className="text-sm text-neutral-400 px-2">
           {packets.length} packets received, since 6:00am
         </div>

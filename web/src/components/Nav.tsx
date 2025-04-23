@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { Separator } from "./Separator";
 import { SITE_TITLE } from "../lib/config";
-import { Info, Layers, LayoutDashboard, Radio } from "lucide-react";
+import { Info, Layers, LayoutDashboard, Radio, Palette } from "lucide-react";
 
 interface NavProps {
   connectionStatus: string;
@@ -54,6 +54,22 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
             >
               <Radio className="h-4 w-4 mr-3" />
               Stream
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/demo"
+              className="flex items-center px-4 py-2.5 transition-colors "
+              inactiveProps={{
+                className: "text-neutral-400 hover:text-neutral-200 font-thin",
+              }}
+              activeProps={{
+                exact: true,
+                className: "text-neutral-200 font-normal",
+              }}
+            >
+              <Palette className="h-4 w-4 mr-3" />
+              Component Demo
             </Link>
           </li>
           <li>

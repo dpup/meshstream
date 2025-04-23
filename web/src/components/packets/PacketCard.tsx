@@ -19,7 +19,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
   const { data } = packet;
 
   return (
-    <div className="p-4 effect-inset bg-neutral-500/5 rounded-lg border border-neutral-950/60">
+    <div className="max-w-4xl p-4 effect-inset bg-neutral-500/5 rounded-lg border border-neutral-950/60">
       <div className="flex justify-between items-start mb-3">
         <div className="flex items-center">
           <div className={`rounded-md ${iconBgColor} p-1.5 mr-3`}>{icon}</div>
