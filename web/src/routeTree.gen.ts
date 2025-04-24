@@ -16,6 +16,7 @@ import { Route as PacketsImport } from './routes/packets'
 import { Route as HomeImport } from './routes/home'
 import { Route as DemoImport } from './routes/demo'
 import { Route as IndexImport } from './routes/index'
+import { Route as NodeNodeIdImport } from './routes/node.$nodeId'
 
 // Create/Update Routes
 
@@ -46,6 +47,12 @@ const DemoRoute = DemoImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const NodeNodeIdRoute = NodeNodeIdImport.update({
+  id: '/node/$nodeId',
+  path: '/node/$nodeId',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -88,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RootImport
       parentRoute: typeof rootRoute
     }
+    '/node/$nodeId': {
+      id: '/node/$nodeId'
+      path: '/node/$nodeId'
+      fullPath: '/node/$nodeId'
+      preLoaderRoute: typeof NodeNodeIdImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -99,6 +113,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRoutesByTo {
@@ -107,6 +122,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRoutesById {
@@ -116,14 +132,22 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/demo' | '/home' | '/packets' | '/root'
+  fullPaths: '/' | '/demo' | '/home' | '/packets' | '/root' | '/node/$nodeId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/demo' | '/home' | '/packets' | '/root'
-  id: '__root__' | '/' | '/demo' | '/home' | '/packets' | '/root'
+  to: '/' | '/demo' | '/home' | '/packets' | '/root' | '/node/$nodeId'
+  id:
+    | '__root__'
+    | '/'
+    | '/demo'
+    | '/home'
+    | '/packets'
+    | '/root'
+    | '/node/$nodeId'
   fileRoutesById: FileRoutesById
 }
 
@@ -133,6 +157,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   PacketsRoute: typeof PacketsRoute
   RootRoute: typeof RootRoute
+  NodeNodeIdRoute: typeof NodeNodeIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -141,6 +166,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   PacketsRoute: PacketsRoute,
   RootRoute: RootRoute,
+  NodeNodeIdRoute: NodeNodeIdRoute,
 }
 
 export const routeTree = rootRoute
@@ -157,11 +183,12 @@ export const routeTree = rootRoute
         "/demo",
         "/home",
         "/packets",
-        "/root"
+        "/root",
+        "/node/$nodeId"
       ]
     },
     "/": {
-      "filePath": "index.ts"
+      "filePath": "index.tsx"
     },
     "/demo": {
       "filePath": "demo.tsx"
@@ -174,6 +201,9 @@ export const routeTree = rootRoute
     },
     "/root": {
       "filePath": "root.tsx"
+    },
+    "/node/$nodeId": {
+      "filePath": "node.$nodeId.tsx"
     }
   }
 }

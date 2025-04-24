@@ -1,6 +1,11 @@
 import { Link, Outlet } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
-export function Root() {
+export const Route = createFileRoute('/root')({
+  component: RootComponent,
+});
+
+function RootComponent() {
   return (
     <div className="min-h-screen bg-neutral-100">
       <header className="bg-blue-600 text-white shadow-md">
@@ -9,7 +14,7 @@ export function Root() {
             <h1 className="text-2xl font-bold">Meshstream</h1>
             <nav className="space-x-4">
               <Link
-                to="/"
+                to="/home"
                 className="hover:underline"
                 activeProps={{
                   className: "font-bold underline",

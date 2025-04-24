@@ -87,10 +87,7 @@ func (s *Server) Stop() error {
 
 // handleStatus is a placeholder API endpoint that returns server status
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	// Ensure logger is in context
-	ctx = logging.EnsureLogger(ctx)
-	logger := logging.FromContext(ctx).Named("api.status")
+	logger := s.logger.Named("api.status")
 
 	status := map[string]interface{}{
 		"status":  "ok",
@@ -105,11 +102,8 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleStream handles Server-Sent Events streaming of MQTT messages
 func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
+	logger := s.logger.Named("api.sse")
 	ctx := r.Context()
-	// Ensure we have a logger in the context
-	ctx = logging.EnsureLogger(ctx)
-	// Create request-scoped logger
-	logger := logging.FromContext(ctx).Named("sse")
 
 	// Check if the server is shutting down
 	if s.isShuttingDown.Load() {
@@ -153,6 +147,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			// Client disconnected, unsubscribe and return
 			logger.Info("Client disconnected, unsubscribing from broker")
 			s.config.Broker.Unsubscribe(packetChan)
+			http.Error(w, "Client disconnected", http.StatusGone)
 			return
 
 		case <-s.shutdown:
@@ -161,12 +156,14 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "event: info\ndata: Server shutting down, connection closed\n\n")
 			flusher.Flush()
 			s.config.Broker.Unsubscribe(packetChan)
+			http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 			return
 
 		case packet, ok := <-packetChan:
 			if !ok {
 				// Channel closed, probably shutting down
 				logger.Info("Packet channel closed, ending stream")
+				http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 				return
 			}
 

@@ -1,42 +1,27 @@
-import { InfoMessage, Separator, PageWrapper } from "../components";
+import { PageWrapper, NodeList, GatewayList } from "../components";
+import { createFileRoute } from "@tanstack/react-router";
 
-export function IndexPage() {
+export const Route = createFileRoute('/home')({
+  component: HomePage,
+});
+
+function HomePage() {
   return (
     <PageWrapper>
-      <div>
-        <p className="mb-4 text-neutral-200">
-          This application provides a real-time view of Meshtastic network
-          traffic.
+      <div className="mb-4">
+        <h1 className="text-xl font-bold mb-2 text-neutral-200">Network Dashboard</h1>
+        <p className="text-sm text-neutral-400">
+          Real-time view of your Meshtastic mesh network traffic
         </p>
-
-        <InfoMessage
-          message="Click on the Packets link in the navigation to view incoming messages from the Meshtastic network."
-          type="info"
-        />
       </div>
 
-      <Separator className="my-6" />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-neutral-800 border border-neutral-700 p-5 rounded shadow-inner">
-          <h3 className="text-lg font-semibold mb-3 text-neutral-200">
-            About Meshtastic
-          </h3>
-          <p className="text-neutral-300">
-            Meshtastic is an open source, off-grid, decentralized mesh
-            communication platform. It allows devices to communicate without
-            cellular service or internet.
-          </p>
+      <div className="grid grid-cols-1 gap-4">
+        <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800">
+          <GatewayList />
         </div>
-
-        <div className="bg-neutral-800 border border-neutral-700 p-5 rounded shadow-inner">
-          <h3 className="text-lg font-semibold mb-3 text-neutral-200">
-            Data Privacy
-          </h3>
-          <p className="text-neutral-300">
-            All data is processed locally. Position data on public servers has
-            reduced precision for privacy protection.
-          </p>
+        
+        <div className="bg-neutral-900/50 p-3 rounded-lg border border-neutral-800">
+          <NodeList />
         </div>
       </div>
     </PageWrapper>

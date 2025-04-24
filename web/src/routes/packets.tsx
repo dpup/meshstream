@@ -3,23 +3,26 @@ import { useAppDispatch } from "../hooks";
 import { PacketList, PageWrapper } from "../components";
 import { addPacket } from "../store/slices/packetSlice";
 import { streamPackets, StreamEvent } from "../lib/api";
+import { createFileRoute } from "@tanstack/react-router";
 
-export function PacketsRoute() {
+export const Route = createFileRoute('/packets')({
+  component: PacketsPage,
+});
+
+function PacketsPage() {
   const dispatch = useAppDispatch();
 
   useEffect(() => {
-    // Set up Server-Sent Events connection using our API utility
+    // Subscribe to packet events for this route specifically
     const cleanup = streamPackets(
-      // Event handler for all event types
       (event: StreamEvent) => {
         if (event.type === "message") {
-          // Handle message events (actual packet data)
+          // Only handle for packet display in this route
           dispatch(addPacket(event.data));
         }
       }
     );
 
-    // Clean up connection when component unmounts
     return cleanup;
   }, [dispatch]);
 
