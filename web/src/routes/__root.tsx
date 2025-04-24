@@ -4,6 +4,7 @@ import { useAppDispatch } from "../hooks";
 import { Nav } from "../components";
 import { streamPackets, StreamEvent } from "../lib/api";
 import { processNewPacket } from "../store/slices/aggregatorSlice";
+import { addPacket } from "../store/slices/packetSlice";
 import { createRootRoute } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
@@ -52,8 +53,9 @@ function RootLayout() {
               setIsReconnecting(false);
             }
           } else if (event.type === "message") {
-            // Process message for the aggregator
+            // Process message for both the aggregator and packet display
             dispatch(processNewPacket(event.data));
+            dispatch(addPacket(event.data));
           } else if (event.type === "bad_data") {
             console.warn("[SSE] Received bad data:", event.data);
           }

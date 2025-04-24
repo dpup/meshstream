@@ -26,5 +26,4 @@ export const API_BASE_URL = getApiBaseUrl();
 // API endpoints
 export const API_ENDPOINTS = {
   STREAM: `${API_BASE_URL}/api/stream`,
-  RECENT_PACKETS: `${API_BASE_URL}/api/packets/recent`,
 };

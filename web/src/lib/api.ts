@@ -16,22 +16,6 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
-/**
- * Fetch a list of the most recent packets from the server
- */
-export async function fetchRecentPackets(): Promise<ApiResponse<Packet[]>> {
-  try {
-    const response = await fetch(API_ENDPOINTS.RECENT_PACKETS);
-    if (!response.ok) {
-      throw new Error(`Error: ${response.status} ${response.statusText}`);
-    }
-    const data = await response.json();
-    return { data };
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : String(error) };
-  }
-}
-
 // Re-export types
 export type { 
   InfoEvent, 
