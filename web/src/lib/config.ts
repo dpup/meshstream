@@ -5,20 +5,23 @@
 // Environment type
 export const IS_DEV = import.meta.env.DEV;
 export const IS_PROD = import.meta.env.PROD;
-export const APP_ENV = import.meta.env.VITE_APP_ENV || 'development';
+export const APP_ENV = import.meta.env.VITE_APP_ENV || "development";
 
 // Site configuration
-export const SITE_TITLE = import.meta.env.VITE_SITE_TITLE || 'ERSN Mesh';
+export const SITE_TITLE = import.meta.env.VITE_SITE_TITLE || "My Mesh";
+export const SITE_DESCRIPTION =
+  import.meta.env.VITE_SITE_DESCRIPTION ||
+  "Realtime Meshtastic activity via MQTT.";
 
 // API URL configuration
 const getApiBaseUrl = (): string => {
   // In production, use the same domain (empty string base URL)
   if (IS_PROD) {
-    return import.meta.env.VITE_API_BASE_URL || '';
+    return import.meta.env.VITE_API_BASE_URL || "";
   }
-  
+
   // In development, use the configured base URL with fallback
-  return import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+  return import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
 };
 
 export const API_BASE_URL = getApiBaseUrl();

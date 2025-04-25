@@ -13,7 +13,7 @@ interface NodeDetailProps {
   nodeId: number;
 }
 
-// Google Maps API is already loaded - this creates a map component
+// Google Maps component that uses the API loaded via script tag
 const GoogleMap: React.FC<{lat: number, lng: number, zoom?: number}> = ({lat, lng, zoom = 14}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -104,7 +104,6 @@ const GoogleMap: React.FC<{lat: number, lng: number, zoom?: number}> = ({lat, ln
           radius: 300 // 300m accuracy as default
         });
       }
-
     }
   }, [lat, lng, zoom]);
 

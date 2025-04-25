@@ -155,9 +155,6 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "event: padding\ndata: %s\n\n", padding)
 	flusher.Flush()
 
-	// Log that we sent the large initial message
-	logger.Debug("Sent large initial message to force buffer flush")
-
 	// Stream messages to the client
 	for {
 		select {
@@ -203,8 +200,6 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Error marshaling packet", http.StatusInternalServerError)
 				return
 			}
-
-			logger.Info("Sending packet to client", "packetID", packet.Data.Id)
 
 			// Send the event
 			fmt.Fprintf(w, "event: message\ndata: %s\n\n", data)
