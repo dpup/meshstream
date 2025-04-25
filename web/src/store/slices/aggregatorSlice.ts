@@ -52,6 +52,7 @@ export interface ChannelData {
   gateways: string[]; // Changed from Set to array for Redux serialization
   nodes: number[]; // Changed from Set to array for Redux serialization
   messageCount: number;
+  textMessageCount: number; // Count specifically for text messages
   lastMessage?: number;
 }
 
@@ -152,12 +153,18 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
         gateways: [],
         nodes: [],
         messageCount: 0,
+        textMessageCount: 0,
       };
     }
 
     const channel = state.channels[channelId];
     channel.messageCount++;
-
+    
+    // Track text messages separately
+    if (data.textMessage) {
+      channel.textMessageCount++;
+    }
+    
     channel.lastMessage = timestamp;
 
     if (gatewayId && !channel.gateways.includes(gatewayId)) {
@@ -212,7 +219,12 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
     }
   }
 
-  // Process text messages.
+  // Process text messages - only for new packets to avoid duplicates
+  // Debug text message processing
+  if (data.textMessage) {
+    console.log(`[Aggregator] Processing text message: "${data.textMessage}" on channel ${channelId}, isNewPacket: ${isNewPacket}`);
+  }
+  
   if (data.textMessage && nodeId !== undefined && channelId) {
     const channelKey = getChannelKey(channelId);
 
@@ -224,15 +236,24 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
     const nodeName =
       state.nodes[nodeId]?.shortName || state.nodes[nodeId]?.longName;
 
-    state.messages[channelKey].push({
-      id: data.id || Math.random(),
+    // Ensure we have a stable ID for the message
+    const messageId = data.id !== undefined ? data.id : Math.floor(Math.random() * 1000000);
+    
+    const newMessage = {
+      id: messageId,
       from: nodeId,
       fromName: nodeName,
       text: data.textMessage,
       timestamp,
       channelId,
       gatewayId: gatewayId || "",
-    });
+    };
+    
+    state.messages[channelKey].push(newMessage);
+    
+    console.log(`[Aggregator] Added message to channel ${channelId}:`, newMessage);
+    console.log(`[Aggregator] Channel ${channelId} now has ${state.messages[channelKey].length} messages`);
+    
 
     // Sort messages by timestamp (newest first)
     state.messages[channelKey].sort((a, b) => b.timestamp - a.timestamp);

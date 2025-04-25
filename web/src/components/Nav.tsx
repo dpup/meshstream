@@ -3,11 +3,54 @@ import { Link } from "@tanstack/react-router";
 import { ConnectionStatus } from "./ConnectionStatus";
 import { Separator } from "./Separator";
 import { SITE_TITLE } from "../lib/config";
-import { Info, Layers, LayoutDashboard, Radio, Palette } from "lucide-react";
+import {
+  Info,
+  Layers,
+  LayoutDashboard,
+  Radio,
+  MessageSquare,
+  LucideIcon,
+} from "lucide-react";
 
+// Define navigation item structure
+interface NavItem {
+  to: string;
+  label: string;
+  icon: LucideIcon;
+  exact?: boolean;
+}
+
+// Define props for the component
 interface NavProps {
   connectionStatus: string;
 }
+
+// Navigation items data
+const navigationItems: NavItem[] = [
+  {
+    to: "/",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    exact: true,
+  },
+  {
+    to: "/packets",
+    label: "Stream",
+    icon: Radio,
+    exact: true,
+  },
+  {
+    to: "/channels",
+    label: "Messages",
+    icon: MessageSquare,
+  },
+  {
+    to: "/info",
+    label: "Information",
+    icon: Info,
+    exact: true,
+  },
+];
 
 export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
   return (
@@ -24,70 +67,25 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
 
       <nav className="flex-1">
         <ul className="space-y-1">
-          <li>
-            <Link
-              to="/"
-              className="flex items-center px-4 py-2.5 transition-colors"
-              inactiveProps={{
-                className: "text-neutral-400 hover:text-neutral-200 font-thin",
-              }}
-              activeProps={{
-                exact: true,
-                className: "text-neutral-200 font-normal",
-              }}
-            >
-              <LayoutDashboard className="h-4 w-4 mr-3" />
-              Dashboard
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/packets"
-              className="flex items-center px-4 py-2.5 transition-colors "
-              inactiveProps={{
-                className: "text-neutral-400 hover:text-neutral-200 font-thin",
-              }}
-              activeProps={{
-                exact: true,
-                className: "text-neutral-200 font-normal",
-              }}
-            >
-              <Radio className="h-4 w-4 mr-3" />
-              Stream
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/demo"
-              className="flex items-center px-4 py-2.5 transition-colors "
-              inactiveProps={{
-                className: "text-neutral-400 hover:text-neutral-200 font-thin",
-              }}
-              activeProps={{
-                exact: true,
-                className: "text-neutral-200 font-normal",
-              }}
-            >
-              <Palette className="h-4 w-4 mr-3" />
-              Component Demo
-            </Link>
-          </li>
-          <li>
-            <Link
-              to="/info"
-              className="flex items-center px-4 py-2.5 transition-colors "
-              inactiveProps={{
-                className: "text-neutral-400 hover:text-neutral-200 font-thin",
-              }}
-              activeProps={{
-                exact: true,
-                className: "text-neutral-200 font-normal",
-              }}
-            >
-              <Info className="h-4 w-4 mr-3" />
-              Information
-            </Link>
-          </li>
+          {navigationItems.map((item) => (
+            <li key={item.to}>
+              <Link
+                to={item.to}
+                className="flex items-center px-4 py-2.5 transition-colors"
+                inactiveProps={{
+                  className:
+                    "text-neutral-400 hover:text-neutral-200 font-thin",
+                }}
+                activeProps={{
+                  exact: item.exact,
+                  className: "text-neutral-200 font-normal",
+                }}
+              >
+                <item.icon className="h-4 w-4 mr-3" />
+                {item.label}
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
 

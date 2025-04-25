@@ -10,3 +10,4 @@ export * from './StreamControl';
 export * from './PageWrapper';
 export * from './Counter';
 export * from './dashboard';
+export * from './messages';

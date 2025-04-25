@@ -15,8 +15,10 @@ import { Route as RootImport } from './routes/root'
 import { Route as PacketsImport } from './routes/packets'
 import { Route as HomeImport } from './routes/home'
 import { Route as DemoImport } from './routes/demo'
+import { Route as ChannelsImport } from './routes/channels'
 import { Route as IndexImport } from './routes/index'
 import { Route as NodeNodeIdImport } from './routes/node.$nodeId'
+import { Route as ChannelChannelIdImport } from './routes/channel.$channelId'
 
 // Create/Update Routes
 
@@ -44,6 +46,12 @@ const DemoRoute = DemoImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ChannelsRoute = ChannelsImport.update({
+  id: '/channels',
+  path: '/channels',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
@@ -56,6 +64,12 @@ const NodeNodeIdRoute = NodeNodeIdImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const ChannelChannelIdRoute = ChannelChannelIdImport.update({
+  id: '/channel/$channelId',
+  path: '/channel/$channelId',
+  getParentRoute: () => rootRoute,
+} as any)
+
 // Populate the FileRoutesByPath interface
 
 declare module '@tanstack/react-router' {
@@ -65,6 +79,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexImport
+      parentRoute: typeof rootRoute
+    }
+    '/channels': {
+      id: '/channels'
+      path: '/channels'
+      fullPath: '/channels'
+      preLoaderRoute: typeof ChannelsImport
       parentRoute: typeof rootRoute
     }
     '/demo': {
@@ -95,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RootImport
       parentRoute: typeof rootRoute
     }
+    '/channel/$channelId': {
+      id: '/channel/$channelId'
+      path: '/channel/$channelId'
+      fullPath: '/channel/$channelId'
+      preLoaderRoute: typeof ChannelChannelIdImport
+      parentRoute: typeof rootRoute
+    }
     '/node/$nodeId': {
       id: '/node/$nodeId'
       path: '/node/$nodeId'
@@ -109,63 +137,91 @@ declare module '@tanstack/react-router' {
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
+  '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/demo' | '/home' | '/packets' | '/root' | '/node/$nodeId'
-  fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/demo' | '/home' | '/packets' | '/root' | '/node/$nodeId'
-  id:
-    | '__root__'
+  fullPaths:
     | '/'
+    | '/channels'
     | '/demo'
     | '/home'
     | '/packets'
     | '/root'
+    | '/channel/$channelId'
+    | '/node/$nodeId'
+  fileRoutesByTo: FileRoutesByTo
+  to:
+    | '/'
+    | '/channels'
+    | '/demo'
+    | '/home'
+    | '/packets'
+    | '/root'
+    | '/channel/$channelId'
+    | '/node/$nodeId'
+  id:
+    | '__root__'
+    | '/'
+    | '/channels'
+    | '/demo'
+    | '/home'
+    | '/packets'
+    | '/root'
+    | '/channel/$channelId'
     | '/node/$nodeId'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ChannelsRoute: typeof ChannelsRoute
   DemoRoute: typeof DemoRoute
   HomeRoute: typeof HomeRoute
   PacketsRoute: typeof PacketsRoute
   RootRoute: typeof RootRoute
+  ChannelChannelIdRoute: typeof ChannelChannelIdRoute
   NodeNodeIdRoute: typeof NodeNodeIdRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ChannelsRoute: ChannelsRoute,
   DemoRoute: DemoRoute,
   HomeRoute: HomeRoute,
   PacketsRoute: PacketsRoute,
   RootRoute: RootRoute,
+  ChannelChannelIdRoute: ChannelChannelIdRoute,
   NodeNodeIdRoute: NodeNodeIdRoute,
 }
 
@@ -180,15 +236,20 @@ export const routeTree = rootRoute
       "filePath": "__root.tsx",
       "children": [
         "/",
+        "/channels",
         "/demo",
         "/home",
         "/packets",
         "/root",
+        "/channel/$channelId",
         "/node/$nodeId"
       ]
     },
     "/": {
       "filePath": "index.tsx"
+    },
+    "/channels": {
+      "filePath": "channels.tsx"
     },
     "/demo": {
       "filePath": "demo.tsx"
@@ -201,6 +262,9 @@ export const routeTree = rootRoute
     },
     "/root": {
       "filePath": "root.tsx"
+    },
+    "/channel/$channelId": {
+      "filePath": "channel.$channelId.tsx"
     },
     "/node/$nodeId": {
       "filePath": "node.$nodeId.tsx"
