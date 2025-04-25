@@ -17,10 +17,10 @@ export interface ApiResponse<T> {
 }
 
 // Re-export types
-export type { 
-  InfoEvent, 
-  MessageEvent, 
-  BadDataEvent, 
+export type {
+  InfoEvent,
+  MessageEvent,
+  BadDataEvent,
   StreamEvent,
   StreamEventHandler,
 };
@@ -34,9 +34,10 @@ export function streamPackets(
 ): () => void {
   const evtSource = new EventSource(API_ENDPOINTS.STREAM);
 
+  console.log("[SSE] Connecting to stream...", evtSource);
+
   // Handle info events specifically
   evtSource.addEventListener("info", (event) => {
-    // Info events are just strings
     onEvent({
       type: "info",
       data: event.data,

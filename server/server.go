@@ -18,6 +18,7 @@ import (
 type Config struct {
 	Host   string
 	Port   string
+	Logger logging.Logger
 	Broker *mqtt.Broker // The MQTT message broker
 }
 
@@ -34,8 +35,8 @@ type Server struct {
 }
 
 // New creates a new server instance
-func New(config Config, logger logging.Logger) *Server {
-	serverLogger := logger.Named("server")
+func New(config Config) *Server {
+	serverLogger := config.Logger.Named("server")
 
 	if config.Broker == nil {
 		serverLogger.Info("Warning: Server created without a broker, streaming will not work")
@@ -102,8 +103,10 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 // handleStream handles Server-Sent Events streaming of MQTT messages
 func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
-	logger := s.logger.Named("api.sse")
+	logger := s.logger.Named("api.sse").With("remoteAddr", r.RemoteAddr)
 	ctx := r.Context()
+
+	logger.Infow("SSE stream requested")
 
 	// Check if the server is shutting down
 	if s.isShuttingDown.Load() {
@@ -185,6 +188,8 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 				http.Error(w, "Error marshaling packet", http.StatusInternalServerError)
 				return
 			}
+
+			logger.Info("Sending packet to client", "packetID", packet.Data.Id)
 
 			// Send the event
 			fmt.Fprintf(w, "event: message\ndata: %s\n\n", data)

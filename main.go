@@ -17,8 +17,7 @@ const (
 	mqttBroker      = "mqtt.bayme.sh"
 	mqttUsername    = "meshdev"
 	mqttPassword    = "large4cats"
-	mqttTopicPrefix = "msh/US/bayarea"
-	logsDir         = "./logs"
+	mqttTopicPrefix = "msh/US/CA"
 
 	// Web server configuration
 	serverHost = "localhost"
@@ -81,7 +80,8 @@ func main() {
 		Host:   serverHost,
 		Port:   serverPort,
 		Broker: broker,
-	}, logger)
+		Logger: logger,
+	})
 
 	// Start the server in a goroutine
 	go func() {
