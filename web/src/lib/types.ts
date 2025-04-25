@@ -186,10 +186,90 @@ export interface NeighborInfo {
   neighbors?: Neighbor[]; // The list of out edges from this node
 }
 
+// HardwareModel enum based on mesh.proto
+export enum HardwareModel {
+  UNSET = 0,
+  TLORA_V2 = 1,
+  TLORA_V1 = 2,
+  TLORA_V2_1_1P6 = 3,
+  TBEAM = 4,
+  HELTEC_V2_0 = 5,
+  TBEAM_V0P7 = 6,
+  T_ECHO = 7,
+  TLORA_V1_1P3 = 8,
+  RAK4631 = 9,
+  HELTEC_V2_1 = 10,
+  HELTEC_V1 = 11,
+  LILYGO_TBEAM_S3_CORE = 12,
+  RAK11200 = 13,
+  NANO_G1 = 14,
+  TLORA_V2_1_1P8 = 15,
+  TLORA_T3_S3 = 16,
+  NANO_G1_EXPLORER = 17,
+  NANO_G2_ULTRA = 18
+}
+
+// Roles from config.proto
+export enum DeviceRole {
+  CLIENT = 0,
+  ROUTER = 1,
+  ROUTER_CLIENT = 2,
+  TRACKER = 3,
+  TAK_TRACKER = 4,
+  SENSOR = 5,
+  REPEATER = 6
+}
+
+// Region codes as string literals for the wire format
+export enum RegionCode {
+  UNSET = "UNSET",
+  US = "US",
+  EU_433 = "EU_433",
+  EU_868 = "EU_868",
+  CN = "CN",
+  JP = "JP",
+  ANZ = "ANZ",
+  KR = "KR",
+  TW = "TW",
+  RU = "RU",
+  IN = "IN",
+  NZ_865 = "NZ_865",
+  TH = "TH",
+  LORA_24 = "LORA_24",
+  UA_433 = "UA_433",
+  UA_868 = "UA_868",
+  MY_433 = "MY_433"
+}
+
+// Modem presets as string literals for the wire format
+export enum ModemPreset {
+  UNSET = "UNSET",
+  LONG_FAST = "LONG_FAST",
+  LONG_SLOW = "LONG_SLOW",
+  VERY_LONG_SLOW = "VERY_LONG_SLOW",
+  MEDIUM_SLOW = "MEDIUM_SLOW",
+  MEDIUM_FAST = "MEDIUM_FAST",
+  SHORT_SLOW = "SHORT_SLOW",
+  SHORT_FAST = "SHORT_FAST",
+  ULTRA_FAST = "ULTRA_FAST"
+}
+
+// MapReport interface based on mqtt.proto definition
 export interface MapReport {
-  // This would need to be defined based on the actual data structure
-  // Currently not defined in the proto files
-  [key: string]: unknown;
+  // Fields from the mqtt.proto MapReport message
+  longName?: string;
+  shortName?: string;
+  role?: DeviceRole;
+  hwModel?: HardwareModel;
+  firmwareVersion?: string;
+  region?: RegionCode;
+  modemPreset?: ModemPreset;
+  hasDefaultChannel?: boolean;
+  latitudeI?: number;
+  longitudeI?: number;
+  altitude?: number;
+  positionPrecision?: number;
+  numOnlineLocalNodes?: number;
 }
 
 export interface HardwareMessage {

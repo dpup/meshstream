@@ -2,7 +2,7 @@ import React from "react";
 import { Packet } from "../../lib/types";
 import { MapPin } from "lucide-react";
 import { PacketCard } from "./PacketCard";
-import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
+import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
 import { Map } from "../Map";
 
 interface WaypointPacketProps {
@@ -52,19 +52,21 @@ export const WaypointPacket: React.FC<WaypointPacketProps> = ({ packet }) => {
           )}
           <KeyValueGrid>
             {latitude !== undefined && (
-              <KeyValuePair label="Latitude" value={latitude.toFixed(6)} />
+              <KeyValuePair label="Latitude" value={latitude.toFixed(6)} vertical monospace />
             )}
             {longitude !== undefined && (
-              <KeyValuePair label="Longitude" value={longitude.toFixed(6)} />
+              <KeyValuePair label="Longitude" value={longitude.toFixed(6)} vertical monospace />
             )}
             {waypoint.id !== undefined && (
-              <KeyValuePair label="Waypoint ID" value={waypoint.id} />
+              <KeyValuePair label="Waypoint ID" value={waypoint.id} vertical monospace />
             )}
-            {expireTime && <KeyValuePair label="Expires" value={expireTime} />}
+            {expireTime && <KeyValuePair label="Expires" value={expireTime} vertical />}
             {waypoint.lockedTo !== undefined && waypoint.lockedTo > 0 && (
               <KeyValuePair
                 label="Locked To"
                 value={`!${waypoint.lockedTo.toString(16)}`}
+                vertical
+                monospace
               />
             )}
           </KeyValueGrid>

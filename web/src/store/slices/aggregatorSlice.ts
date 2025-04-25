@@ -6,6 +6,7 @@ import {
   Position,
   User,
   Telemetry,
+  MapReport,
 } from "../../lib/types";
 
 // Types for aggregated data
@@ -28,6 +29,8 @@ export interface NodeData {
   // Fields for gateway nodes
   isGateway?: boolean;
   observedNodeCount?: number;
+  // MapReport payload for this node
+  mapReport?: MapReport;
 }
 
 export interface TextMessage {
@@ -107,13 +110,14 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
   // Always mark this packet as processed
   state.processedPackets[packetKey] = true;
 
-  // Update gateway data, but only if it's reporting packets from a different nodeId
-  // (a true gateway is relaying data from other nodes, not just its own data)
-  if (
-    gatewayId &&
-    nodeId !== undefined &&
-    gatewayId !== `!${nodeId.toString(16)}`
-  ) {
+  // Update gateway data
+  // Handle both cases:
+  // 1. Gateway relaying data from other nodes (gatewayId != nodeId)
+  // 2. Gateway reporting its own data (gatewayId = nodeId)
+  if (gatewayId && nodeId !== undefined) {
+    const gatewayNodeHex = `!${nodeId.toString(16).toLowerCase()}`;
+    const isSelfReport = gatewayId === gatewayNodeHex;
+    
     if (!state.gateways[gatewayId]) {
       state.gateways[gatewayId] = {
         gatewayId,
@@ -137,9 +141,54 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
       gateway.channelIds.push(channelId);
     }
 
-    // Record node in observed nodes
-    if (!gateway.observedNodes.includes(nodeId)) {
+    // Only record as observed if it's not the gateway itself reporting
+    if (!isSelfReport && !gateway.observedNodes.includes(nodeId)) {
       gateway.observedNodes.push(nodeId);
+    }
+    
+    // If this is a gateway reporting its own data via MAP_REPORT, create a node entry for it
+    if (isSelfReport && data.mapReport) {
+      // Extract gateway's node ID from the gateway ID
+      const gatewayNodeId = parseInt(gatewayId.substring(1), 16);
+      
+      // Make sure we have a node entry for this gateway
+      if (!state.nodes[gatewayNodeId]) {
+        state.nodes[gatewayNodeId] = {
+          nodeId: gatewayNodeId,
+          lastHeard: timestamp,
+          messageCount: 1,
+          textMessageCount: 0,
+          isGateway: true,
+          gatewayId: gatewayId
+        };
+      }
+      
+      // Update the node with map report data
+      const gatewayNode = state.nodes[gatewayNodeId];
+      gatewayNode.mapReport = { ...data.mapReport };
+      gatewayNode.lastHeard = Math.max(gatewayNode.lastHeard, timestamp);
+      
+      // Copy relevant fields from MapReport to the node object
+      if (data.mapReport.longName) {
+        gatewayNode.longName = data.mapReport.longName;
+      }
+      if (data.mapReport.shortName) {
+        gatewayNode.shortName = data.mapReport.shortName;
+      }
+      if (data.mapReport.hwModel !== undefined) {
+        gatewayNode.hwModel = data.mapReport.hwModel.toString();
+      }
+      
+      // Create position info from MapReport
+      if (data.mapReport.latitudeI !== undefined && data.mapReport.longitudeI !== undefined) {
+        gatewayNode.position = {
+          latitudeI: data.mapReport.latitudeI,
+          longitudeI: data.mapReport.longitudeI,
+          altitude: data.mapReport.altitude,
+          time: timestamp,
+          precisionBits: data.mapReport.positionPrecision
+        };
+      }
     }
   }
 
@@ -219,6 +268,35 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
     // Update telemetry if available
     if (data.telemetry) {
       updateTelemetry(node, data.telemetry);
+    }
+    
+    // Update MapReport if available
+    if (data.mapReport) {
+      node.mapReport = { ...data.mapReport };
+      
+      // Also update node fields from MapReport if they're missing
+      if (!node.longName && data.mapReport.longName) {
+        node.longName = data.mapReport.longName;
+      }
+      if (!node.shortName && data.mapReport.shortName) {
+        node.shortName = data.mapReport.shortName;
+      }
+      if (!node.hwModel && data.mapReport.hwModel !== undefined) {
+        node.hwModel = 
+          data.mapReport.hwModel.toString(); // Store as string to match User.hwModel format
+      }
+      
+      // Update position from MapReport if node doesn't have position
+      if (!node.position && data.mapReport.latitudeI !== undefined && data.mapReport.longitudeI !== undefined) {
+        node.position = {
+          latitudeI: data.mapReport.latitudeI,
+          longitudeI: data.mapReport.longitudeI,
+          altitude: data.mapReport.altitude,
+          time: timestamp, // Use packet time
+          // Set precisionBits from positionPrecision if available
+          precisionBits: data.mapReport.positionPrecision
+        };
+      }
     }
   }
 

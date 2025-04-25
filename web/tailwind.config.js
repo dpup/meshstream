@@ -19,6 +19,15 @@ export default {
           'Arial',
           'sans-serif',
         ],
+        mono: [
+          '"JetBrains Mono"',
+          '"Share Tech Mono"',
+          '"Space Mono"',
+          '"Roboto Mono"',
+          '"VT323"',
+          '"Courier New"',
+          'monospace',
+        ],
       }
     },
   },

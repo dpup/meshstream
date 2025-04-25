@@ -2,7 +2,7 @@ import React from "react";
 import { Packet, PortNum } from "../../lib/types";
 import { Package } from "lucide-react";
 import { PacketCard } from "./PacketCard";
-import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
+import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
 
 interface GenericPacketProps {
   packet: Packet;
@@ -53,18 +53,24 @@ export const GenericPacket: React.FC<GenericPacketProps> = ({ packet }) => {
           <KeyValuePair
             label="Port"
             value={portName}
+            vertical={true}
           />
           <KeyValuePair
             label="Payload"
             value={getPayloadDescription()}
+            vertical={true}
           />
           <KeyValuePair
             label="To"
             value={data.to === 4294967295 ? "Broadcast" : data.to.toString()}
+            vertical={true}
+            monospace={true}
           />
           <KeyValuePair
             label="Hop Limit"
             value={data.hopLimit}
+            vertical={true}
+            monospace={true}
           />
         </KeyValueGrid>
         

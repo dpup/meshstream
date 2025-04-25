@@ -2,7 +2,7 @@ import React from "react";
 import { Packet } from "../../lib/types";
 import { MapPin } from "lucide-react";
 import { PacketCard } from "./PacketCard";
-import { KeyValueGrid, KeyValuePair } from "./KeyValuePair";
+import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
 import { Map } from "../Map";
 
 interface PositionPacketProps {
@@ -40,33 +40,44 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
             <KeyValuePair 
               label="Latitude" 
               value={latitude !== undefined ? latitude.toFixed(6) : 'N/A'} 
+              vertical
+              monospace
             />
             <KeyValuePair 
               label="Longitude" 
               value={longitude !== undefined ? longitude.toFixed(6) : 'N/A'} 
+              vertical
+              monospace
             />
             {position.altitude && (
               <KeyValuePair 
                 label="Altitude" 
                 value={`${position.altitude.toFixed(1)}m`} 
+                vertical
+                monospace
               />
             )}
             {position.time && (
               <KeyValuePair 
                 label="Time" 
                 value={formattedTime} 
+                vertical
               />
             )}
             {position.locationSource && (
               <KeyValuePair 
                 label="Source" 
                 value={position.locationSource.replace('LOC_', '')} 
+                vertical
               />
             )}
             {position.satsInView && (
               <KeyValuePair 
                 label="Satellites" 
                 value={position.satsInView} 
+                vertical
+                monospace
+                highlight={position.satsInView > 6}
               />
             )}
           </KeyValueGrid>
