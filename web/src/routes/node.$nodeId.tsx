@@ -9,8 +9,8 @@ function NodePage() {
   // Get the node ID from the route params
   const { nodeId } = Route.useParams();
   
-  // Convert nodeId string to number
-  const nodeIdNum = parseInt(nodeId, 10);
+  // Convert nodeId hex string to number
+  const nodeIdNum = parseInt(nodeId, 16);
 
   return (
     <PageWrapper>

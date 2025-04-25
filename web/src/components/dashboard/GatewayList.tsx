@@ -1,10 +1,12 @@
 import React from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { useAppSelector } from "../../hooks";
 import { RefreshCw } from "lucide-react";
 import { MeshCard } from "./MeshCard";
 
 export const GatewayList: React.FC = () => {
   const { gateways, nodes } = useAppSelector((state) => state.aggregator);
+  const navigate = useNavigate();
 
   // Convert gateways object to array for sorting
   const gatewayArray = Object.values(gateways);
@@ -59,6 +61,10 @@ export const GatewayList: React.FC = () => {
           const isRecent = secondsSinceLastHeard < 300; // 5 minutes for gateways
           const isActive = !isRecent && secondsSinceLastHeard < 900; // 5-15 minutes for gateways
 
+          const handleNodeClick = (clickedNodeId: number) => {
+            navigate({ to: "/node/$nodeId", params: { nodeId: clickedNodeId.toString(16) } });
+          };
+          
           return (
             <MeshCard
               key={gateway.gatewayId}
@@ -72,6 +78,7 @@ export const GatewayList: React.FC = () => {
               }}
               gatewayId={gateway.gatewayId}
               observedNodes={gateway.observedNodes}
+              onClick={handleNodeClick}
               isRecent={isRecent}
               isActive={isActive}
               lastHeard={gateway.lastHeard}

@@ -139,9 +139,24 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	// Signal when the client disconnects
 	notify := ctx.Done()
 
-	// Send an initial message
-	fmt.Fprintf(w, "event: info\ndata: Connected to Meshtastic stream\n\n")
+	// Send an initial message with an additional 1.5k payload. This force buffer
+	// flush so the client knows the connection is open.
+	w.WriteHeader(http.StatusOK)
+
+	initialMessage := "Connected to Meshtastic stream"
+	paddingSize := 1500
+	padding := make([]byte, paddingSize)
+	for i := 0; i < paddingSize; i++ {
+		padding[i] = byte('A' + (i % 26))
+	}
+
+	// Send the event with the padded data
+	fmt.Fprintf(w, "event: info\ndata: %s\n\n", initialMessage)
+	fmt.Fprintf(w, "event: info\ndata: %s\n\n", padding)
 	flusher.Flush()
+
+	// Log that we sent the large initial message
+	logger.Debug("Sent large initial message to force buffer flush")
 
 	// Stream messages to the client
 	for {

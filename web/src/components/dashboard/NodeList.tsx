@@ -15,7 +15,7 @@ export const NodeList: React.FC = () => {
   const sortedNodes = nodeArray.sort((a, b) => a.nodeId - b.nodeId);
 
   const handleNodeClick = (nodeId: number) => {
-    navigate({ to: "/node/$nodeId", params: { nodeId: nodeId.toString() } });
+    navigate({ to: "/node/$nodeId", params: { nodeId: nodeId.toString(16) } });
   };
 
   if (nodeArray.length === 0) {

@@ -17,7 +17,7 @@ const (
 	mqttBroker      = "mqtt.bayme.sh"
 	mqttUsername    = "meshdev"
 	mqttPassword    = "large4cats"
-	mqttTopicPrefix = "msh/US/CA"
+	mqttTopicPrefix = "msh/US/CA/Motherlode"
 
 	// Web server configuration
 	serverHost = "localhost"

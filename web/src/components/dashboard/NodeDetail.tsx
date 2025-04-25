@@ -291,7 +291,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           </div>
         </div>
         <div className="text-sm text-neutral-400 bg-neutral-900/50 px-3 py-1.5 rounded font-mono">
-          ID: {nodeId.toString(16)}
+          ID: !{nodeId.toString(16)}
         </div>
       </div>
 
