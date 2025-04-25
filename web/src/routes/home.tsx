@@ -9,7 +9,7 @@ function HomePage() {
   return (
     <PageWrapper>
       <div className="mb-4">
-        <h1 className="text-xl font-bold mb-2 text-neutral-200">Network Dashboard</h1>
+        <h1 className="text-xl font-bold mb-2 text-neutral-200">Mesh Overview</h1>
         <p className="text-sm text-neutral-400">
           Real-time view of your Meshtastic mesh network traffic
         </p>

@@ -3,10 +3,10 @@ import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
 import { 
-  ArrowLeft, Radio, Battery, Cpu, Thermometer, Gauge, Signal, 
+  ArrowLeft, Radio, Cpu, Thermometer, Gauge, Signal,
   Droplets, Map, Calendar, Clock, Wifi, BarChart, 
   BatteryFull, BatteryMedium, BatteryLow, AlertTriangle, 
-  Zap, Timer, ChevronRight
+  Zap, Timer, ChevronRight, Users
 } from "lucide-react";
 
 interface NodeDetailProps {
@@ -199,8 +199,34 @@ const formatUptime = (seconds: number): string => {
 export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { nodes } = useAppSelector((state) => state.aggregator);
-  const node = nodes[nodeId];
+  const { nodes, gateways } = useAppSelector((state) => state.aggregator);
+  
+  // First try to get the node directly from nodes collection
+  let node = nodes[nodeId];
+  
+  // If node not found in nodes collection, check if it might be a gateway
+  if (!node) {
+    // Construct the gateway ID format from the node ID
+    const gatewayId = `!${nodeId.toString(16).toLowerCase()}`;
+    
+    // Check if there's a gateway with this ID
+    const gateway = gateways[gatewayId];
+    
+    if (gateway) {
+      // Create a synthetic node from the gateway data
+      node = {
+        nodeId,
+        lastHeard: gateway.lastHeard,
+        messageCount: gateway.messageCount,
+        textMessageCount: gateway.textMessageCount,
+        // Mark this as a gateway node
+        isGateway: true,
+        gatewayId: gatewayId,
+        // Add observed nodes info
+        observedNodeCount: gateway.observedNodes.length
+      };
+    }
+  }
 
   useEffect(() => {
     // Update selected node in the store
@@ -235,7 +261,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   }
 
   // Format node name
-  const nodeName = node.shortName || node.longName || `Node ${nodeId.toString(16)}`;
+  const nodeName = node.shortName || node.longName || `${node.isGateway ? 'Gateway' : 'Node'} ${nodeId.toString(16)}`;
   
   // Format timestamps
   const lastHeardDate = new Date(node.lastHeard * 1000);
@@ -281,7 +307,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className={`p-2 mr-3 rounded-full ${isActive ? 'bg-green-900/30 text-green-500' : 'bg-neutral-700/30 text-neutral-500'}`}>
-          <Radio className="w-5 h-5" />
+          {node.isGateway ? <Signal className="w-5 h-5" /> : <Radio className="w-5 h-5" />}
         </div>
         <div className="flex-1 flex flex-col md:flex-row md:items-center">
           <h1 className="text-xl font-semibold text-neutral-200 mr-3">{nodeName}</h1>
@@ -302,6 +328,22 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
             <div className="bg-neutral-800/50 p-4 rounded-lg">
               <h2 className="font-semibold mb-4 text-neutral-300 border-b border-neutral-700 pb-2">Device Information</h2>
               <div className="space-y-3">
+                {/* Display gateway info if this is a gateway */}
+                {node.isGateway && (
+                  <div className="flex justify-between items-center mb-2 bg-blue-900/20 p-2 rounded">
+                    <span className="text-blue-400 flex items-center">
+                      <Signal className="w-4 h-4 mr-1.5" />
+                      Gateway Node
+                    </span>
+                    {node.observedNodeCount !== undefined && (
+                      <span className="text-blue-400 flex items-center">
+                        <Users className="w-4 h-4 mr-1.5" />
+                        {node.observedNodeCount} {node.observedNodeCount === 1 ? 'node' : 'nodes'}
+                      </span>
+                    )}
+                  </div>
+                )}
+                
                 {node.longName && (
                   <div className="flex justify-between items-center">
                     <span className="text-neutral-400">Name:</span>
@@ -390,14 +432,21 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                     <span className="text-neutral-400">Gateways:</span>
                     <div className="flex flex-col items-end">
                       {node.gatewayId ? (
-                        <Link
-                          to="/node/$nodeId"
-                          params={{ nodeId: node.gatewayId.substring(1) }}
-                          className="text-neutral-200 font-mono text-xs truncate max-w-[180px] hover:text-blue-400 transition-colors flex items-center"
-                        >
-                          {node.gatewayId}
-                          <ChevronRight className="w-4 h-4 text-neutral-500 ml-1" />
-                        </Link>
+                        // Check if gateway ID matches the current node ID (self-reporting)
+                        node.gatewayId === `!${nodeId.toString(16).toLowerCase()}` ? (
+                          <span className="text-emerald-400 text-xs flex items-center">
+                            Self reported
+                          </span>
+                        ) : (
+                          <Link
+                            to="/node/$nodeId"
+                            params={{ nodeId: node.gatewayId.substring(1) }}
+                            className="text-neutral-200 font-mono text-xs truncate max-w-[180px] hover:text-blue-400 transition-colors flex items-center"
+                          >
+                            {node.gatewayId}
+                            <ChevronRight className="w-4 h-4 text-neutral-500 ml-1" />
+                          </Link>
+                        )
                       ) : (
                         <span className="text-neutral-400 italic">None detected</span>
                       )}

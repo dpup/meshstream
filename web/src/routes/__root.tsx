@@ -22,7 +22,7 @@ function RootLayout() {
   const isReconnectingRef = useRef(false);
 
   useEffect(() => {
-    console.log("[SSE] Setting up event source (should happen only once)");
+    console.log("[SSE] Setting up event source");
 
     // Set up Server-Sent Events connection
     const cleanup = streamPackets(

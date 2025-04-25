@@ -5,11 +5,24 @@ import { RefreshCw } from "lucide-react";
 import { MeshCard } from "./MeshCard";
 
 export const NodeList: React.FC = () => {
-  const { nodes } = useAppSelector((state) => state.aggregator);
+  const { nodes, gateways } = useAppSelector((state) => state.aggregator);
   const navigate = useNavigate();
 
-  // Convert nodes object to array for sorting
-  const nodeArray = Object.values(nodes);
+  // Create a set of node IDs that are already shown as gateways
+  const gatewayNodeIds = new Set<number>();
+  
+  // Extract node IDs from gateway IDs
+  Object.keys(gateways).forEach(gatewayId => {
+    const nodeIdMatch = gatewayId.match(/^!([0-9a-f]+)/i);
+    if (nodeIdMatch) {
+      const nodeIdHex = nodeIdMatch[1];
+      const nodeId = parseInt(nodeIdHex, 16);
+      gatewayNodeIds.add(nodeId);
+    }
+  });
+
+  // Convert nodes object to array and filter out gateway nodes
+  const nodeArray = Object.values(nodes).filter(node => !gatewayNodeIds.has(node.nodeId));
 
   // Sort by node ID (stable)
   const sortedNodes = nodeArray.sort((a, b) => a.nodeId - b.nodeId);
@@ -18,50 +31,56 @@ export const NodeList: React.FC = () => {
     navigate({ to: "/node/$nodeId", params: { nodeId: nodeId.toString(16) } });
   };
 
-  if (nodeArray.length === 0) {
-    return (
-      <div className="p-6 text-neutral-400 text-center border border-neutral-700 rounded bg-neutral-800/50">
-        <div className="flex items-center justify-center mb-2">
-          <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
-        </div>
-        No nodes discovered yet. Waiting for data...
-      </div>
-    );
-  }
+  // Instead of early return, we'll handle the empty state in the JSX
 
   return (
     <div className="space-y-1">
       <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-neutral-200">Mesh Nodes</h2>
+        <h2 className="text-lg font-semibold text-neutral-200">Nodes</h2>
         <div className="text-sm text-neutral-400 bg-neutral-800/70 px-2 py-0.5 rounded">
           {nodeArray.length} {nodeArray.length === 1 ? "node" : "nodes"}
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-2">
-        {sortedNodes.map((node) => {
-          // Calculate time since last heard (in seconds)
-          const secondsSinceLastHeard = Date.now() / 1000 - node.lastHeard;
+        {nodeArray.length === 0 ? (
+          <div className="bg-neutral-800/50 hover:bg-neutral-800 p-2 rounded-lg flex items-center">
+            <div className="p-1.5 rounded-full bg-neutral-700/30 text-neutral-500 mr-2">
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm text-neutral-400 truncate">
+                {Object.keys(nodes).length > 0 ? 
+                  "All nodes are shown as gateways above" :
+                  "Waiting for node data..."}
+              </div>
+            </div>
+          </div>
+        ) : (
+          sortedNodes.map((node) => {
+            // Calculate time since last heard (in seconds)
+            const secondsSinceLastHeard = Date.now() / 1000 - node.lastHeard;
 
-          // Determine node activity status:
-          // Recent: < 10 minutes (green)
-          // Active: 10-30 minutes (blue)
-          // Inactive: > 30 minutes (grey)
-          const isRecent = secondsSinceLastHeard < 600; // 10 minutes
-          const isActive = !isRecent && secondsSinceLastHeard < 1800; // 10-30 minutes
+            // Determine node activity status:
+            // Recent: < 10 minutes (green)
+            // Active: 10-30 minutes (blue)
+            // Inactive: > 30 minutes (grey)
+            const isRecent = secondsSinceLastHeard < 600; // 10 minutes
+            const isActive = !isRecent && secondsSinceLastHeard < 1800; // 10-30 minutes
 
-          return (
-            <MeshCard
-              key={node.nodeId}
-              type="node"
-              nodeId={node.nodeId}
-              nodeData={node}
-              onClick={handleNodeClick}
-              isRecent={isRecent}
-              isActive={isActive}
-              lastHeard={node.lastHeard}
-            />
-          );
-        })}
+            return (
+              <MeshCard
+                key={node.nodeId}
+                type="node"
+                nodeId={node.nodeId}
+                nodeData={node}
+                onClick={handleNodeClick}
+                isRecent={isRecent}
+                isActive={isActive}
+                lastHeard={node.lastHeard}
+              />
+            );
+          })
+        )}
       </div>
     </div>
   );

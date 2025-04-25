@@ -25,6 +25,9 @@ export interface NodeData {
   textMessageCount: number;
   channelId?: string;
   gatewayId?: string;
+  // Fields for gateway nodes
+  isGateway?: boolean;
+  observedNodeCount?: number;
 }
 
 export interface TextMessage {
