@@ -143,7 +143,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	// flush so the client knows the connection is open.
 	w.WriteHeader(http.StatusOK)
 
-	initialMessage := "Connected to Meshtastic stream"
+	initialMessage := "Connected to stream"
 	paddingSize := 1500
 	padding := make([]byte, paddingSize)
 	for i := 0; i < paddingSize; i++ {
@@ -152,7 +152,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 
 	// Send the event with the padded data
 	fmt.Fprintf(w, "event: info\ndata: %s\n\n", initialMessage)
-	fmt.Fprintf(w, "event: info\ndata: %s\n\n", padding)
+	fmt.Fprintf(w, "event: padding\ndata: %s\n\n", padding)
 	flusher.Flush()
 
 	// Log that we sent the large initial message

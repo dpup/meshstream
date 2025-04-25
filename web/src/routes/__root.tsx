@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAppDispatch } from "../hooks";
 import { Nav } from "../components";
 import { streamPackets, StreamEvent } from "../lib/api";
@@ -13,92 +13,57 @@ export const Route = createRootRoute({
 
 function RootLayout() {
   const dispatch = useAppDispatch();
-  const [connectionStatus, setConnectionStatus] = useState<string>("Connecting...");
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const [isReconnecting, setIsReconnecting] = useState(false);
+  const [connectionStatus, setConnectionStatus] =
+    useState<string>("Connecting...");
+
+  // Use refs instead of state for tracking reconnection status
+  // This way changes to these values won't trigger useEffect reruns
+  const connectionAttemptsRef = useRef(0);
+  const isReconnectingRef = useRef(false);
 
   useEffect(() => {
-    // Connection management
-    let reconnectTimer: number | null = null;
-    const MAX_RECONNECT_DELAY = 10000; // Maximum reconnect delay in ms (10 seconds)
-    const INITIAL_RECONNECT_DELAY = 1000; // Start with 1 second
+    console.log("[SSE] Setting up event source (should happen only once)");
 
-    // Calculate exponential backoff delay with a cap
-    const getReconnectDelay = (attempts: number) => {
-      const delay = Math.min(
-        INITIAL_RECONNECT_DELAY * Math.pow(1.5, attempts),
-        MAX_RECONNECT_DELAY
-      );
-      return delay;
-    };
+    // Set up Server-Sent Events connection
+    const cleanup = streamPackets(
+      // Event handler for all event types
+      (event: StreamEvent) => {
+        if (event.type === "info") {
+          // Handle info events (connection status, etc.)
+          console.log(`[SSE] Info: ${event.data}`);
+          setConnectionStatus(event.data);
 
-    const connectToEventStream = () => {
-      // Log connection attempt
-      const attemptNum = connectionAttempts + 1;
-      console.log(`[SSE] Connection attempt ${attemptNum}${isReconnecting ? ' (reconnecting)' : ''}`);
-      
-      // Set up Server-Sent Events connection
-      const cleanup = streamPackets(
-        // Event handler for all event types
-        (event: StreamEvent) => {
-          if (event.type === "info") {
-            // Handle info events (connection status, etc.)
-            console.log(`[SSE] Info: ${event.data}`);
-            setConnectionStatus(event.data);
-            
-            // Reset connection attempts on successful connection
-            if (event.data.includes("Connected") && isReconnecting) {
-              console.log("[SSE] Connection restored successfully");
-              setConnectionAttempts(0);
-              setIsReconnecting(false);
-            }
-          } else if (event.type === "message") {
-            // Process message for both the aggregator and packet display
-            dispatch(processNewPacket(event.data));
-            dispatch(addPacket(event.data));
-          } else if (event.type === "bad_data") {
-            console.warn("[SSE] Received bad data:", event.data);
+          // Reset connection attempts on successful connection
+          if (event.data.includes("Connected") && isReconnectingRef.current) {
+            console.log("[SSE] Connection restored successfully");
+            connectionAttemptsRef.current = 0;
+            isReconnectingRef.current = false;
           }
-        },
-        // On error handler
-        (error) => {
-          console.error("[SSE] Connection error:", error);
-          setConnectionStatus("Connection error. Reconnecting...");
-          setIsReconnecting(true);
-          
-          // Increment connection attempts
-          const newAttempts = connectionAttempts + 1;
-          setConnectionAttempts(newAttempts);
-          
-          // Calculate backoff delay
-          const reconnectDelay = getReconnectDelay(newAttempts);
-          console.log(`[SSE] Will attempt to reconnect in ${reconnectDelay}ms (attempt ${newAttempts})`);
-          
-          // Close the current connection
-          cleanup();
-          
-          // Schedule reconnection
-          reconnectTimer = window.setTimeout(() => {
-            connectToEventStream();
-          }, reconnectDelay);
+        } else if (event.type === "message") {
+          // Process message for both the aggregator and packet display
+          dispatch(processNewPacket(event.data));
+          dispatch(addPacket(event.data));
+        } else if (event.type === "bad_data") {
+          console.warn("[SSE] Received bad data:", event.data);
         }
-      );
-      
-      // Return cleanup function 
-      return () => {
-        if (reconnectTimer) {
-          window.clearTimeout(reconnectTimer);
-        }
-        cleanup();
-      };
-    };
+      },
+      // On error handler - only for reporting UI state
+      (error) => {
+        console.error("[SSE] Connection error:", error);
+        setConnectionStatus("Connection error. Reconnecting...");
+        isReconnectingRef.current = true;
 
-    // Initial connection
-    const cleanupFn = connectToEventStream();
-    
-    // Cleanup when component unmounts
-    return cleanupFn;
-  }, [dispatch, connectionAttempts, isReconnecting]);
+        // Increment connection attempts for UI tracking
+        connectionAttemptsRef.current += 1;
+        console.log(
+          `[SSE] Connection attempt ${connectionAttemptsRef.current}`
+        );
+      }
+    );
+
+    // This cleanup will only be called when the component unmounts
+    return cleanup;
+  }, [dispatch]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-900">
