@@ -133,8 +133,8 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Subscribe to the broker with a buffer size of 10
-	packetChan := s.config.Broker.Subscribe(10)
+	// Subscribe to the broker with a buffer size of 100
+	packetChan := s.config.Broker.Subscribe(100)
 
 	// Signal when the client disconnects
 	notify := ctx.Done()

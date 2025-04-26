@@ -28,7 +28,7 @@ interface NavProps {
 // Navigation items data
 const navigationItems: NavItem[] = [
   {
-    to: "/",
+    to: "/home",
     label: "Dashboard",
     icon: LayoutDashboard,
     exact: true,
@@ -77,8 +77,10 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
                     "text-neutral-400 hover:text-neutral-200 font-thin",
                 }}
                 activeProps={{
-                  exact: item.exact,
                   className: "text-neutral-200 font-normal",
+                }}
+                activeOptions={{
+                  exact: item.exact,
                 }}
               >
                 <item.icon className="h-4 w-4 mr-3" />

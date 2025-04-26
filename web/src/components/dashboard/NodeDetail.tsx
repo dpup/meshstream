@@ -1,10 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
-import { RegionCode, ModemPreset } from "../../lib/types";
+import { RegionCode, ModemPreset, Packet } from "../../lib/types";
 import { KeyValuePair } from "../ui/KeyValuePair";
 import { Separator } from "../Separator";
+import { PacketRenderer } from "../packets/PacketRenderer";
 import {
   ArrowLeft,
   Radio,
@@ -29,6 +30,7 @@ import {
   Earth,
   TableConfig,
   Save,
+  MessageSquare,
 } from "lucide-react";
 
 interface NodeDetailProps {
@@ -357,6 +359,63 @@ const getModemPresetName = (
   return presetNames[preset] || `Unknown (${preset})`;
 };
 
+// Component to render packets associated with a specific node
+const NodePacketList: React.FC<{ nodeId: number }> = ({ nodeId }) => {
+  const { packets } = useAppSelector((state) => state.packets);
+  // Fixed number of packets to display
+  const MAX_PACKETS = 20;
+
+  // Get packets from this node (sent or received)
+  const nodePackets = packets
+    .filter(
+      (packet) => packet.data.from === nodeId || packet.data.to === nodeId
+    )
+    .slice(0, MAX_PACKETS); // Show fixed number of packets
+
+  // Generate a reproducible packet key
+  const getPacketKey = useCallback((packet: Packet, index: number): string => {
+    if (packet.data.id !== undefined && packet.data.from !== undefined) {
+      const fromId = `!${packet.data.from.toString(16).toLowerCase()}`;
+      return `${fromId}_${packet.data.id}`;
+    }
+    return `fallback_${index}`;
+  }, []);
+
+  if (nodePackets.length === 0) {
+    return (
+      <div className="p-6 effect-inset rounded-lg border border-neutral-950/60 bg-neutral-800/50 text-neutral-400 text-center">
+        No packets found for this node
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full w-full">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm text-neutral-400 px-2">
+          Showing {nodePackets.length} of{" "}
+          {
+            packets.filter(
+              (p) => p.data.from === nodeId || p.data.to === nodeId
+            ).length
+          }{" "}
+          recent packets
+        </h3>
+      </div>
+
+      <Separator className="mx-0 mb-4" />
+
+      <ul className="space-y-8 w-full">
+        {nodePackets.map((packet, index) => (
+          <li key={getPacketKey(packet, index)}>
+            <PacketRenderer packet={packet} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -481,7 +540,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const positionAccuracy = calculateAccuracyFromPrecisionBits(precisionBits);
 
   return (
-    <div>
+    <div className="max-w-4xl">
       {/* Header with back button and basic node info */}
       <div className="flex items-center p-4 bg-neutral-800/50 rounded-lg">
         <button
@@ -518,281 +577,123 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
       <Separator />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="lg:col-span-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Basic Info */}
-            <Section
-              title="Device Information"
-              icon={<Cpu className="w-4 h-4" />}
-            >
-              {node.longName && (
-                <KeyValuePair label="Name" value={node.longName} inset={true} />
-              )}
+        {/* First column: Device Information and Device Status */}
+        <div>
+          {/* Basic Info */}
+          <Section
+            title="Device Information"
+            icon={<Cpu className="w-4 h-4" />}
+          >
+            {node.longName && (
+              <KeyValuePair label="Name" value={node.longName} inset={true} />
+            )}
 
-              {node.hwModel && (
-                <KeyValuePair
-                  label="Hardware"
-                  value={node.hwModel}
-                  icon={<Cpu className="w-3 h-3" />}
-                  inset={true}
-                />
-              )}
+            {node.hwModel && (
+              <KeyValuePair
+                label="Hardware"
+                value={node.hwModel}
+                icon={<Cpu className="w-3 h-3" />}
+                inset={true}
+              />
+            )}
 
-              {node.macAddr && (
-                <KeyValuePair
-                  label="MAC Address"
-                  value={node.macAddr}
-                  monospace={true}
-                  inset={true}
-                />
-              )}
+            {node.macAddr && (
+              <KeyValuePair
+                label="MAC Address"
+                value={node.macAddr}
+                monospace={true}
+                inset={true}
+              />
+            )}
 
-              <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
-                <span className="text-neutral-400 flex items-center text-sm">
-                  <Wifi className="w-3 h-3 mr-2 text-neutral-300" />
-                  Channels
-                </span>
-                <div className="flex flex-col items-end">
-                  {node.channelId ? (
-                    <Link
-                      to="/channel/$channelId"
-                      params={{ channelId: node.channelId }}
-                      className="text-neutral-200 flex items-center hover:text-blue-400 transition-colors"
-                    >
-                      <Wifi className="w-3 h-3 mr-1.5 text-blue-400" />
-                      <span className="font-mono text-sm">
-                        {node.channelId}
-                      </span>
-                    </Link>
-                  ) : (
-                    <span className="text-neutral-400 italic">
-                      None detected
+            <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
+              <span className="text-neutral-400 flex items-center text-sm">
+                <Wifi className="w-3 h-3 mr-2 text-neutral-300" />
+                Channels
+              </span>
+              <div className="flex flex-col items-end">
+                {node.channelId ? (
+                  <Link
+                    to="/channel/$channelId"
+                    params={{ channelId: node.channelId }}
+                    className="text-neutral-200 flex items-center hover:text-blue-400 transition-colors"
+                  >
+                    <Wifi className="w-3 h-3 mr-1.5 text-blue-400" />
+                    <span className="font-mono text-sm">
+                      {node.channelId}
                     </span>
-                  )}
-                  {node.mapReport?.hasDefaultChannel !== undefined && (
-                    <span className="text-xs text-neutral-400">
-                      Default channel:{" "}
-                      {node.mapReport.hasDefaultChannel ? "Yes" : "No"}
-                    </span>
-                  )}
-                </div>
+                  </Link>
+                ) : (
+                  <span className="text-neutral-400 italic">
+                    None detected
+                  </span>
+                )}
+                {node.mapReport?.hasDefaultChannel !== undefined && (
+                  <span className="text-xs text-neutral-400">
+                    Default channel:{" "}
+                    {node.mapReport.hasDefaultChannel ? "Yes" : "No"}
+                  </span>
+                )}
               </div>
+            </div>
 
-              {/* Show MapReport-specific information for gateways */}
-              {node.isGateway && (
-                <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
-                  <div className="flex justify-between items-center mb-2 bg-blue-900/20 p-2 rounded effect-inset">
+            {/* Show MapReport-specific information for gateways */}
+            {node.isGateway && (
+              <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
+                <div className="flex justify-between items-center mb-2 bg-blue-900/20 p-2 rounded effect-inset">
+                  <span className="text-blue-400 flex items-center">
+                    <Signal className="w-4 h-4 mr-1.5" />
+                    Gateway Node
+                  </span>
+                  {node.observedNodeCount !== undefined && (
                     <span className="text-blue-400 flex items-center">
-                      <Signal className="w-4 h-4 mr-1.5" />
-                      Gateway Node
+                      <Users className="w-4 h-4 mr-1.5" />
+                      {node.observedNodeCount}{" "}
+                      {node.observedNodeCount === 1 ? "node" : "nodes"}
                     </span>
-                    {node.observedNodeCount !== undefined && (
-                      <span className="text-blue-400 flex items-center">
-                        <Users className="w-4 h-4 mr-1.5" />
-                        {node.observedNodeCount}{" "}
-                        {node.observedNodeCount === 1 ? "node" : "nodes"}
-                      </span>
-                    )}
-                    {node.mapReport?.numOnlineLocalNodes !== undefined && (
-                      <span className="text-emerald-400 text-xs flex items-center font-mono">
-                        {node.mapReport.numOnlineLocalNodes} online local nodes
-                      </span>
-                    )}
-                  </div>
-                  {node.mapReport?.region !== undefined && (
-                    <KeyValuePair
-                      label="Region"
-                      value={getRegionName(node.mapReport.region)}
-                      icon={<Earth className="w-3 h-3" />}
-                      inset={true}
-                    />
                   )}
-
-                  {node.mapReport?.modemPreset !== undefined && (
-                    <KeyValuePair
-                      label="Modem Preset"
-                      value={getModemPresetName(node.mapReport.modemPreset)}
-                      icon={<TableConfig className="w-3 h-3" />}
-                      inset={true}
-                    />
-                  )}
-
-                  {node.mapReport?.firmwareVersion && (
-                    <KeyValuePair
-                      label="Firmware"
-                      value={node.mapReport.firmwareVersion}
-                      monospace={true}
-                      icon={<Save className="w-3 h-3" />}
-                      inset={true}
-                    />
-                  )}
-                </div>
-              )}
-            </Section>
-
-            {/* Activity */}
-            <Section title="Last Activity" icon={<Clock className="w-4 h-4" />}>
-              <KeyValuePair
-                label="Date"
-                value={lastHeardDay}
-                icon={<Calendar className="w-3 h-3" />}
-                monospace={true}
-                inset={true}
-              />
-
-              <KeyValuePair
-                label="Time"
-                value={lastHeardTime}
-                icon={<Clock className="w-3 h-3" />}
-                monospace={true}
-                inset={true}
-              />
-
-              {node.deviceMetrics?.uptimeSeconds !== undefined && (
-                <KeyValuePair
-                  label="Uptime"
-                  value={formatUptime(node.deviceMetrics.uptimeSeconds)}
-                  icon={<Timer className="w-3 h-3" />}
-                  monospace={true}
-                  highlight={node.deviceMetrics.uptimeSeconds > 86400}
-                  inset={true}
-                />
-              )}
-
-              <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
-                <span className="text-neutral-400 flex items-center text-sm">
-                  <Signal className="w-3 h-3 mr-2 text-neutral-300" />
-                  Gateways
-                </span>
-                <div className="flex flex-col items-end">
-                  {node.gatewayId ? (
-                    // Check if gateway ID matches the current node ID (self-reporting)
-                    node.gatewayId ===
-                    `!${nodeId.toString(16).toLowerCase()}` ? (
-                      <span className="text-emerald-400 text-xs flex items-center font-mono">
-                        Self reported
-                      </span>
-                    ) : (
-                      <Link
-                        to="/node/$nodeId"
-                        params={{ nodeId: node.gatewayId.substring(1) }}
-                        className="font-mono text-xs truncate max-w-[180px] text-blue-400 hover:text-blue-300 transition-colors flex items-center"
-                      >
-                        {node.gatewayId}
-                        <ChevronRight className="w-3 h-3 ml-1" />
-                      </Link>
-                    )
-                  ) : (
-                    <span className="text-neutral-400 italic">
-                      None detected
+                  {node.mapReport?.numOnlineLocalNodes !== undefined && (
+                    <span className="text-emerald-400 text-xs flex items-center font-mono">
+                      {node.mapReport.numOnlineLocalNodes} online local nodes
                     </span>
                   )}
                 </div>
-              </div>
-              <div className="flex items-center justify-between p-2 rounded bg-neutral-700/50 effect-inset">
-                <span className="text-neutral-400 flex items-center text-sm">
-                  <Radio className="w-3 h-3 mr-2 text-neutral-300" />
-                  Packets
-                </span>
-                <div className="flex space-x-3">
-                  <div className="flex flex-col items-center">
-                    <span className="text-amber-500 font-mono text-lg">
-                      {node.messageCount}
-                    </span>
-                    <span className="text-xs text-neutral-500">Total</span>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <span className="text-green-500 font-mono text-lg">
-                      {node.textMessageCount}
-                    </span>
-                    <span className="text-xs text-neutral-500">Text</span>
-                  </div>
-                </div>
-              </div>
-            </Section>
-          </div>
-
-          {/* Position Map */}
-          {hasPosition && (
-            <Section
-              title="Node Location"
-              icon={<Map className="w-4 h-4" />}
-              className="mt-4"
-            >
-              <div className="h-[350px] rounded-lg overflow-hidden relative shadow-inner">
-                <GoogleMap
-                  lat={latitude}
-                  lng={longitude}
-                  precisionBits={precisionBits}
-                />
-              </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 text-sm">
-                <KeyValuePair
-                  label="Coordinates"
-                  value={`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`}
-                  monospace={true}
-                  inset={true}
-                />
-
-                {node.position?.altitude !== undefined && (
+                {node.mapReport?.region !== undefined && (
                   <KeyValuePair
-                    label="Altitude"
-                    value={`${node.position.altitude} m`}
-                    monospace={true}
+                    label="Region"
+                    value={getRegionName(node.mapReport.region)}
+                    icon={<Earth className="w-3 h-3" />}
                     inset={true}
                   />
                 )}
 
-                {/* Position Accuracy */}
-                <KeyValuePair
-                  label="Accuracy"
-                  value={
-                    positionAccuracy < 1000
-                      ? `±${positionAccuracy.toFixed(0)} m`
-                      : `±${(positionAccuracy / 1000).toFixed(1)} km`
-                  }
-                  monospace={true}
-                  inset={true}
-                />
-
-                {precisionBits !== undefined && (
+                {node.mapReport?.modemPreset !== undefined && (
                   <KeyValuePair
-                    label="Precision"
-                    value={`${precisionBits} bits`}
-                    monospace={true}
+                    label="Modem Preset"
+                    value={getModemPresetName(node.mapReport.modemPreset)}
+                    icon={<TableConfig className="w-3 h-3" />}
                     inset={true}
                   />
                 )}
 
-                {node.position?.satsInView !== undefined && (
+                {node.mapReport?.firmwareVersion && (
                   <KeyValuePair
-                    label="Satellites"
-                    value={node.position.satsInView}
+                    label="Firmware"
+                    value={node.mapReport.firmwareVersion}
                     monospace={true}
-                    highlight={node.position.satsInView > 6}
-                    inset={true}
-                  />
-                )}
-
-                {node.position?.groundSpeed !== undefined && (
-                  <KeyValuePair
-                    label="Speed"
-                    value={`${node.position.groundSpeed} m/s`}
-                    monospace={true}
+                    icon={<Save className="w-3 h-3" />}
                     inset={true}
                   />
                 )}
               </div>
-            </Section>
-          )}
-        </div>
+            )}
+          </Section>
 
-        <div className="space-y-6">
-          {/* Telemetry Info - Device Metrics */}
+          {/* Device Status - Moved from the right column to here */}
           {(node.deviceMetrics ||
             node.batteryLevel !== undefined ||
             node.snr !== undefined) && (
-            <Section title="Device Status" icon={<Cpu className="w-4 h-4" />}>
+            <Section title="Device Status" icon={<Cpu className="w-4 h-4" />} className="mt-4">
               <div className="space-y-4">
                 {node.batteryLevel !== undefined && (
                   <BatteryLevel level={node.batteryLevel} />
@@ -862,12 +763,117 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
             </Section>
           )}
 
+          {/* Warning for low battery */}
+          {node.batteryLevel !== undefined && node.batteryLevel < 20 && (
+            <div className="bg-red-900/30 border border-red-800 p-4 rounded-lg effect-inset mt-4">
+              <div className="flex items-center text-red-400">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                <h3 className="font-medium font-mono tracking-wider">
+                  LOW BATTERY WARNING
+                </h3>
+              </div>
+              <p className="text-sm mt-2 text-neutral-300 flex items-center">
+                <BatteryLow className="w-3 h-3 mr-1.5 text-red-400" />
+                Battery level critically low at{" "}
+                <span className="font-mono text-red-400 mx-1">
+                  {node.batteryLevel}%
+                </span>
+                Device may stop reporting soon.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Second column: Last Activity and Environment Metrics */}
+        <div>
+          {/* Activity */}
+          <Section title="Last Activity" icon={<Clock className="w-4 h-4" />}>
+            <KeyValuePair
+              label="Date"
+              value={lastHeardDay}
+              icon={<Calendar className="w-3 h-3" />}
+              monospace={true}
+              inset={true}
+            />
+
+            <KeyValuePair
+              label="Time"
+              value={lastHeardTime}
+              icon={<Clock className="w-3 h-3" />}
+              monospace={true}
+              inset={true}
+            />
+
+            {node.deviceMetrics?.uptimeSeconds !== undefined && (
+              <KeyValuePair
+                label="Uptime"
+                value={formatUptime(node.deviceMetrics.uptimeSeconds)}
+                icon={<Timer className="w-3 h-3" />}
+                monospace={true}
+                highlight={node.deviceMetrics.uptimeSeconds > 86400}
+                inset={true}
+              />
+            )}
+
+            <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
+              <span className="text-neutral-400 flex items-center text-sm">
+                <Signal className="w-3 h-3 mr-2 text-neutral-300" />
+                Gateways
+              </span>
+              <div className="flex flex-col items-end">
+                {node.gatewayId ? (
+                  // Check if gateway ID matches the current node ID (self-reporting)
+                  node.gatewayId ===
+                  `!${nodeId.toString(16).toLowerCase()}` ? (
+                    <span className="text-emerald-400 text-xs flex items-center font-mono">
+                      Self reported
+                    </span>
+                  ) : (
+                    <Link
+                      to="/node/$nodeId"
+                      params={{ nodeId: node.gatewayId.substring(1) }}
+                      className="font-mono text-xs truncate max-w-[180px] text-blue-400 hover:text-blue-300 transition-colors flex items-center"
+                    >
+                      {node.gatewayId}
+                      <ChevronRight className="w-3 h-3 ml-1" />
+                    </Link>
+                  )
+                ) : (
+                  <span className="text-neutral-400 italic">
+                    None detected
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="flex items-center justify-between p-2 rounded bg-neutral-700/50 effect-inset">
+              <span className="text-neutral-400 flex items-center text-sm">
+                <Radio className="w-3 h-3 mr-2 text-neutral-300" />
+                Packets
+              </span>
+              <div className="flex space-x-3">
+                <div className="flex flex-col items-center">
+                  <span className="text-amber-500 font-mono text-lg">
+                    {node.messageCount}
+                  </span>
+                  <span className="text-xs text-neutral-500">Total</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <span className="text-green-500 font-mono text-lg">
+                    {node.textMessageCount}
+                  </span>
+                  <span className="text-xs text-neutral-500">Text</span>
+                </div>
+              </div>
+            </div>
+          </Section>
+
           {/* Telemetry Info - Environment Metrics */}
           {node.environmentMetrics &&
             Object.keys(node.environmentMetrics).length > 0 && (
               <Section
                 title="Environment Data"
                 icon={<Thermometer className="w-4 h-4" />}
+                className="mt-4"
               >
                 <div className="space-y-4">
                   {node.environmentMetrics.temperature !== undefined && (
@@ -879,14 +885,14 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                         </span>
                         <span
                           className={`
-                        ${
-                          node.environmentMetrics.temperature > 30
-                            ? "text-red-500"
-                            : node.environmentMetrics.temperature < 10
-                              ? "text-blue-500"
-                              : "text-green-500"
-                        } font-mono text-sm
-                      `}
+                      ${
+                        node.environmentMetrics.temperature > 30
+                          ? "text-red-500"
+                          : node.environmentMetrics.temperature < 10
+                            ? "text-blue-500"
+                            : "text-green-500"
+                      } font-mono text-sm
+                    `}
                         >
                           {node.environmentMetrics.temperature}°C
                         </span>
@@ -895,14 +901,14 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                         {/* Temp scale: -10°C to 40°C mapped to 0-100% */}
                         <div
                           className={`
-                          ${
-                            node.environmentMetrics.temperature > 30
-                              ? "bg-red-500"
-                              : node.environmentMetrics.temperature < 10
-                                ? "bg-blue-500"
-                                : "bg-green-500"
-                          } h-2 rounded-full
-                        `}
+                        ${
+                          node.environmentMetrics.temperature > 30
+                            ? "bg-red-500"
+                            : node.environmentMetrics.temperature < 10
+                              ? "bg-blue-500"
+                              : "bg-green-500"
+                        } h-2 rounded-full
+                      `}
                           style={{
                             width: `${Math.max(0, Math.min(100, ((node.environmentMetrics.temperature + 10) / 50) * 100))}%`,
                           }}
@@ -967,28 +973,91 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                 </div>
               </Section>
             )}
-
-          {/* Warning for low battery */}
-          {node.batteryLevel !== undefined && node.batteryLevel < 20 && (
-            <div className="bg-red-900/30 border border-red-800 p-4 rounded-lg effect-inset">
-              <div className="flex items-center text-red-400">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                <h3 className="font-medium font-mono tracking-wider">
-                  LOW BATTERY WARNING
-                </h3>
-              </div>
-              <p className="text-sm mt-2 text-neutral-300 flex items-center">
-                <BatteryLow className="w-3 h-3 mr-1.5 text-red-400" />
-                Battery level critically low at{" "}
-                <span className="font-mono text-red-400 mx-1">
-                  {node.batteryLevel}%
-                </span>
-                Device may stop reporting soon.
-              </p>
-            </div>
-          )}
         </div>
       </div>
+
+      {/* Position Map - Full Width */}
+      {hasPosition && (
+        <Section
+          title="Node Location"
+          icon={<Map className="w-4 h-4" />}
+          className="mt-6"
+        >
+          <div className="h-[400px] rounded-lg overflow-hidden relative shadow-inner">
+            <GoogleMap
+              lat={latitude}
+              lng={longitude}
+              precisionBits={precisionBits}
+            />
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+            <KeyValuePair
+              label="Coordinates"
+              value={`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`}
+              monospace={true}
+              inset={true}
+            />
+
+            {node.position?.altitude !== undefined && (
+              <KeyValuePair
+                label="Altitude"
+                value={`${node.position.altitude} m`}
+                monospace={true}
+                inset={true}
+              />
+            )}
+
+            {/* Position Accuracy */}
+            <KeyValuePair
+              label="Accuracy"
+              value={
+                positionAccuracy < 1000
+                  ? `±${positionAccuracy.toFixed(0)} m`
+                  : `±${(positionAccuracy / 1000).toFixed(1)} km`
+              }
+              monospace={true}
+              inset={true}
+            />
+
+            {precisionBits !== undefined && (
+              <KeyValuePair
+                label="Precision"
+                value={`${precisionBits} bits`}
+                monospace={true}
+                inset={true}
+              />
+            )}
+
+            {node.position?.satsInView !== undefined && (
+              <KeyValuePair
+                label="Satellites"
+                value={node.position.satsInView}
+                monospace={true}
+                highlight={node.position.satsInView > 6}
+                inset={true}
+              />
+            )}
+
+            {node.position?.groundSpeed !== undefined && (
+              <KeyValuePair
+                label="Speed"
+                value={`${node.position.groundSpeed} m/s`}
+                monospace={true}
+                inset={true}
+              />
+            )}
+          </div>
+        </Section>
+      )}
+
+      {/* Recent Packets - Full Width */}
+      <Section
+        title="Recent Packets"
+        icon={<MessageSquare className="w-4 h-4" />}
+        className="mt-6"
+      >
+        <NodePacketList nodeId={nodeId} />
+      </Section>
     </div>
   );
 };

@@ -7,23 +7,90 @@ import (
 	meshtreampb "meshstream/generated/meshstream"
 )
 
+// CircularBuffer implements a fixed-size circular buffer for caching packets
+type CircularBuffer struct {
+	buffer []*meshtreampb.Packet // Fixed size buffer to store packets
+	size   int                   // Size of the buffer
+	next   int                   // Index where the next packet will be stored
+	count  int                   // Number of packets currently in the buffer
+	mutex  sync.RWMutex          // Lock for thread-safe access
+}
+
+// NewCircularBuffer creates a new circular buffer with the given size
+func NewCircularBuffer(size int) *CircularBuffer {
+	return &CircularBuffer{
+		buffer: make([]*meshtreampb.Packet, size),
+		size:   size,
+		next:   0,
+		count:  0,
+	}
+}
+
+// Add adds a packet to the circular buffer
+func (cb *CircularBuffer) Add(packet *meshtreampb.Packet) {
+	cb.mutex.Lock()
+	defer cb.mutex.Unlock()
+
+	cb.buffer[cb.next] = packet
+	cb.next = (cb.next + 1) % cb.size
+
+	// Update count if we haven't filled the buffer yet
+	if cb.count < cb.size {
+		cb.count++
+	}
+}
+
+// GetAll returns all packets in the buffer in chronological order
+func (cb *CircularBuffer) GetAll() []*meshtreampb.Packet {
+	cb.mutex.RLock()
+	defer cb.mutex.RUnlock()
+
+	if cb.count == 0 {
+		return []*meshtreampb.Packet{}
+	}
+
+	result := make([]*meshtreampb.Packet, cb.count)
+	
+	// If buffer isn't full yet, just copy from start to next
+	if cb.count < cb.size {
+		copy(result, cb.buffer[:cb.count])
+		return result
+	}
+
+	// If buffer is full, we need to handle the wrap-around
+	// First copy from next to end
+	firstPartLength := cb.size - cb.next
+	if firstPartLength > 0 {
+		copy(result, cb.buffer[cb.next:])
+	}
+	
+	// Then copy from start to next
+	if cb.next > 0 {
+		copy(result[firstPartLength:], cb.buffer[:cb.next])
+	}
+
+	return result
+}
+
 // Broker distributes messages from a source channel to multiple subscriber channels
 type Broker struct {
 	sourceChan      <-chan *meshtreampb.Packet            // Source of packets (e.g., from MQTT client)
 	subscribers     map[chan *meshtreampb.Packet]struct{} // Active subscribers
-	subscriberMutex sync.RWMutex              // Lock for modifying the subscribers map
-	done            chan struct{}             // Signal to stop the dispatch loop
-	wg              sync.WaitGroup            // Wait group to ensure clean shutdown
-	logger          logging.Logger            // Logger for broker operations
+	subscriberMutex sync.RWMutex                          // Lock for modifying the subscribers map
+	done            chan struct{}                         // Signal to stop the dispatch loop
+	wg              sync.WaitGroup                        // Wait group to ensure clean shutdown
+	logger          logging.Logger                        // Logger for broker operations
+	cache           *CircularBuffer                       // Circular buffer for caching packets
 }
 
 // NewBroker creates a new broker that distributes messages from sourceChannel to subscribers
-func NewBroker(sourceChannel <-chan *meshtreampb.Packet, logger logging.Logger) *Broker {
+func NewBroker(sourceChannel <-chan *meshtreampb.Packet, cacheSize int, logger logging.Logger) *Broker {
 	broker := &Broker{
 		sourceChan:  sourceChannel,
 		subscribers: make(map[chan *meshtreampb.Packet]struct{}),
 		done:        make(chan struct{}),
 		logger:      logger.Named("mqtt.broker"),
+		cache:       NewCircularBuffer(cacheSize),
 	}
 
 	// Start the dispatch loop
@@ -43,6 +110,23 @@ func (b *Broker) Subscribe(bufferSize int) <-chan *meshtreampb.Packet {
 	b.subscriberMutex.Lock()
 	b.subscribers[subscriberChan] = struct{}{}
 	b.subscriberMutex.Unlock()
+
+	// Send cached packets to the new subscriber
+	cachedPackets := b.cache.GetAll()
+	if len(cachedPackets) > 0 {
+		go func() {
+			for _, packet := range cachedPackets {
+				select {
+				case subscriberChan <- packet:
+					// Successfully sent packet
+				default:
+					// Buffer is full, log warning and stop sending cached packets
+					b.logger.Warn("New subscriber buffer full, stopping cache replay")
+					return
+				}
+			}
+		}()
+	}
 
 	// Return the channel
 	return subscriberChan
@@ -101,6 +185,9 @@ func (b *Broker) dispatchLoop() {
 				b.Close()
 				return
 			}
+
+			// Add packet to the cache
+			b.cache.Add(packet)
 
 			// Distribute the packet to all subscribers
 			b.broadcast(packet)

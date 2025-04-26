@@ -58,7 +58,8 @@ func main() {
 	messagesChan := mqttClient.Messages()
 
 	// Create a message broker to distribute messages to multiple consumers
-	broker := mqtt.NewBroker(messagesChan, logger)
+	// Cache the last 50 packets for new subscribers
+	broker := mqtt.NewBroker(messagesChan, 50, logger)
 
 	// Create a stats tracker that subscribes to the broker
 	// with statistics printed every 30 seconds

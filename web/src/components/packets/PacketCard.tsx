@@ -41,8 +41,12 @@ export const PacketCard: React.FC<PacketCardProps> = ({
                 ? `!${data.from.toString(16).toLowerCase()}`
                 : "Unknown"}
             </span>
-            <span className="text-neutral-500">on</span>
-            <span className="text-neutral-400">{packet.info.channel}</span>
+            {packet.info.channel && (
+              <>
+                <span className="text-neutral-500">on</span>
+                <span className="text-neutral-400">{packet.info.channel}</span>
+              </>
+            )}
             {data.gatewayId && (
               <>
                 <span className="text-neutral-500">via</span>
@@ -54,7 +58,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
           {/* Right side: ID, Time, and Type */}
           <div className="flex items-center gap-3 text-xs">
             <div className="flex items-center">
-              <span className="text-neutral-400">{data.id || "None"}</span>
+              <span className="text-neutral-400">{data.id || ""}</span>
               {data.rxTime && (
                 <span className="text-neutral-500 ml-2">
                   {new Date(data.rxTime * 1000).toLocaleTimeString([], {

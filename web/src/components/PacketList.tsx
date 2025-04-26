@@ -103,13 +103,9 @@ export const PacketList: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-w-4xl ">
       <div className="sticky top-0 z-10">
         <div className="flex justify-between items-center mb-2">
-          <div className="text-sm text-neutral-400 px-2">
-            {packets.length} packets received
-            {packets.length > 0 && <>, since {getEarliestTime()}</>}
-          </div>
           <div className="flex items-center space-x-3">
             {/* Show buffered count when paused */}
             {streamPaused && bufferedPackets.length > 0 && (
@@ -133,6 +129,10 @@ export const PacketList: React.FC = () => {
               <Trash2 className="h-4 w-4 mr-1.5" />
               <span className="text-sm font-medium">Clear</span>
             </button>
+          </div>
+          <div className="text-sm text-neutral-400 px-2">
+            {packets.length} packets received
+            {packets.length > 0 && <>, since {getEarliestTime()}</>}
           </div>
         </div>
         <Separator className="mx-0" />
@@ -175,11 +175,17 @@ export const PacketList: React.FC = () => {
       <div className="mt-auto">
         {/* Empty state when no packets are visible but stream is paused */}
         {packets.length === 0 && streamPaused && bufferedPackets.length > 0 && (
-          <div className="p-6 text-amber-400 text-center border border-amber-900 bg-neutral-800 rounded mb-4">
-            Stream is paused with {bufferedPackets.length} buffered messages.
+          <div className="p-4 text-amber-400 text-center border border-amber-900/60 bg-neutral-800/50 rounded-lg effect-inset mb-4">
+            <div className="flex items-center justify-center mb-2">
+              <Archive className="w-4 h-4 mr-2" />
+              <span>
+                Stream is paused with {bufferedPackets.length} buffered
+                messages.
+              </span>
+            </div>
             <button
               onClick={handleToggleStream}
-              className="block mx-auto mt-2 px-3 py-1.5 text-sm bg-neutral-700 hover:bg-neutral-600 rounded transition-colors"
+              className="inline-flex items-center px-3 py-1.5 mt-2 text-sm effect-outset border border-neutral-950/90 rounded-md text-neutral-300 hover:bg-neutral-700/50 transition-colors"
             >
               Resume to view
             </button>
@@ -188,41 +194,46 @@ export const PacketList: React.FC = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex justify-between items-center text-sm sticky bottom-0 bg-neutral-50/5 py-2">
-            <button
-              onClick={() =>
-                setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
-              }
-              disabled={currentPage === 1}
-              className={`px-3 py-1.5 rounded ${
-                currentPage === 1
-                  ? "text-neutral-500 cursor-not-allowed"
-                  : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
-              }`}
-            >
-              Previous
-            </button>
+          <>
+            <Separator className="mx-0 mt-4" />
+            <div className="flex justify-between items-center text-sm py-2 bg-neutral-800/50 sticky bottom-0">
+              <div className="text-sm text-neutral-400 px-2">
+                Page {currentPage} of {totalPages}
+              </div>
 
-            <div className="text-neutral-400">
-              Page {currentPage} of {totalPages}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={() =>
+                    setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+                  }
+                  disabled={currentPage === 1}
+                  className={`flex items-center px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md ${
+                    currentPage === 1
+                      ? "text-neutral-500 cursor-not-allowed opacity-50"
+                      : "text-neutral-400 hover:bg-neutral-700/50"
+                  }`}
+                >
+                  <span className="text-sm font-medium">Previous</span>
+                </button>
+
+                <button
+                  onClick={() =>
+                    setCurrentPage(
+                      currentPage < totalPages ? currentPage + 1 : totalPages
+                    )
+                  }
+                  disabled={currentPage === totalPages}
+                  className={`flex items-center px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md ${
+                    currentPage === totalPages
+                      ? "text-neutral-500 cursor-not-allowed opacity-50"
+                      : "text-neutral-400 hover:bg-neutral-700/50"
+                  }`}
+                >
+                  <span className="text-sm font-medium">Next</span>
+                </button>
+              </div>
             </div>
-
-            <button
-              onClick={() =>
-                setCurrentPage(
-                  currentPage < totalPages ? currentPage + 1 : totalPages
-                )
-              }
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1.5 rounded ${
-                currentPage === totalPages
-                  ? "text-neutral-500 cursor-not-allowed"
-                  : "bg-neutral-700 text-neutral-200 hover:bg-neutral-600"
-              }`}
-            >
-              Next
-            </button>
-          </div>
+          </>
         )}
       </div>
     </div>
