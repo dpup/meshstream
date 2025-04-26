@@ -2,10 +2,17 @@ import React, { useState, useCallback } from "react";
 import { useAppSelector, useAppDispatch } from "../hooks";
 import { PacketRenderer } from "./packets/PacketRenderer";
 import { StreamControl } from "./StreamControl";
-import { Trash2, RefreshCw, Archive } from "lucide-react";
+import {
+  Trash2,
+  RefreshCw,
+  Archive,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { clearPackets, toggleStreamPause } from "../store/slices/packetSlice";
 import { Packet } from "../lib/types";
 import { Separator } from "./Separator";
+import { Button } from "./ui/Button";
 
 // Number of packets to show per page
 const PACKETS_PER_PAGE = 100;
@@ -122,13 +129,9 @@ export const PacketList: React.FC = () => {
             />
 
             {/* Clear button */}
-            <button
-              onClick={handleClearPackets}
-              className="flex items-center space-x-2 px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md text-neutral-400 hover:bg-neutral-700/50"
-            >
-              <Trash2 className="h-4 w-4 mr-1.5" />
-              <span className="text-sm font-medium">Clear</span>
-            </button>
+            <Button onClick={handleClearPackets} icon={Trash2} size="md">
+              Clear
+            </Button>
           </div>
           <div className="text-sm text-neutral-400 px-2">
             {packets.length} packets received
@@ -183,12 +186,14 @@ export const PacketList: React.FC = () => {
                 messages.
               </span>
             </div>
-            <button
+            <Button
               onClick={handleToggleStream}
-              className="inline-flex items-center px-3 py-1.5 mt-2 text-sm effect-outset border border-neutral-950/90 rounded-md text-neutral-300 hover:bg-neutral-700/50 transition-colors"
+              variant="primary"
+              size="md"
+              className="mt-2"
             >
               Resume to view
-            </button>
+            </Button>
           </div>
         )}
 
@@ -202,35 +207,31 @@ export const PacketList: React.FC = () => {
               </div>
 
               <div className="flex items-center space-x-3">
-                <button
+                <Button
                   onClick={() =>
                     setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
                   }
                   disabled={currentPage === 1}
-                  className={`flex items-center px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md ${
-                    currentPage === 1
-                      ? "text-neutral-500 cursor-not-allowed opacity-50"
-                      : "text-neutral-400 hover:bg-neutral-700/50"
-                  }`}
+                  icon={ChevronLeft}
+                  variant="secondary"
+                  size="md"
                 >
-                  <span className="text-sm font-medium">Previous</span>
-                </button>
+                  Previous
+                </Button>
 
-                <button
+                <Button
                   onClick={() =>
                     setCurrentPage(
                       currentPage < totalPages ? currentPage + 1 : totalPages
                     )
                   }
                   disabled={currentPage === totalPages}
-                  className={`flex items-center px-3 py-1.5 effect-outset border border-neutral-950/90 rounded-md ${
-                    currentPage === totalPages
-                      ? "text-neutral-500 cursor-not-allowed opacity-50"
-                      : "text-neutral-400 hover:bg-neutral-700/50"
-                  }`}
+                  icon={ChevronRight}
+                  variant="secondary"
+                  size="md"
                 >
-                  <span className="text-sm font-medium">Next</span>
-                </button>
+                  Next
+                </Button>
               </div>
             </div>
           </>
