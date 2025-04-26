@@ -60,7 +60,14 @@ function ChannelPage() {
       console.log(`[Channel] Available messages:`, messages);
       console.log(`[Channel] Looking for key:`, channelKey);
     }
-  }, [channel, channelId, channelMessages.length, navigate, messages]);
+  }, [
+    channel,
+    channelId,
+    channelKey,
+    channelMessages.length,
+    navigate,
+    messages,
+  ]);
 
   if (!channel) {
     return (

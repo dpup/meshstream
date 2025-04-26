@@ -7,7 +7,6 @@ export interface MeshCardProps {
   type: "node" | "gateway";
   nodeId: number;
   nodeData: NodeData;
-  gatewayId?: string;
   observedNodes?: number[];
   onClick?: (nodeId: number) => void;
   isActive?: boolean;
@@ -19,7 +18,6 @@ export const MeshCard: React.FC<MeshCardProps> = ({
   type,
   nodeId,
   nodeData,
-  gatewayId,
   observedNodes = [],
   onClick,
   isActive = false,

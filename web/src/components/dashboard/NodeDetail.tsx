@@ -1,420 +1,41 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
-import { RegionCode, ModemPreset, Packet } from "../../lib/types";
-import { KeyValuePair } from "../ui/KeyValuePair";
-import { Separator } from "../Separator";
-import { PacketRenderer } from "../packets/PacketRenderer";
-import {
+import { 
   ArrowLeft,
   Radio,
   Cpu,
-  Thermometer,
-  Gauge,
-  Signal,
-  Droplets,
-  Map,
-  Calendar,
   Clock,
-  Wifi,
-  BarChart,
-  BatteryFull,
-  BatteryMedium,
-  BatteryLow,
-  AlertTriangle,
+  Calendar,
+  Map,
   Zap,
-  Timer,
   ChevronRight,
+  Signal,
+  Wifi,
   Users,
   Earth,
   TableConfig,
   Save,
-  MessageSquare,
+  MessageSquare
 } from "lucide-react";
+import { Separator } from "../Separator";
+import { KeyValuePair } from "../ui/KeyValuePair";
+import { Section } from "../ui/Section";
+import { BatteryLevel } from "./BatteryLevel";
+import { SignalStrength } from "./SignalStrength";
+import { GoogleMap } from "./GoogleMap";
+import { NodePositionData } from "./NodePositionData";
+import { EnvironmentMetrics } from "./EnvironmentMetrics";
+import { NodePacketList } from "./NodePacketList";
+import { LowBatteryWarning } from "./LowBatteryWarning";
+import { UtilizationMetrics } from "./UtilizationMetrics";
+import { calculateAccuracyFromPrecisionBits } from "../../lib/mapUtils";
+import { formatUptime, getRegionName, getModemPresetName } from "../../utils/formatters";
 
 interface NodeDetailProps {
   nodeId: number;
 }
-
-// Function to calculate the position accuracy in meters using precision bits
-const calculateAccuracyFromPrecisionBits = (precisionBits?: number): number => {
-  if (!precisionBits) return 300; // Default accuracy of 300m
-
-  // Each precision bit halves the accuracy radius
-  // Starting with Earth's circumference (~40075km), calculate the precision
-  // For reference: 24 bits = ~2.4m accuracy, 21 bits = ~19m accuracy
-  const earthCircumference = 40075000; // in meters
-  const accuracy = earthCircumference / 2 ** precisionBits / 2;
-
-  // Limit to reasonable values
-  return Math.max(1, Math.min(accuracy, 10000));
-};
-
-// Calculate appropriate zoom level based on accuracy
-const calculateZoomFromAccuracy = (accuracyMeters: number): number => {
-  // Roughly map accuracy to zoom level (higher accuracy = higher zoom)
-  // < 10m: zoom 18
-  // < 50m: zoom 16
-  // < 100m: zoom 15
-  // < 500m: zoom 14
-  // < 1km: zoom 13
-  // < 5km: zoom 11
-  // >= 5km: zoom 10
-  if (accuracyMeters < 10) return 18;
-  if (accuracyMeters < 50) return 16;
-  if (accuracyMeters < 100) return 15;
-  if (accuracyMeters < 500) return 14;
-  if (accuracyMeters < 1000) return 13;
-  if (accuracyMeters < 5000) return 11;
-  return 10;
-};
-
-// Google Maps component that uses the API loaded via script tag
-const GoogleMap: React.FC<{
-  lat: number;
-  lng: number;
-  zoom?: number;
-  precisionBits?: number;
-}> = ({ lat, lng, zoom, precisionBits }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
-
-  // Calculate accuracy in meters based on precision bits
-  const accuracyMeters = calculateAccuracyFromPrecisionBits(precisionBits);
-
-  // If zoom is not provided, calculate based on accuracy
-  const effectiveZoom = zoom || calculateZoomFromAccuracy(accuracyMeters);
-
-  useEffect(() => {
-    if (mapRef.current && window.google && window.google.maps) {
-      // Create map instance
-      const mapOptions: google.maps.MapOptions = {
-        center: { lat, lng },
-        zoom: effectiveZoom,
-        mapTypeId: google.maps.MapTypeId.HYBRID,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: false,
-        zoomControl: true,
-        styles: [
-          {
-            featureType: "all",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#ffffff" }],
-          },
-          {
-            featureType: "all",
-            elementType: "labels.text.stroke",
-            stylers: [{ visibility: "off" }],
-          },
-          {
-            featureType: "administrative",
-            elementType: "geometry",
-            stylers: [{ visibility: "on" }, { color: "#2d2d2d" }],
-          },
-          {
-            featureType: "landscape",
-            elementType: "geometry",
-            stylers: [{ color: "#1a1a1a" }],
-          },
-          {
-            featureType: "poi",
-            elementType: "geometry",
-            stylers: [{ color: "#1a1a1a" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry.fill",
-            stylers: [{ color: "#2d2d2d" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#333333" }],
-          },
-          {
-            featureType: "water",
-            elementType: "geometry",
-            stylers: [{ color: "#0f252e" }],
-          },
-        ],
-      };
-
-      mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
-
-      // Only add the center marker if we don't have precision information or
-      // it's very accurate.
-      if (precisionBits === undefined || accuracyMeters < 100) {
-        markerRef.current = new google.maps.Marker({
-          position: { lat, lng },
-          map: mapInstanceRef.current,
-          title: `Node Position`,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "#4ade80",
-            fillOpacity: 1,
-            strokeColor: "#22c55e",
-            strokeWeight: 2,
-          },
-        });
-      }
-
-      // Circle will always be shown, using default 300m accuracy if no
-      // precision bits.
-      new google.maps.Circle({
-        strokeColor: "#22c55e",
-        strokeOpacity: 0.8,
-        strokeWeight: 2.5,
-        fillColor: "#4ade80",
-        fillOpacity: 0.4,
-        map: mapInstanceRef.current,
-        center: { lat, lng },
-        radius: accuracyMeters,
-      });
-    }
-  }, [lat, lng, effectiveZoom, accuracyMeters]);
-
-  return (
-    <div
-      ref={mapRef}
-      className="w-full h-full min-h-[300px] rounded-lg overflow-hidden effect-inset"
-    />
-  );
-};
-
-// Battery level component with visual indicator
-const BatteryLevel: React.FC<{ level: number }> = ({ level }) => {
-  let color = "bg-green-500";
-  let icon = <BatteryFull className="w-4 h-4" />;
-
-  if (level <= 20) {
-    color = "bg-red-500";
-    icon = <BatteryLow className="w-4 h-4" />;
-  } else if (level <= 50) {
-    color = "bg-amber-500";
-    icon = <BatteryMedium className="w-4 h-4" />;
-  }
-
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-neutral-400 flex items-center">
-          {icon}
-          <span className="ml-1.5">Battery</span>
-        </span>
-        <span
-          className={`${level > 30 ? "text-green-500" : "text-amber-500"} font-mono text-sm`}
-        >
-          {level}%
-        </span>
-      </div>
-      <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset">
-        <div
-          className={`${color} h-2 rounded-full`}
-          style={{ width: `${level}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-};
-
-// Signal strength component with visual indicator
-const SignalStrength: React.FC<{ snr: number }> = ({ snr }) => {
-  // SNR is typically in dB, with values from -20 to +20
-  // Higher is better: < 0 is poor, > 10 is excellent
-  let strengthClass = "bg-red-500";
-  let strengthText = "Poor";
-  let textColor = "text-red-500";
-
-  if (snr > 10) {
-    strengthClass = "bg-green-500";
-    strengthText = "Excellent";
-    textColor = "text-green-500";
-  } else if (snr > 5) {
-    strengthClass = "bg-green-400";
-    strengthText = "Good";
-    textColor = "text-green-400";
-  } else if (snr > 0) {
-    strengthClass = "bg-amber-500";
-    strengthText = "Fair";
-    textColor = "text-amber-500";
-  }
-
-  // Calculate width percentage (0-100%)
-  // Map SNR from -20...+20 to 0...100%
-  const percentage = Math.max(0, Math.min(100, ((snr + 20) / 40) * 100));
-
-  return (
-    <div className="flex flex-col">
-      <div className="flex items-center justify-between mb-1">
-        <span className="text-neutral-400 flex items-center">
-          <Signal className="w-4 h-4" />
-          <span className="ml-1.5">Signal</span>
-        </span>
-        <span className="flex items-center">
-          <span className="font-mono text-sm">{snr} dB</span>
-          <span className={`${textColor} text-xs ml-1.5`}>
-            ({strengthText})
-          </span>
-        </span>
-      </div>
-      <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset">
-        <div
-          className={`${strengthClass} h-2 rounded-full`}
-          style={{ width: `${percentage}%` }}
-        ></div>
-      </div>
-    </div>
-  );
-};
-
-// Section component for consistent section styling
-const Section: React.FC<{
-  title: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-  className?: string;
-}> = ({ title, icon, children, className = "" }) => {
-  return (
-    <div
-      className={`bg-neutral-800/50 p-4 rounded-lg effect-inset ${className}`}
-    >
-      <h2 className="font-semibold mb-4 text-neutral-300 border-b border-neutral-700 pb-2 flex items-center">
-        {icon && <span className="mr-2">{icon}</span>}
-        {title}
-      </h2>
-      <div className="space-y-3">{children}</div>
-    </div>
-  );
-};
-
-// Use the new centralized KeyValuePair component from ui folder
-
-// Format uptime into a human-readable string
-const formatUptime = (seconds: number): string => {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0) parts.push(`${minutes}m`);
-
-  return parts.join(" ") || "< 1m";
-};
-
-// Helper function to get region name
-const getRegionName = (region: RegionCode | string | undefined): string => {
-  if (region === undefined) return "Unknown";
-
-  // Map of region codes to display names
-  const regionNames: Record<string, string> = {
-    UNSET: "Unset",
-    US: "US",
-    EU_433: "EU 433MHz",
-    EU_868: "EU 868MHz",
-    CN: "China",
-    JP: "Japan",
-    ANZ: "Australia/NZ",
-    KR: "Korea",
-    TW: "Taiwan",
-    RU: "Russia",
-    IN: "India",
-    NZ_865: "New Zealand 865MHz",
-    TH: "Thailand",
-    LORA_24: "LoRa 2.4GHz",
-    UA_433: "Ukraine 433MHz",
-    UA_868: "Ukraine 868MHz",
-    MY_433: "Malaysia 433MHz",
-  };
-
-  // Get the name from the map, or return unknown with the value
-  return regionNames[region] || `Unknown (${region})`;
-};
-
-// Helper function to get modem preset name
-const getModemPresetName = (
-  preset: ModemPreset | string | undefined
-): string => {
-  if (preset === undefined) return "Unknown";
-
-  // Map of modem presets to display names
-  const presetNames: Record<string, string> = {
-    UNSET: "Unset",
-    LONG_FAST: "Long Fast",
-    LONG_SLOW: "Long Slow",
-    VERY_LONG_SLOW: "Very Long Slow",
-    MEDIUM_SLOW: "Medium Slow",
-    MEDIUM_FAST: "Medium Fast",
-    SHORT_SLOW: "Short Slow",
-    SHORT_FAST: "Short Fast",
-    ULTRA_FAST: "Ultra Fast",
-  };
-
-  // Get the name from the map, or return unknown with the value
-  return presetNames[preset] || `Unknown (${preset})`;
-};
-
-// Component to render packets associated with a specific node
-const NodePacketList: React.FC<{ nodeId: number }> = ({ nodeId }) => {
-  const { packets } = useAppSelector((state) => state.packets);
-  // Fixed number of packets to display
-  const MAX_PACKETS = 20;
-
-  // Get packets from this node (sent or received)
-  const nodePackets = packets
-    .filter(
-      (packet) => packet.data.from === nodeId || packet.data.to === nodeId
-    )
-    .slice(0, MAX_PACKETS); // Show fixed number of packets
-
-  // Generate a reproducible packet key
-  const getPacketKey = useCallback((packet: Packet, index: number): string => {
-    if (packet.data.id !== undefined && packet.data.from !== undefined) {
-      const fromId = `!${packet.data.from.toString(16).toLowerCase()}`;
-      return `${fromId}_${packet.data.id}`;
-    }
-    return `fallback_${index}`;
-  }, []);
-
-  if (nodePackets.length === 0) {
-    return (
-      <div className="p-6 effect-inset rounded-lg border border-neutral-950/60 bg-neutral-800/50 text-neutral-400 text-center">
-        No packets found for this node
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm text-neutral-400 px-2">
-          Showing {nodePackets.length} of{" "}
-          {
-            packets.filter(
-              (p) => p.data.from === nodeId || p.data.to === nodeId
-            ).length
-          }{" "}
-          recent packets
-        </h3>
-      </div>
-
-      <Separator className="mx-0 mb-4" />
-
-      <ul className="space-y-8 w-full">
-        {nodePackets.map((packet, index) => (
-          <li key={getPacketKey(packet, index)}>
-            <PacketRenderer packet={packet} />
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-};
 
 export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const dispatch = useAppDispatch();
@@ -445,10 +66,6 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
         // Add observed nodes info
         observedNodeCount: gateway.observedNodes.length,
       };
-
-      // Look for packets from this node that might have MapReport data
-      // No direct access to packets store here, so we'll rely on
-      // the data being properly populated in the aggregatorSlice
     }
   }
 
@@ -714,73 +331,18 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
                 {(node.deviceMetrics?.channelUtilization !== undefined ||
                   node.deviceMetrics?.airUtilTx !== undefined) && (
-                  <div className="mt-3 pt-3 border-t border-neutral-700">
-                    <div className="text-sm text-neutral-400 mb-2 flex items-center">
-                      <BarChart className="w-3 h-3 mr-1.5" />
-                      Channel Utilization:
-                    </div>
-
-                    {node.deviceMetrics?.channelUtilization !== undefined && (
-                      <div className="flex flex-col mb-2">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Total</span>
-                          <span className="font-mono">
-                            {node.deviceMetrics.channelUtilization}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset">
-                          <div
-                            className={`bg-blue-500 h-2 rounded-full`}
-                            style={{
-                              width: `${node.deviceMetrics.channelUtilization}%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-
-                    {node.deviceMetrics?.airUtilTx !== undefined && (
-                      <div className="flex flex-col">
-                        <div className="flex justify-between text-xs mb-1">
-                          <span>Transmit</span>
-                          <span className="font-mono">
-                            {node.deviceMetrics.airUtilTx}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset">
-                          <div
-                            className={`bg-green-500 h-2 rounded-full`}
-                            style={{
-                              width: `${node.deviceMetrics.airUtilTx}%`,
-                            }}
-                          ></div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <UtilizationMetrics
+                    channelUtilization={node.deviceMetrics.channelUtilization}
+                    airUtilTx={node.deviceMetrics.airUtilTx}
+                  />
                 )}
               </div>
             </Section>
           )}
 
           {/* Warning for low battery */}
-          {node.batteryLevel !== undefined && node.batteryLevel < 20 && (
-            <div className="bg-red-900/30 border border-red-800 p-4 rounded-lg effect-inset mt-4">
-              <div className="flex items-center text-red-400">
-                <AlertTriangle className="w-4 h-4 mr-2" />
-                <h3 className="font-medium font-mono tracking-wider">
-                  LOW BATTERY WARNING
-                </h3>
-              </div>
-              <p className="text-sm mt-2 text-neutral-300 flex items-center">
-                <BatteryLow className="w-3 h-3 mr-1.5 text-red-400" />
-                Battery level critically low at{" "}
-                <span className="font-mono text-red-400 mx-1">
-                  {node.batteryLevel}%
-                </span>
-                Device may stop reporting soon.
-              </p>
-            </div>
+          {node.batteryLevel !== undefined && (
+            <LowBatteryWarning batteryLevel={node.batteryLevel} />
           )}
         </div>
 
@@ -808,7 +370,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               <KeyValuePair
                 label="Uptime"
                 value={formatUptime(node.deviceMetrics.uptimeSeconds)}
-                icon={<Timer className="w-3 h-3" />}
+                icon={<Clock className="w-3 h-3" />}
                 monospace={true}
                 highlight={node.deviceMetrics.uptimeSeconds > 86400}
                 inset={true}
@@ -867,7 +429,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
             </div>
           </Section>
 
-          {/* Telemetry Info - Environment Metrics */}
+          {/* Environment Metrics */}
           {node.environmentMetrics &&
             Object.keys(node.environmentMetrics).length > 0 && (
               <Section
@@ -875,102 +437,12 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                 icon={<Thermometer className="w-4 h-4" />}
                 className="mt-4"
               >
-                <div className="space-y-4">
-                  {node.environmentMetrics.temperature !== undefined && (
-                    <div className="flex flex-col">
-                      <div className="flex justify-between mb-1 bg-neutral-700/50 p-2 rounded effect-inset">
-                        <span className="text-neutral-400 flex items-center">
-                          <Thermometer className="w-3 h-3 mr-2" />
-                          Temperature
-                        </span>
-                        <span
-                          className={`
-                      ${
-                        node.environmentMetrics.temperature > 30
-                          ? "text-red-500"
-                          : node.environmentMetrics.temperature < 10
-                            ? "text-blue-500"
-                            : "text-green-500"
-                      } font-mono text-sm
-                    `}
-                        >
-                          {node.environmentMetrics.temperature}°C
-                        </span>
-                      </div>
-                      <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset mt-1">
-                        {/* Temp scale: -10°C to 40°C mapped to 0-100% */}
-                        <div
-                          className={`
-                        ${
-                          node.environmentMetrics.temperature > 30
-                            ? "bg-red-500"
-                            : node.environmentMetrics.temperature < 10
-                              ? "bg-blue-500"
-                              : "bg-green-500"
-                        } h-2 rounded-full
-                      `}
-                          style={{
-                            width: `${Math.max(0, Math.min(100, ((node.environmentMetrics.temperature + 10) / 50) * 100))}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {node.environmentMetrics.relativeHumidity !== undefined && (
-                    <div className="flex flex-col mt-3">
-                      <div className="flex justify-between mb-1 bg-neutral-700/50 p-2 rounded effect-inset">
-                        <span className="text-neutral-400 flex items-center">
-                          <Droplets className="w-3 h-3 mr-2" />
-                          Humidity
-                        </span>
-                        <span className="text-blue-400 font-mono text-sm">
-                          {node.environmentMetrics.relativeHumidity}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset mt-1">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full"
-                          style={{
-                            width: `${node.environmentMetrics.relativeHumidity}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {node.environmentMetrics.barometricPressure !== undefined && (
-                    <KeyValuePair
-                      label="Pressure"
-                      value={`${node.environmentMetrics.barometricPressure} hPa`}
-                      icon={<Gauge className="w-3 h-3" />}
-                      monospace={true}
-                      inset={true}
-                    />
-                  )}
-
-                  {node.environmentMetrics.soilMoisture !== undefined && (
-                    <div className="flex flex-col mt-3">
-                      <div className="flex justify-between mb-1 bg-neutral-700/50 p-2 rounded effect-inset">
-                        <span className="text-neutral-400 flex items-center">
-                          <Droplets className="w-3 h-3 mr-2" />
-                          Soil Moisture
-                        </span>
-                        <span className="text-green-400 font-mono text-sm">
-                          {node.environmentMetrics.soilMoisture}%
-                        </span>
-                      </div>
-                      <div className="w-full bg-neutral-700/70 rounded-full h-2 effect-inset mt-1">
-                        <div
-                          className="bg-green-500 h-2 rounded-full"
-                          style={{
-                            width: `${node.environmentMetrics.soilMoisture}%`,
-                          }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <EnvironmentMetrics
+                  temperature={node.environmentMetrics.temperature}
+                  relativeHumidity={node.environmentMetrics.relativeHumidity}
+                  barometricPressure={node.environmentMetrics.barometricPressure}
+                  soilMoisture={node.environmentMetrics.soilMoisture}
+                />
               </Section>
             )}
         </div>
@@ -990,63 +462,15 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               precisionBits={precisionBits}
             />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
-            <KeyValuePair
-              label="Coordinates"
-              value={`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`}
-              monospace={true}
-              inset={true}
-            />
-
-            {node.position?.altitude !== undefined && (
-              <KeyValuePair
-                label="Altitude"
-                value={`${node.position.altitude} m`}
-                monospace={true}
-                inset={true}
-              />
-            )}
-
-            {/* Position Accuracy */}
-            <KeyValuePair
-              label="Accuracy"
-              value={
-                positionAccuracy < 1000
-                  ? `±${positionAccuracy.toFixed(0)} m`
-                  : `±${(positionAccuracy / 1000).toFixed(1)} km`
-              }
-              monospace={true}
-              inset={true}
-            />
-
-            {precisionBits !== undefined && (
-              <KeyValuePair
-                label="Precision"
-                value={`${precisionBits} bits`}
-                monospace={true}
-                inset={true}
-              />
-            )}
-
-            {node.position?.satsInView !== undefined && (
-              <KeyValuePair
-                label="Satellites"
-                value={node.position.satsInView}
-                monospace={true}
-                highlight={node.position.satsInView > 6}
-                inset={true}
-              />
-            )}
-
-            {node.position?.groundSpeed !== undefined && (
-              <KeyValuePair
-                label="Speed"
-                value={`${node.position.groundSpeed} m/s`}
-                monospace={true}
-                inset={true}
-              />
-            )}
-          </div>
+          <NodePositionData
+            latitude={latitude}
+            longitude={longitude}
+            altitude={node.position?.altitude}
+            positionAccuracy={positionAccuracy}
+            precisionBits={precisionBits}
+            satsInView={node.position?.satsInView}
+            groundSpeed={node.position?.groundSpeed}
+          />
         </Section>
       )}
 
