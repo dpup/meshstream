@@ -40,26 +40,42 @@ const getNodeInitials = (nodeId: number, nodeName?: string) => {
   return nodeId.toString(16).slice(-4).toUpperCase();
 };
 
+// Get the preferred display name for a node
+const getDisplayName = (nodeId: number, nodeName?: string) => {
+  if (!nodeName) {
+    return `Node ${nodeId.toString(16)}`;
+  }
+  
+  // Prefer longName if available
+  return nodeName;
+};
+
 export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, nodeName }) => {
   const initials = getNodeInitials(message.from, nodeName);
   const nodeColor = getNodeColor(message.from);
+  const displayName = getDisplayName(message.from, nodeName);
   
   return (
-    <div className="flex">
-      <div className={`flex-shrink-0 w-9 h-9 rounded-full ${nodeColor} flex items-center justify-center text-white text-xs font-bold`}>
-        {initials}
+    <div>
+      {/* Header row with name and timestamp aligned right */}
+      <div className="flex justify-end items-baseline mb-1 px-2 space-x-2">
+        <span className="text-neutral-200 font-medium font-mono text-xs">
+          {displayName}
+        </span>
+        <span className="text-[10px] text-neutral-500">
+          {formatTimestamp(message.timestamp)}
+        </span>
       </div>
-      <div className="ml-3 flex-1">
-        <div className="flex items-baseline">
-          <span className="text-neutral-200 font-medium">
-            {nodeName || `Node ${message.from.toString(16)}`}
-          </span>
-          <span className="ml-2 text-xs text-neutral-500">
-            {formatTimestamp(message.timestamp)}
-          </span>
+      
+      {/* Message row with avatar and text */}
+      <div className="flex items-start">
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${nodeColor} flex items-center justify-center text-white text-[9px] font-bold`}>
+          {initials}
         </div>
-        <div className="mt-1 bg-neutral-800 rounded-lg py-2 px-3 text-neutral-300 break-words">
-          {message.text}
+        <div className="ml-3 flex-1">
+          <div className="bg-neutral-800 rounded-lg py-2 px-3 text-neutral-300 break-words font-mono effect-inset text-sm">
+            {message.text}
+          </div>
         </div>
       </div>
     </div>

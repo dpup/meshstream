@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
-import { 
+import {
   ArrowLeft,
   Radio,
   Cpu,
@@ -17,7 +17,8 @@ import {
   Earth,
   TableConfig,
   Save,
-  MessageSquare
+  MessageSquare,
+  Thermometer,
 } from "lucide-react";
 import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
@@ -31,7 +32,11 @@ import { NodePacketList } from "./NodePacketList";
 import { LowBatteryWarning } from "./LowBatteryWarning";
 import { UtilizationMetrics } from "./UtilizationMetrics";
 import { calculateAccuracyFromPrecisionBits } from "../../lib/mapUtils";
-import { formatUptime, getRegionName, getModemPresetName } from "../../utils/formatters";
+import {
+  formatUptime,
+  getRegionName,
+  getModemPresetName,
+} from "../../utils/formatters";
 
 interface NodeDetailProps {
   nodeId: number;
@@ -159,7 +164,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   return (
     <div className="max-w-4xl">
       {/* Header with back button and basic node info */}
-      <div className="flex items-center p-4 bg-neutral-800/50 rounded-lg">
+      <div className="flex items-center px-4 bg-neutral-800/50 rounded-lg">
         <button
           onClick={handleBack}
           className="flex items-center mr-4 p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 rounded-full transition-colors effect-outset"
@@ -236,14 +241,10 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                     className="text-neutral-200 flex items-center hover:text-blue-400 transition-colors"
                   >
                     <Wifi className="w-3 h-3 mr-1.5 text-blue-400" />
-                    <span className="font-mono text-sm">
-                      {node.channelId}
-                    </span>
+                    <span className="font-mono text-sm">{node.channelId}</span>
                   </Link>
                 ) : (
-                  <span className="text-neutral-400 italic">
-                    None detected
-                  </span>
+                  <span className="text-neutral-400 italic">None detected</span>
                 )}
                 {node.mapReport?.hasDefaultChannel !== undefined && (
                   <span className="text-xs text-neutral-400">
@@ -310,7 +311,11 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           {(node.deviceMetrics ||
             node.batteryLevel !== undefined ||
             node.snr !== undefined) && (
-            <Section title="Device Status" icon={<Cpu className="w-4 h-4" />} className="mt-4">
+            <Section
+              title="Device Status"
+              icon={<Cpu className="w-4 h-4" />}
+              className="mt-4"
+            >
               <div className="space-y-4">
                 {node.batteryLevel !== undefined && (
                   <BatteryLevel level={node.batteryLevel} />
@@ -385,8 +390,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               <div className="flex flex-col items-end">
                 {node.gatewayId ? (
                   // Check if gateway ID matches the current node ID (self-reporting)
-                  node.gatewayId ===
-                  `!${nodeId.toString(16).toLowerCase()}` ? (
+                  node.gatewayId === `!${nodeId.toString(16).toLowerCase()}` ? (
                     <span className="text-emerald-400 text-xs flex items-center font-mono">
                       Self reported
                     </span>
@@ -401,9 +405,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                     </Link>
                   )
                 ) : (
-                  <span className="text-neutral-400 italic">
-                    None detected
-                  </span>
+                  <span className="text-neutral-400 italic">None detected</span>
                 )}
               </div>
             </div>
@@ -440,7 +442,9 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                 <EnvironmentMetrics
                   temperature={node.environmentMetrics.temperature}
                   relativeHumidity={node.environmentMetrics.relativeHumidity}
-                  barometricPressure={node.environmentMetrics.barometricPressure}
+                  barometricPressure={
+                    node.environmentMetrics.barometricPressure
+                  }
                   soilMoisture={node.environmentMetrics.soilMoisture}
                 />
               </Section>

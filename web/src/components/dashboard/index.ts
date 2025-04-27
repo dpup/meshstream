@@ -2,6 +2,7 @@ export * from './NodeList';
 export * from './GatewayList';
 export * from './MeshCard';
 export * from './NodeDetail';
+export * from './ChannelDetail';
 export * from './BatteryLevel';
 export * from './SignalStrength';
 export * from './GoogleMap';

@@ -28,10 +28,10 @@ export const NodePositionData: React.FC<NodePositionDataProps> = ({
   positionAccuracy,
   precisionBits,
   satsInView,
-  groundSpeed
+  groundSpeed,
 }) => {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3 text-sm">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mt-3 text-sm">
       <KeyValuePair
         label="Coordinates"
         value={`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`}

@@ -43,20 +43,6 @@ export const NodePacketList: React.FC<NodePacketListProps> = ({ nodeId }) => {
 
   return (
     <div className="flex flex-col h-full w-full">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm text-neutral-400 px-2">
-          Showing {nodePackets.length} of{" "}
-          {
-            packets.filter(
-              (p) => p.data.from === nodeId || p.data.to === nodeId
-            ).length
-          }{" "}
-          recent packets
-        </h3>
-      </div>
-
-      <Separator className="mx-0 mb-4" />
-
       <ul className="space-y-8 w-full">
         {nodePackets.map((packet, index) => (
           <li key={getPacketKey(packet, index)}>
