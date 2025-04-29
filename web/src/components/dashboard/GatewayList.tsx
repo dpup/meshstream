@@ -79,7 +79,6 @@ export const GatewayList: React.FC = () => {
                   messageCount: gateway.messageCount,
                   textMessageCount: gateway.textMessageCount
                 }}
-                gatewayId={gateway.gatewayId}
                 observedNodes={gateway.observedNodes}
                 onClick={handleNodeClick}
                 isRecent={isRecent}

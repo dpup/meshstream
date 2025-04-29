@@ -9,7 +9,7 @@ declare namespace google {
       setZoom(zoom: number): void;
       getZoom(): number | undefined;
       fitBounds(bounds: LatLngBounds): void;
-      addListener(event: string, handler: Function): MapsEventListener;
+      addListener(event: string, handler: () => void): MapsEventListener;
     }
 
     class Marker {
@@ -17,7 +17,7 @@ declare namespace google {
       setMap(map: Map | null): void;
       setPosition(position: LatLngLiteral): void;
       setIcon(icon: any): void;
-      addListener(event: string, handler: Function): MapsEventListener;
+      addListener(event: string, handler: () => void): MapsEventListener;
     }
 
     class Circle {
@@ -87,7 +87,7 @@ declare namespace google {
       /**
        * Removes all listeners for all events for the given instance.
        */
-      clearInstanceListeners(instance: Object): void;
+      clearInstanceListeners(instance: object): void;
     };
 
     // Maps Event Listener

@@ -4,8 +4,6 @@ import { useAppSelector } from "../../hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
 import { Position } from "../../lib/types";
-import { Button } from "../ui/Button";
-import { Locate } from "lucide-react";
 
 interface NetworkMapProps {
   /** Height of the map in CSS units */
@@ -367,7 +365,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       `${node.isGateway ? 'Gateway' : 'Node'} ${node.id.toString(16)}`;
     
     const secondsAgo = node.lastHeard ? Math.floor(Date.now() / 1000) - node.lastHeard : 0;
-    let lastSeenText = formatLastSeen(secondsAgo);
+    const lastSeenText = formatLastSeen(secondsAgo);
     
     const infoContent = `
       <div style="font-family: sans-serif; max-width: 240px; color: #181818;">
