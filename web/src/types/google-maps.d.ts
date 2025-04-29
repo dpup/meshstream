@@ -6,18 +6,43 @@ declare namespace google {
         mapDiv: Element,
         opts?: MapOptions
       );
+      setZoom(zoom: number): void;
+      getZoom(): number | undefined;
+      fitBounds(bounds: LatLngBounds): void;
     }
 
     class Marker {
       constructor(opts?: MarkerOptions);
+      setMap(map: Map | null): void;
+      setPosition(position: LatLngLiteral): void;
+      setIcon(icon: any): void;
+      addListener(event: string, handler: Function): void;
     }
 
     class Circle {
       constructor(opts?: CircleOptions);
+      setMap(map: Map | null): void;
+    }
+
+    class InfoWindow {
+      constructor(opts?: InfoWindowOptions);
+      setContent(content: string): void;
+      open(map?: Map, anchor?: Marker): void;
+      close(): void;
+    }
+
+    class LatLngBounds {
+      constructor();
+      extend(point: LatLngLiteral): void;
+    }
+
+    interface LatLngLiteral {
+      lat: number;
+      lng: number;
     }
 
     interface MapOptions {
-      center?: { lat: number; lng: number };
+      center?: LatLngLiteral;
       zoom?: number;
       mapTypeId?: string;
       mapTypeControl?: boolean;
@@ -28,10 +53,11 @@ declare namespace google {
     }
 
     interface MarkerOptions {
-      position?: { lat: number; lng: number };
+      position?: LatLngLiteral;
       map?: Map;
       title?: string;
       icon?: any;
+      zIndex?: number;
     }
 
     interface CircleOptions {
@@ -41,8 +67,13 @@ declare namespace google {
       fillColor?: string;
       fillOpacity?: number;
       map?: Map;
-      center?: { lat: number; lng: number };
+      center?: LatLngLiteral;
       radius?: number;
+    }
+
+    interface InfoWindowOptions {
+      content?: string;
+      position?: LatLngLiteral;
     }
 
     const MapTypeId: {

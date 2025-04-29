@@ -2,5 +2,6 @@
   "cSpell.words": ["meshstream", "Motherlode", "mqtt"],
   "protoc": {
     "options": ["-Iproto"]
-  }
+  },
+  "makefile.configureOnOpen": false
 }

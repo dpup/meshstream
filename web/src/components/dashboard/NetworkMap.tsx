@@ -2,6 +2,8 @@
 import React, { useRef, useEffect, useState } from "react";
 import { useAppSelector } from "../../hooks";
 import { useNavigate } from "@tanstack/react-router";
+import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
+import { Position } from "../../lib/types";
 
 interface NetworkMapProps {
   /** Height of the map in CSS units */
@@ -18,7 +20,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   const markersRef = useRef<Record<string, google.maps.Marker>>({});
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const boundsRef = useRef<google.maps.LatLngBounds>(new google.maps.LatLngBounds());
-  const [nodesWithPosition, setNodesWithPosition] = useState<any[]>([]);
+  const [nodesWithPosition, setNodesWithPosition] = useState<MapNode[]>([]);
   const animatingNodesRef = useRef<Record<string, number>>({});
 
   // Get nodes data from the store
@@ -68,7 +70,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }, [latestPacket]);
 
   // Function to animate a node marker when it receives a packet
-  function animateNodeMarker(nodeId: number) {
+  function animateNodeMarker(nodeId: number): void {
     const key = `node-${nodeId}`;
     const marker = markersRef.current[key];
     const node = nodesWithPosition.find(n => n.id === nodeId);
@@ -109,7 +111,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }, []);
   
   // Helper function to initialize the map
-  function initializeMap(element: HTMLDivElement) {
+  function initializeMap(element: HTMLDivElement): void {
     const mapOptions: google.maps.MapOptions = {
       zoom: 10,
       mapTypeId: google.maps.MapTypeId.HYBRID,
@@ -166,7 +168,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }
   
   // Helper function to update node markers on the map
-  function updateNodeMarkers(nodes: any[], navigate: any) {
+  function updateNodeMarkers(nodes: MapNode[], navigate: ReturnType<typeof useNavigate>): void {
     if (!mapInstanceRef.current) return;
     
     // Clear the bounds for recalculation
@@ -224,8 +226,12 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }
   
   // Create a new marker
-  function createMarker(node: any, position: google.maps.LatLngLiteral, 
-                        nodeName: string, navigate: any) {
+  function createMarker(
+    node: MapNode, 
+    position: google.maps.LatLngLiteral, 
+    nodeName: string, 
+    navigate: ReturnType<typeof useNavigate>
+  ): void {
     if (!mapInstanceRef.current || !infoWindowRef.current) return;
     
     const key = `node-${node.id}`;
@@ -246,20 +252,24 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }
   
   // Update an existing marker
-  function updateMarker(node: any, position: google.maps.LatLngLiteral) {
+  function updateMarker(node: MapNode, position: google.maps.LatLngLiteral): void {
     const key = `node-${node.id}`;
     markersRef.current[key].setPosition(position);
     markersRef.current[key].setIcon(getMarkerIcon(node));
   }
   
   // Show info window for a node
-  function showInfoWindow(node: any, marker: google.maps.Marker, navigate: any) {
+  function showInfoWindow(
+    node: MapNode, 
+    marker: google.maps.Marker, 
+    navigate: ReturnType<typeof useNavigate>
+  ): void {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
     
     const nodeName = node.shortName || node.longName || 
       `${node.isGateway ? 'Gateway' : 'Node'} ${node.id.toString(16)}`;
     
-    const secondsAgo = Math.floor(Date.now() / 1000) - node.lastHeard;
+    const secondsAgo = node.lastHeard ? Math.floor(Date.now() / 1000) - node.lastHeard : 0;
     let lastSeenText = formatLastSeen(secondsAgo);
     
     const infoContent = `
@@ -292,7 +302,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
       const link = document.getElementById(`view-node-${node.id}`);
       if (link) {
         link.addEventListener('click', () => {
-          navigate({ to: `/node/$nodeId`, params: { nodeId: node.id.toString() } });
+          navigate({ to: `/node/$nodeId`, params: { nodeId: node.id.toString(16) } });
         });
       }
     }, 100);
@@ -307,70 +317,100 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   );
 };
 
+// Define interface for nodes with position data for map display
+interface MapNode {
+  id: number;
+  position: Position & {
+    latitudeI: number; // Override to make required
+    longitudeI: number; // Override to make required
+  };
+  isGateway: boolean;
+  gatewayId?: string;
+  shortName?: string;
+  longName?: string;
+  lastHeard?: number;
+  messageCount: number;
+  textMessageCount: number;
+}
+
 // Helper function to determine if a node has valid position data
-function hasValidPosition(node: any) {
-  return node.position && 
-         node.position.latitudeI !== undefined && 
-         node.position.longitudeI !== undefined;
+function hasValidPosition(node: NodeData): boolean {
+  return Boolean(
+    node.position && 
+    node.position.latitudeI !== undefined && 
+    node.position.longitudeI !== undefined
+  );
 }
 
 // Get a list of nodes that have position data
-function getNodesWithPosition(nodes: any, gateways: any) {
-  const nodesMap = new Map(); // Use a Map to avoid duplicates
+function getNodesWithPosition(
+  nodes: Record<number, NodeData>, 
+  gateways: Record<string, GatewayData>
+): MapNode[] {
+  const nodesMap = new Map<number, MapNode>(); // Use a Map to avoid duplicates
   
   // Regular nodes
   Object.entries(nodes).forEach(([nodeIdStr, nodeData]) => {
     if (hasValidPosition(nodeData)) {
       const nodeId = parseInt(nodeIdStr);
+      const position = nodeData.position as MapNode['position'];
       nodesMap.set(nodeId, {
         ...nodeData,
         id: nodeId,
-        isGateway: false
+        isGateway: !!nodeData.isGateway,
+        position,
+        messageCount: nodeData.messageCount || 0,
+        textMessageCount: nodeData.textMessageCount || 0
       });
     }
   });
 
-  // Gateways with position data
+  // Gateways - we need to find the corresponding node for each gateway
   Object.entries(gateways).forEach(([gatewayId, gatewayData]) => {
     // Extract node ID from gateway ID (removing the '!' prefix)
     const nodeId = parseInt(gatewayId.substring(1), 16);
     
-    // First priority: Use gateway's mapReport position if available
-    if (gatewayData.mapReport && 
-        gatewayData.mapReport.latitudeI !== undefined && 
-        gatewayData.mapReport.longitudeI !== undefined) {
-      
-      nodesMap.set(nodeId, {
-        ...(nodesMap.get(nodeId) || {}), // Keep existing node data if any
-        id: nodeId,
-        isGateway: true,
-        gatewayId: gatewayId,
-        position: {
-          latitudeI: gatewayData.mapReport.latitudeI,
-          longitudeI: gatewayData.mapReport.longitudeI,
-          precisionBits: gatewayData.mapReport.positionPrecision
-        },
-        // Include other gateway data
-        lastHeard: gatewayData.lastHeard || (nodesMap.get(nodeId)?.lastHeard),
-        messageCount: gatewayData.messageCount || (nodesMap.get(nodeId)?.messageCount || 0),
-        textMessageCount: gatewayData.textMessageCount || (nodesMap.get(nodeId)?.textMessageCount || 0),
-        shortName: gatewayData.shortName || (nodesMap.get(nodeId)?.shortName),
-        longName: gatewayData.longName || (nodesMap.get(nodeId)?.longName)
-      });
+    // First priority: Check if we already have the node with a mapReport 
+    // (since mapReport is stored on NodeData, not GatewayData)
+    const nodeWithMapReport = nodes[nodeId];
+    
+    if (
+      nodeWithMapReport?.mapReport && 
+      nodeWithMapReport.mapReport.latitudeI !== undefined && 
+      nodeWithMapReport.mapReport.longitudeI !== undefined
+    ) {
+      // Use mapReport position from the node data if we haven't already added this node
+      if (!nodesMap.has(nodeId)) {
+        nodesMap.set(nodeId, {
+          id: nodeId,
+          isGateway: true,
+          gatewayId: gatewayId,
+          position: {
+            latitudeI: nodeWithMapReport.mapReport.latitudeI!,
+            longitudeI: nodeWithMapReport.mapReport.longitudeI!,
+            precisionBits: nodeWithMapReport.mapReport.positionPrecision,
+            time: nodeWithMapReport.lastHeard || Math.floor(Date.now() / 1000)
+          },
+          // Include other data
+          lastHeard: nodeWithMapReport.lastHeard,
+          messageCount: nodeWithMapReport.messageCount || gatewayData.messageCount || 0,
+          textMessageCount: nodeWithMapReport.textMessageCount || gatewayData.textMessageCount || 0,
+          shortName: nodeWithMapReport.shortName,
+          longName: nodeWithMapReport.longName
+        });
+      }
     } 
     // Second priority: Mark existing node as gateway if it already has position data
     else if (nodesMap.has(nodeId)) {
-      const existingNode = nodesMap.get(nodeId);
+      const existingNode = nodesMap.get(nodeId)!;
       nodesMap.set(nodeId, {
         ...existingNode,
         isGateway: true,
         gatewayId: gatewayId,
-        // Merge other data
+        // Update data from gateway information
         lastHeard: Math.max(existingNode.lastHeard || 0, gatewayData.lastHeard || 0),
         messageCount: existingNode.messageCount || gatewayData.messageCount || 0,
-        textMessageCount: existingNode.textMessageCount || gatewayData.textMessageCount || 0,
-        shortName: existingNode.shortName || gatewayData.shortName,
-        longName: existingNode.longName || gatewayData.longName
+        textMessageCount: existingNode.textMessageCount || gatewayData.textMessageCount || 0
       });
     }
   });
@@ -378,8 +418,18 @@ function getNodesWithPosition(nodes: any, gateways: any) {
   return Array.from(nodesMap.values());
 }
 
+// Interface for marker icon configuration
+interface MarkerIconConfig {
+  path: number;
+  scale: number;
+  fillColor: string;
+  fillOpacity: number;
+  strokeColor: string;
+  strokeWeight: number;
+}
+
 // Get marker icon for a node
-function getMarkerIcon(node: any, isAnimating: boolean = false) {
+function getMarkerIcon(node: MapNode, isAnimating: boolean = false): MarkerIconConfig {
   return {
     path: google.maps.SymbolPath.CIRCLE,
     scale: isAnimating ? 14 : 10, // Increase size during animation
@@ -391,7 +441,7 @@ function getMarkerIcon(node: any, isAnimating: boolean = false) {
 }
 
 // Format the "last seen" text
-function formatLastSeen(secondsAgo: number) {
+function formatLastSeen(secondsAgo: number): string {
   if (secondsAgo < 60) {
     return `${secondsAgo} seconds ago`;
   } else if (secondsAgo < 3600) {
