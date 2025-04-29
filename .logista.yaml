@@ -26,9 +26,11 @@ format: |
       {{- if $data.textMessage }}
   {{ "Text:" | dim }} {{ $data.textMessage }}
       {{- else if $data.mapReport }}
-  {{ "Map Report:" | dim }} {{ $data.mapReport | table }}
+  {{ "Map Report:" | dim }}
+  {{ $data.mapReport | table }}
       {{- else if $data.routeDiscovery }}
-  {{ "Route Discovery:" | dim }} {{ $data.routeDiscovery | table }}
+  {{ "Route Discovery:" | dim }}
+  {{ $data.routeDiscovery | table }}
       {{- else if $data.position }}
   {{ "Position:" | dim }} Lat: {{ $data.position.latitudeI | mult 0.0000001 }}, Long: {{ $data.position.longitudeI | mult 0.0000001 }}
       {{- else if $data.nodeInfo }}

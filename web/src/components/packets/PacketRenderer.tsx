@@ -7,6 +7,7 @@ import { TelemetryPacket } from "./TelemetryPacket";
 import { ErrorPacket } from "./ErrorPacket";
 import { WaypointPacket } from "./WaypointPacket";
 import { MapReportPacket } from "./MapReportPacket";
+import { TraceroutePacket } from "./TraceroutePacket";
 import { GenericPacket } from "./GenericPacket";
 
 interface PacketRendererProps {
@@ -45,6 +46,9 @@ export const PacketRenderer: React.FC<PacketRendererProps> = ({ packet }) => {
       
     case PortNum.MAP_REPORT_APP:
       return <MapReportPacket packet={packet} />;
+      
+    case PortNum.TRACEROUTE_APP:
+      return <TraceroutePacket packet={packet} />;
 
     default:
       return <GenericPacket packet={packet} />;

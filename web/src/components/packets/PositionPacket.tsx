@@ -32,7 +32,6 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
       icon={<MapPin />}
       iconBgColor="bg-emerald-500"
       label="Position"
-      backgroundColor="bg-emerald-950/5"
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
