@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as RootImport } from './routes/root'
 import { Route as PacketsImport } from './routes/packets'
+import { Route as MapImport } from './routes/map'
 import { Route as HomeImport } from './routes/home'
 import { Route as DemoImport } from './routes/demo'
 import { Route as ChannelsImport } from './routes/channels'
@@ -31,6 +32,12 @@ const RootRoute = RootImport.update({
 const PacketsRoute = PacketsImport.update({
   id: '/packets',
   path: '/packets',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const MapRoute = MapImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,6 +109,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeImport
       parentRoute: typeof rootRoute
     }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapImport
+      parentRoute: typeof rootRoute
+    }
     '/packets': {
       id: '/packets'
       path: '/packets'
@@ -140,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/map': typeof MapRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
@@ -151,6 +166,7 @@ export interface FileRoutesByTo {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/map': typeof MapRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
@@ -163,6 +179,7 @@ export interface FileRoutesById {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/map': typeof MapRoute
   '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
@@ -176,6 +193,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/map'
     | '/packets'
     | '/root'
     | '/channel/$channelId'
@@ -186,6 +204,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/map'
     | '/packets'
     | '/root'
     | '/channel/$channelId'
@@ -196,6 +215,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/map'
     | '/packets'
     | '/root'
     | '/channel/$channelId'
@@ -208,6 +228,7 @@ export interface RootRouteChildren {
   ChannelsRoute: typeof ChannelsRoute
   DemoRoute: typeof DemoRoute
   HomeRoute: typeof HomeRoute
+  MapRoute: typeof MapRoute
   PacketsRoute: typeof PacketsRoute
   RootRoute: typeof RootRoute
   ChannelChannelIdRoute: typeof ChannelChannelIdRoute
@@ -219,6 +240,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsRoute: ChannelsRoute,
   DemoRoute: DemoRoute,
   HomeRoute: HomeRoute,
+  MapRoute: MapRoute,
   PacketsRoute: PacketsRoute,
   RootRoute: RootRoute,
   ChannelChannelIdRoute: ChannelChannelIdRoute,
@@ -239,6 +261,7 @@ export const routeTree = rootRoute
         "/channels",
         "/demo",
         "/home",
+        "/map",
         "/packets",
         "/root",
         "/channel/$channelId",
@@ -256,6 +279,9 @@ export const routeTree = rootRoute
     },
     "/home": {
       "filePath": "home.tsx"
+    },
+    "/map": {
+      "filePath": "map.tsx"
     },
     "/packets": {
       "filePath": "packets.tsx"

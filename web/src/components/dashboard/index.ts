@@ -6,6 +6,7 @@ export * from './ChannelDetail';
 export * from './BatteryLevel';
 export * from './SignalStrength';
 export * from './GoogleMap';
+export * from './NetworkMap';
 export * from './NodePacketList';
 export * from './NodePositionData';
 export * from './EnvironmentMetrics';

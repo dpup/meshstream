@@ -9,6 +9,7 @@ import {
   LayoutDashboard,
   Radio,
   MessageSquare,
+  Map,
   LucideIcon,
 } from "lucide-react";
 
@@ -31,6 +32,12 @@ const navigationItems: NavItem[] = [
     to: "/home",
     label: "Dashboard",
     icon: LayoutDashboard,
+    exact: true,
+  },
+  {
+    to: "/map",
+    label: "Network Map",
+    icon: Map,
     exact: true,
   },
   {

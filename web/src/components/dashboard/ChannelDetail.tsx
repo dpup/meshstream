@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useAppSelector } from "../../hooks";
 import { Separator } from "../Separator";
 import { MessageBubble } from "../messages";
-import { Section } from "../ui/Section";
 import { ArrowLeft, MessageSquare, Users, Wifi } from "lucide-react";
 
 interface ChannelDetailProps {

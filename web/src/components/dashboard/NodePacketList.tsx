@@ -2,7 +2,6 @@ import React, { useCallback } from "react";
 import { useAppSelector } from "../../hooks";
 import { PacketRenderer } from "../packets/PacketRenderer";
 import { Packet } from "../../lib/types";
-import { Separator } from "../Separator";
 
 interface NodePacketListProps {
   /** Node ID to filter packets by */
