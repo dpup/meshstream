@@ -41,7 +41,7 @@ export const NodeList: React.FC = () => {
           {nodeArray.length} {nodeArray.length === 1 ? "node" : "nodes"}
         </div>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 gap-2">
         {nodeArray.length === 0 ? (
           <div className="bg-neutral-800/50 hover:bg-neutral-800 p-2 rounded-lg flex items-center">
             <div className="p-1.5 rounded-full bg-neutral-700/30 text-neutral-500 mr-2">

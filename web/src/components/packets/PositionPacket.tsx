@@ -57,21 +57,21 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
                 monospace
               />
             )}
-            {position.time && (
+            {!!position.time && (
               <KeyValuePair 
                 label="Time" 
                 value={formattedTime} 
                 vertical
               />
             )}
-            {position.locationSource && (
+            {!!position.locationSource && (
               <KeyValuePair 
                 label="Source" 
                 value={position.locationSource.replace('LOC_', '')} 
                 vertical
               />
             )}
-            {position.satsInView && (
+            {!!position.satsInView && (
               <KeyValuePair 
                 label="Satellites" 
                 value={position.satsInView} 

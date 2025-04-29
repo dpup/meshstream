@@ -1,19 +1,24 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useAppSelector } from "../../hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
 import { Position } from "../../lib/types";
+import { Button } from "../ui/Button";
+import { Locate } from "lucide-react";
 
 interface NetworkMapProps {
   /** Height of the map in CSS units */
   height?: string;
+  /** Callback for when auto-zoom state changes */
+  onAutoZoomChange?: (enabled: boolean) => void;
 }
 
 /**
  * NetworkMap displays all nodes with position data on a Google Map
  */
-export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
+export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, NetworkMapProps>(
+  ({ height = "600px", onAutoZoomChange }, ref) => {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -22,6 +27,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   const boundsRef = useRef<google.maps.LatLngBounds>(new google.maps.LatLngBounds());
   const [nodesWithPosition, setNodesWithPosition] = useState<MapNode[]>([]);
   const animatingNodesRef = useRef<Record<string, number>>({});
+  const [autoZoomEnabled, setAutoZoomEnabled] = useState(true);
+  // Using any for the event listener since TypeScript can't find the MapsEventListener interface
+  const zoomListenerRef = useRef<any>(null);
 
   // Get nodes data from the store
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
@@ -30,6 +38,86 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   const latestPacket = useAppSelector((state) => 
     state.packets.packets.length > 0 ? state.packets.packets[0] : null
   );
+  
+  // Expose the resetAutoZoom function via ref
+  React.useImperativeHandle(ref, () => ({
+    resetAutoZoom: () => {
+      resetAutoZoom();
+    }
+  }));
+
+  // Reset auto-zoom behavior
+  const resetAutoZoom = useCallback(() => {
+    setAutoZoomEnabled(true);
+    
+    // Notify parent component of auto-zoom state change
+    if (onAutoZoomChange) {
+      onAutoZoomChange(true);
+    }
+    
+    if (mapInstanceRef.current && nodesWithPosition.length > 0) {
+      fitMapToBounds();
+    }
+  }, [nodesWithPosition, onAutoZoomChange]);
+
+  // Function to fit map to bounds
+  const fitMapToBounds = useCallback(() => {
+    if (!mapInstanceRef.current) return;
+    
+    // Clear the bounds for recalculation
+    boundsRef.current = new google.maps.LatLngBounds();
+    
+    // Extend bounds for each node
+    nodesWithPosition.forEach(node => {
+      const lat = node.position.latitudeI / 10000000;
+      const lng = node.position.longitudeI / 10000000;
+      boundsRef.current.extend({ lat, lng });
+    });
+    
+    // Fit the bounds to see all nodes
+    mapInstanceRef.current.fitBounds(boundsRef.current);
+    
+    // If we only have one node, ensure we're not too zoomed in
+    if (nodesWithPosition.length === 1) {
+      setTimeout(() => {
+        if (mapInstanceRef.current) {
+          const currentZoom = mapInstanceRef.current.getZoom() || 15;
+          mapInstanceRef.current.setZoom(Math.min(currentZoom, 15));
+        }
+      }, 100);
+    }
+  }, [nodesWithPosition]);
+
+  // Setup zoom change listener
+  const setupZoomListener = useCallback(() => {
+    if (!mapInstanceRef.current || !window.google || !window.google.maps) return;
+    
+    // Remove previous listener if it exists
+    if (zoomListenerRef.current) {
+      // Use google.maps.event.removeListener for better compatibility
+      window.google.maps.event.removeListener(zoomListenerRef.current);
+      zoomListenerRef.current = null;
+    }
+    
+    // Console log to debug
+    console.log("Setting up zoom change listener");
+    
+    // Add new listener - using google.maps.event.addListener directly
+    zoomListenerRef.current = window.google.maps.event.addListener(
+      mapInstanceRef.current, 
+      'zoom_changed', 
+      () => {
+        console.log("Zoom changed detected");
+        // Disable auto-zoom when user manually zooms
+        setAutoZoomEnabled(false);
+        
+        // Notify parent component of auto-zoom state change
+        if (onAutoZoomChange) {
+          onAutoZoomChange(false);
+        }
+      }
+    );
+  }, [onAutoZoomChange]);
 
   // Effect to build the list of nodes with position data
   useEffect(() => {
@@ -54,7 +142,21 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
     // Update markers and fit the map
     updateNodeMarkers(nodesWithPosition, navigate);
     
-  }, [nodesWithPosition, navigate]);
+  }, [nodesWithPosition, navigate, setupZoomListener]);
+  
+  // Setup zoom listener when map is initialized
+  useEffect(() => {
+    if (mapInstanceRef.current && window.google && window.google.maps) {
+      setupZoomListener();
+    }
+  }, [setupZoomListener, mapInstanceRef.current]);
+  
+  // Update parent component when auto-zoom state changes
+  useEffect(() => {
+    if (onAutoZoomChange) {
+      onAutoZoomChange(autoZoomEnabled);
+    }
+  }, [autoZoomEnabled, onAutoZoomChange]);
   
   // Effect to detect when a node receives a packet and trigger animation
   useEffect(() => {
@@ -95,6 +197,12 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Clean up zoom listener
+      if (zoomListenerRef.current && window.google && window.google.maps) {
+        window.google.maps.event.removeListener(zoomListenerRef.current);
+        zoomListenerRef.current = null;
+      }
+      
       // Clean up markers
       Object.values(markersRef.current).forEach(marker => marker.setMap(null));
       
@@ -208,20 +316,9 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
       }
     });
     
-    // If we have nodes, fit the map to show all of them
-    if (nodes.length > 0) {
-      // Fit the bounds to see all nodes
-      mapInstanceRef.current?.fitBounds(boundsRef.current);
-      
-      // If we only have one node, ensure we're not too zoomed in
-      if (nodes.length === 1 && mapInstanceRef.current) {
-        setTimeout(() => {
-          if (mapInstanceRef.current) {
-            const currentZoom = mapInstanceRef.current.getZoom() || 15;
-            mapInstanceRef.current.setZoom(Math.min(currentZoom, 15));
-          }
-        }, 100);
-      }
+    // If auto-zoom is enabled and we have nodes, fit the map to show all of them
+    if (autoZoomEnabled && nodes.length > 0) {
+      fitMapToBounds();
     }
   }
   
@@ -278,13 +375,13 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
           ${nodeName}
         </h3>
         <div style="font-size: 12px; color: #555; margin-bottom: 8px; font-weight: 500;">
-          ${node.isGateway ? 'Gateway' : 'Node'} · ID: ${node.id.toString(16)}
+          ${node.isGateway ? 'Gateway' : 'Node'} · !${node.id.toString(16)}
         </div>
         <div style="font-size: 12px; margin-bottom: 4px; color: #333;">
           Last seen: ${lastSeenText}
         </div>
         <div style="font-size: 12px; margin-bottom: 8px; color: #333;">
-          Messages: ${node.messageCount || 0} · Text: ${node.textMessageCount || 0}
+          Packets: ${node.messageCount || 0} · Text: ${node.textMessageCount || 0}
         </div>
         <a href="javascript:void(0);" 
            id="view-node-${node.id}" 
@@ -309,13 +406,17 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({ height = "600px" }) => {
   }
   
   return (
-    <div 
-      ref={mapRef} 
-      className="w-full overflow-hidden effect-inset rounded-lg"
-      style={{ height }}
-    />
+    <div className="w-full">
+      <div 
+        ref={mapRef} 
+        className="w-full overflow-hidden effect-inset rounded-lg relative"
+        style={{ height }}
+      />
+    </div>
   );
-};
+});
+
+NetworkMap.displayName = "NetworkMap";
 
 // Define interface for nodes with position data for map display
 interface MapNode {
