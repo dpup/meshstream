@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { Packet } from "../../lib/types";
 import { cn } from "@/lib/cn";
+import { Link } from "@tanstack/react-router";
 
 interface PacketCardProps {
   packet: Packet;
@@ -36,11 +37,17 @@ export const PacketCard: React.FC<PacketCardProps> = ({
                 className: "h-3.5 w-3.5 text-white",
               })}
             </div>
-            <span className="font-semibold text-neutral-200 tracking-wide">
-              {data.from
-                ? `!${data.from.toString(16).toLowerCase()}`
-                : "Unknown"}
-            </span>
+            {data.from ? (
+              <Link
+                to="/node/$nodeId"
+                params={{ nodeId: data.from.toString(16).toLowerCase() }}
+                className="font-semibold text-neutral-200 tracking-wide hover:text-blue-400 transition-colors"
+              >
+                !{data.from.toString(16).toLowerCase()}
+              </Link>
+            ) : (
+              <span className="font-semibold text-neutral-200 tracking-wide">Unknown</span>
+            )}
             {packet.info.channel && (
               <>
                 <span className="text-neutral-500">on</span>
@@ -50,7 +57,17 @@ export const PacketCard: React.FC<PacketCardProps> = ({
             {data.gatewayId && (
               <>
                 <span className="text-neutral-500">via</span>
-                <span className="text-neutral-400">{data.gatewayId}</span>
+                {data.gatewayId.startsWith('!') ? (
+                  <Link
+                    to="/node/$nodeId"
+                    params={{ nodeId: data.gatewayId.substring(1) }}
+                    className="text-neutral-400 hover:text-blue-400 transition-colors"
+                  >
+                    {data.gatewayId}
+                  </Link>
+                ) : (
+                  <span className="text-neutral-400">{data.gatewayId}</span>
+                )}
               </>
             )}
           </div>
