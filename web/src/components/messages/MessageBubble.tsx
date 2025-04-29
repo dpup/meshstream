@@ -1,5 +1,6 @@
 import React from "react";
 import { TextMessage } from "../../store/slices/aggregatorSlice";
+import { Link } from "@tanstack/react-router";
 
 interface MessageBubbleProps {
   message: TextMessage;
@@ -24,8 +25,8 @@ const getNodeColor = (nodeId: number) => {
 // Get node initials or ID fragment
 const getNodeInitials = (nodeId: number, nodeName?: string) => {
   if (nodeName) {
-    // Use first 2 characters or extract initials
-    if (nodeName.length <= 2) return nodeName.toUpperCase();
+    // Use the full shortname if it's 4 characters or less
+    if (nodeName.length <= 4) return nodeName.toUpperCase();
     
     // Try to get initials from words
     const words = nodeName.split(/\s+/);
@@ -33,7 +34,8 @@ const getNodeInitials = (nodeId: number, nodeName?: string) => {
       return (words[0][0] + words[1][0]).toUpperCase();
     }
     
-    return nodeName.substring(0, 2).toUpperCase();
+    // Use up to 4 characters for the initials
+    return nodeName.substring(0, 4).toUpperCase();
   }
   
   // Use last 4 chars of hex ID
@@ -43,7 +45,7 @@ const getNodeInitials = (nodeId: number, nodeName?: string) => {
 // Get the preferred display name for a node
 const getDisplayName = (nodeId: number, nodeName?: string) => {
   if (!nodeName) {
-    return `Node ${nodeId.toString(16)}`;
+    return `!${nodeId.toString(16).toLowerCase()}`; // Use !hex format
   }
   
   // Prefer longName if available
@@ -69,11 +71,17 @@ export const MessageBubble: React.FC<MessageBubbleProps> = ({ message, nodeName 
       
       {/* Message row with avatar and text */}
       <div className="flex items-start">
-        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${nodeColor} flex items-center justify-center text-white text-[9px] font-bold`}>
-          {initials}
-        </div>
+        <Link
+          to="/node/$nodeId"
+          params={{ nodeId: message.from.toString(16).toLowerCase() }}
+          className="flex-shrink-0"
+        >
+          <div className={`w-10 h-10 rounded-full ${nodeColor} flex items-center justify-center text-white text-[10px] font-bold hover:brightness-110 transition-all`}>
+            {initials}
+          </div>
+        </Link>
         <div className="ml-3 flex-1">
-          <div className="bg-neutral-800 rounded-lg py-2 px-3 text-neutral-300 break-words font-mono effect-inset text-sm">
+          <div className="bg-neutral-800 rounded-lg py-2 px-3 text-neutral-300 break-words font-mono effect-inset text-sm whitespace-pre-wrap">
             {message.text}
           </div>
         </div>

@@ -39,10 +39,10 @@ export const ChannelDetail: React.FC<ChannelDetailProps> = ({ channelId }) => {
   // Create the channel key in the same format used by the aggregator
   const channelKey = `channel_${channelId}`;
 
-  // Get channel messages and sort by timestamp (oldest to newest)
+  // Get channel messages and sort by timestamp (newest to oldest)
   // This creates a shallow copy of the message array to sort it without modifying the original
   const channelMessages = messages[channelKey]
-    ? [...messages[channelKey]].sort((a, b) => a.timestamp - b.timestamp)
+    ? [...messages[channelKey]].sort((a, b) => b.timestamp - a.timestamp)
     : [];
 
   const handleBack = () => {
@@ -72,7 +72,7 @@ export const ChannelDetail: React.FC<ChannelDetailProps> = ({ channelId }) => {
 
   // Determine if the channel is active (has messages in the last 10 minutes)
   const isActive = channelMessages.length > 0 && 
-    (Math.floor(Date.now() / 1000) - channelMessages[channelMessages.length - 1].timestamp) < 600;
+    (Math.floor(Date.now() / 1000) - channelMessages[0].timestamp) < 600;
 
   return (
     <div className="max-w-4xl h-full flex flex-col">
