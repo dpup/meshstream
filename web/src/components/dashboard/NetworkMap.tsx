@@ -124,24 +124,52 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     setNodesWithPosition(nodeArray);
   }, [nodes, gateways]);
 
+  // Check for Google Maps API and initialize
+  const tryInitializeMap = useCallback(() => {
+    if (mapRef.current && window.google && window.google.maps) {
+      // Initialize map if not already done
+      if (!mapInstanceRef.current) {
+        initializeMap(mapRef.current);
+      }
+  
+      // Create info window if not already done
+      if (!infoWindowRef.current) {
+        infoWindowRef.current = new google.maps.InfoWindow();
+      }
+  
+      // Update markers and fit the map
+      updateNodeMarkers(nodesWithPosition, navigate);
+      return true;
+    }
+    return false;
+  }, [nodesWithPosition, navigate, updateNodeMarkers, initializeMap]);
+
   // Handle map initialization and marker creation
   useEffect(() => {
-    if (!mapRef.current || !window.google || !window.google.maps) return;
-    
-    // Initialize map if not already done
-    if (!mapInstanceRef.current) {
-      initializeMap(mapRef.current);
+    // Try to initialize immediately if Google Maps is already loaded
+    if (tryInitializeMap()) {
+      return;
     }
-
-    // Create info window if not already done
-    if (!infoWindowRef.current) {
-      infoWindowRef.current = new google.maps.InfoWindow();
-    }
-
-    // Update markers and fit the map
-    updateNodeMarkers(nodesWithPosition, navigate);
     
-  }, [nodesWithPosition, navigate, setupZoomListener]);
+    // Set up a listener for when the API loads
+    const handleGoogleMapsLoaded = () => {
+      tryInitializeMap();
+    };
+    
+    // Add event listener for Google Maps API loading
+    window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+    
+    // Also try initializing after a short delay (backup)
+    const timeoutId = setTimeout(() => {
+      tryInitializeMap();
+    }, 1000);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+      clearTimeout(timeoutId);
+    };
+  }, [nodesWithPosition, navigate, tryInitializeMap]);
   
   // Setup zoom listener when map is initialized
   useEffect(() => {

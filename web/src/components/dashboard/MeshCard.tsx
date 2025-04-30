@@ -1,5 +1,5 @@
 import React from "react";
-import { Radio, Signal, Battery, MapPin, Thermometer } from "lucide-react";
+import { Radio, Battery, MapPin, Thermometer, Network } from "lucide-react";
 import { Counter } from "../Counter";
 import { NodeData } from "../../store/slices/aggregatorSlice";
 import { getActivityLevel, getNodeColors, ActivityLevel } from "../../lib/activity";
@@ -35,7 +35,7 @@ export const MeshCard: React.FC<MeshCardProps> = ({
   // Get icon based on type
   const getIcon = () => {
     return type === "gateway" ? (
-      <Signal className="w-4 h-4" />
+      <Network className="w-4 h-4" />
     ) : (
       <Radio className="w-4 h-4" />
     );

@@ -13,7 +13,7 @@ import {
   Map,
   Zap,
   ChevronRight,
-  Signal,
+  Network,
   Wifi,
   Users,
   Earth,
@@ -26,7 +26,7 @@ import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
 import { Section } from "../ui/Section";
 import { BatteryLevel } from "./BatteryLevel";
-import { SignalStrength } from "./SignalStrength";
+import { NetworkStrength } from "./NetworkStrength";
 import { GoogleMap } from "./GoogleMap";
 import { NodePositionData } from "./NodePositionData";
 import { EnvironmentMetrics } from "./EnvironmentMetrics";
@@ -39,6 +39,7 @@ import {
   getRegionName,
   getModemPresetName,
 } from "../../utils/formatters";
+import { SignalStrength } from "./SignalStrength";
 
 interface NodeDetailProps {
   nodeId: number;
@@ -179,7 +180,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           )}
         >
           {node.isGateway ? (
-            <Signal className="w-4 h-4" />
+            <Network className="w-4 h-4" />
           ) : (
             <Radio className="w-4 h-4" />
           )}
@@ -267,7 +268,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
                 <div className="flex justify-between items-center mb-2 p-2 rounded effect-inset bg-neutral-700/50 ">
                   <span className="flex items-center">
-                    <Signal className="w-4 h-4 mr-1.5" />
+                    <Network className="w-4 h-4 mr-1.5" />
                     Gateway Node
                   </span>
                   {node.observedNodeCount !== undefined && (
@@ -391,7 +392,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
             <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
               <span className="text-neutral-400 flex items-center text-sm">
-                <Signal className="w-3 h-3 mr-2 text-neutral-300" />
+                <Network className="w-3 h-3 mr-2 text-neutral-300" />
                 Gateways
               </span>
               <div className="flex flex-col items-end">

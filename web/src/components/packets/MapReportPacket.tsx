@@ -6,7 +6,7 @@ import {
   RegionCode,
   ModemPreset,
 } from "../../lib/types";
-import { Map as MapIcon, Signal, MapPin } from "lucide-react";
+import { Map as MapIcon, MapPin, Network } from "lucide-react";
 import { PacketCard } from "./PacketCard";
 import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
 import { Map } from "../Map";
@@ -202,7 +202,7 @@ export const MapReportPacket: React.FC<MapReportPacketProps> = ({ packet }) => {
           mapReport.modemPreset) && (
           <div className="p-3 bg-neutral-800/50 rounded border border-neutral-700">
             <h3 className="text-sm font-medium text-neutral-300 mb-3 flex items-center">
-              <Signal className="w-4 h-4 mr-2 text-cyan-400" />
+              <Network className="w-4 h-4 mr-2 text-cyan-400" />
               Report Source
             </h3>
 

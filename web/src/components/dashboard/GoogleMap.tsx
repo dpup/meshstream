@@ -31,8 +31,17 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
   // If zoom is not provided, calculate based on accuracy
   const effectiveZoom = zoom || calculateZoomFromAccuracy(accuracyMeters);
 
-  useEffect(() => {
-    if (mapRef.current && window.google && window.google.maps) {
+  // Track whether the map has been initialized
+  const isInitializedRef = useRef(false);
+
+  const initializeMap = () => {
+    if (
+      mapRef.current && 
+      window.google && 
+      window.google.maps && 
+      !isInitializedRef.current
+    ) {
+      isInitializedRef.current = true;
       // Create map instance
       const mapOptions: google.maps.MapOptions = {
         center: { lat, lng },
@@ -118,6 +127,34 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
         center: { lat, lng },
         radius: accuracyMeters,
       });
+    }
+  };
+  
+  useEffect(() => {
+    // Check if Google Maps API is already loaded
+    if (window.google && window.google.maps) {
+      initializeMap();
+    } else {
+      // Set up a listener for when the API loads
+      const handleGoogleMapsLoaded = () => {
+        initializeMap();
+      };
+      
+      // Add event listener for Google Maps API loading
+      window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+      
+      // Also try initializing after a short delay (backup)
+      const timeoutId = setTimeout(() => {
+        if (window.google && window.google.maps) {
+          initializeMap();
+        }
+      }, 1000);
+      
+      // Cleanup
+      return () => {
+        window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+        clearTimeout(timeoutId);
+      };
     }
   }, [lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
 
