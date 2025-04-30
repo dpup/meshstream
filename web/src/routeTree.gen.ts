@@ -11,8 +11,8 @@
 // Import Routes
 
 import { Route as rootRoute } from './routes/__root'
+import { Route as StreamImport } from './routes/stream'
 import { Route as RootImport } from './routes/root'
-import { Route as PacketsImport } from './routes/packets'
 import { Route as MapImport } from './routes/map'
 import { Route as HomeImport } from './routes/home'
 import { Route as DemoImport } from './routes/demo'
@@ -23,15 +23,15 @@ import { Route as ChannelChannelIdImport } from './routes/channel.$channelId'
 
 // Create/Update Routes
 
-const RootRoute = RootImport.update({
-  id: '/root',
-  path: '/root',
+const StreamRoute = StreamImport.update({
+  id: '/stream',
+  path: '/stream',
   getParentRoute: () => rootRoute,
 } as any)
 
-const PacketsRoute = PacketsImport.update({
-  id: '/packets',
-  path: '/packets',
+const RootRoute = RootImport.update({
+  id: '/root',
+  path: '/root',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -116,18 +116,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MapImport
       parentRoute: typeof rootRoute
     }
-    '/packets': {
-      id: '/packets'
-      path: '/packets'
-      fullPath: '/packets'
-      preLoaderRoute: typeof PacketsImport
-      parentRoute: typeof rootRoute
-    }
     '/root': {
       id: '/root'
       path: '/root'
       fullPath: '/root'
       preLoaderRoute: typeof RootImport
+      parentRoute: typeof rootRoute
+    }
+    '/stream': {
+      id: '/stream'
+      path: '/stream'
+      fullPath: '/stream'
+      preLoaderRoute: typeof StreamImport
       parentRoute: typeof rootRoute
     }
     '/channel/$channelId': {
@@ -155,8 +155,8 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
-  '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/stream': typeof StreamRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
@@ -167,8 +167,8 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
-  '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/stream': typeof StreamRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
@@ -180,8 +180,8 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
   '/map': typeof MapRoute
-  '/packets': typeof PacketsRoute
   '/root': typeof RootRoute
+  '/stream': typeof StreamRoute
   '/channel/$channelId': typeof ChannelChannelIdRoute
   '/node/$nodeId': typeof NodeNodeIdRoute
 }
@@ -194,8 +194,8 @@ export interface FileRouteTypes {
     | '/demo'
     | '/home'
     | '/map'
-    | '/packets'
     | '/root'
+    | '/stream'
     | '/channel/$channelId'
     | '/node/$nodeId'
   fileRoutesByTo: FileRoutesByTo
@@ -205,8 +205,8 @@ export interface FileRouteTypes {
     | '/demo'
     | '/home'
     | '/map'
-    | '/packets'
     | '/root'
+    | '/stream'
     | '/channel/$channelId'
     | '/node/$nodeId'
   id:
@@ -216,8 +216,8 @@ export interface FileRouteTypes {
     | '/demo'
     | '/home'
     | '/map'
-    | '/packets'
     | '/root'
+    | '/stream'
     | '/channel/$channelId'
     | '/node/$nodeId'
   fileRoutesById: FileRoutesById
@@ -229,8 +229,8 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   HomeRoute: typeof HomeRoute
   MapRoute: typeof MapRoute
-  PacketsRoute: typeof PacketsRoute
   RootRoute: typeof RootRoute
+  StreamRoute: typeof StreamRoute
   ChannelChannelIdRoute: typeof ChannelChannelIdRoute
   NodeNodeIdRoute: typeof NodeNodeIdRoute
 }
@@ -241,8 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   HomeRoute: HomeRoute,
   MapRoute: MapRoute,
-  PacketsRoute: PacketsRoute,
   RootRoute: RootRoute,
+  StreamRoute: StreamRoute,
   ChannelChannelIdRoute: ChannelChannelIdRoute,
   NodeNodeIdRoute: NodeNodeIdRoute,
 }
@@ -262,8 +262,8 @@ export const routeTree = rootRoute
         "/demo",
         "/home",
         "/map",
-        "/packets",
         "/root",
+        "/stream",
         "/channel/$channelId",
         "/node/$nodeId"
       ]
@@ -283,11 +283,11 @@ export const routeTree = rootRoute
     "/map": {
       "filePath": "map.tsx"
     },
-    "/packets": {
-      "filePath": "packets.tsx"
-    },
     "/root": {
       "filePath": "root.tsx"
+    },
+    "/stream": {
+      "filePath": "stream.tsx"
     },
     "/channel/$channelId": {
       "filePath": "channel.$channelId.tsx"

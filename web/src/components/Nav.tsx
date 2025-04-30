@@ -41,7 +41,7 @@ const navigationItems: NavItem[] = [
     exact: true,
   },
   {
-    to: "/packets",
+    to: "/stream",
     label: "Stream",
     icon: Radio,
     exact: true,
