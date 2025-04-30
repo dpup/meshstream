@@ -29,7 +29,7 @@ export const TIME_THRESHOLDS = {
 
 // Color schemes for different node types
 export const COLORS = {
-  [NodeType.NODE]: {
+  [NodeType.GATEWAY]: {
     [ActivityLevel.RECENT]: { 
       fill: "#4ade80", 
       stroke: "#22c55e",
@@ -58,7 +58,7 @@ export const COLORS = {
       statusDot: "bg-neutral-500"
     },
   },
-  [NodeType.GATEWAY]: {
+  [NodeType.NODE]: {
     [ActivityLevel.RECENT]: { 
       "fill": "#93c5fd", 
       "stroke": "#60a5fa",

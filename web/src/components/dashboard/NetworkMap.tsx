@@ -37,12 +37,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   // Get nodes data from the store
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
   
-  // Get the latest packet to detect when nodes receive packets
-  const latestPacket = useAppSelector((state) => 
-    state.packets.packets.length > 0 ? state.packets.packets[0] : null
-  );
-  
-  // Expose the resetAutoZoom function via ref
+   // Expose the resetAutoZoom function via ref
   React.useImperativeHandle(ref, () => ({
     resetAutoZoom: () => {
       resetAutoZoom();
@@ -237,83 +232,6 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     }
   }, [autoZoomEnabled, onAutoZoomChange]);
   
-  // Effect to detect when a node receives a packet and trigger animation
-  useEffect(() => {
-    if (latestPacket && latestPacket.data.from !== undefined) {
-      const nodeId = latestPacket.data.from;
-      const key = `node-${nodeId}`;
-      
-      // If we have this node on the map, animate it
-      if (markersRef.current[key]) {
-        animateNodeMarker(nodeId);
-      }
-    }
-  }, [latestPacket]);
-
-  // Function to animate a node marker when it receives a packet
-  function animateNodeMarker(nodeId: number): void {
-    const key = `node-${nodeId}`;
-    const marker = markersRef.current[key];
-    const node = nodesWithPosition.find(n => n.id === nodeId);
-    
-    if (!marker || !node) return;
-    
-    // Clear any existing animation for this node
-    if (animatingNodesRef.current[key]) {
-      clearTimeout(animatingNodesRef.current[key]);
-    }
-    
-    // Get the animated style
-    const iconStyle = getMarkerIcon(node, true);
-    
-    // Create updated content for the marker with animation style
-    const markerContent = document.createElement('div');
-    markerContent.innerHTML = `
-      <svg width="${iconStyle.scale * 2}" height="${iconStyle.scale * 2}" viewBox="0 0 ${iconStyle.scale * 2} ${iconStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
-        <circle 
-          cx="${iconStyle.scale}" 
-          cy="${iconStyle.scale}" 
-          r="${iconStyle.scale - iconStyle.strokeWeight}" 
-          fill="${iconStyle.fillColor}" 
-          fill-opacity="${iconStyle.fillOpacity}"
-          stroke="${iconStyle.strokeColor}" 
-          stroke-width="${iconStyle.strokeWeight}" 
-        />
-      </svg>
-    `;
-    
-    // Set cursor style
-    markerContent.style.cursor = 'pointer';
-    
-    // Update the marker content with animated style
-    marker.content = markerContent;
-    
-    // Reset after a delay
-    animatingNodesRef.current[key] = window.setTimeout(() => {
-      // Reset to non-animated style
-      const normalStyle = getMarkerIcon(node, false);
-      
-      const normalContent = document.createElement('div');
-      normalContent.innerHTML = `
-        <svg width="${normalStyle.scale * 2}" height="${normalStyle.scale * 2}" viewBox="0 0 ${normalStyle.scale * 2} ${normalStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
-          <circle 
-            cx="${normalStyle.scale}" 
-            cy="${normalStyle.scale}" 
-            r="${normalStyle.scale - normalStyle.strokeWeight}" 
-            fill="${normalStyle.fillColor}" 
-            fill-opacity="${normalStyle.fillOpacity}"
-            stroke="${normalStyle.strokeColor}" 
-            stroke-width="${normalStyle.strokeWeight}" 
-          />
-        </svg>
-      `;
-      
-      normalContent.style.cursor = 'pointer';
-      marker.content = normalContent;
-      
-      delete animatingNodesRef.current[key];
-    }, 1000); // 1 second animation
-  }
 
   // Cleanup on unmount
   useEffect(() => {
@@ -513,7 +431,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     const statusDotColor = colors.fill;
     
     const infoContent = `
-      <div style="font-family: sans-serif; max-width: 240px; color: #181818;">
+      <div style="font-family: sans-serif; max-width: 240px; color: #999999;">
         <h3 style="margin: 0 0 8px; font-size: 16px; color: ${statusDotColor}; font-weight: 600;">
           ${nodeName}
         </h3>
@@ -696,17 +614,16 @@ interface MarkerIconConfig {
 }
 
 // Get marker icon for a node
-function getMarkerIcon(node: MapNode, isAnimating: boolean = false): MarkerIconConfig {
-  // Get activity level and colors using the helper functions
+function getMarkerIcon(node: MapNode): MarkerIconConfig {
   const activityLevel = getActivityLevel(node.lastHeard, node.isGateway);
   const colors = getNodeColors(activityLevel, node.isGateway);
   
   return {
     path: google.maps.SymbolPath.CIRCLE,
-    scale: isAnimating ? 14 : 10, // Increase size during animation
+    scale: 12, 
     fillColor: colors.fill,
-    fillOpacity: isAnimating ? 0.8 : 1, // Slightly transparent during animation
-    strokeColor: isAnimating ? "#ffffff" : colors.stroke,
-    strokeWeight: isAnimating ? 3 : 2, // Thicker stroke during animation
+    fillOpacity: 0.8,
+    strokeColor: colors.stroke,
+    strokeWeight: 4,
   };
 }
