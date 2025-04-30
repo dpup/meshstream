@@ -30,3 +30,6 @@ export const API_BASE_URL = getApiBaseUrl();
 export const API_ENDPOINTS = {
   STREAM: `${API_BASE_URL}/api/stream`,
 };
+
+// Google Maps configuration
+export const GOOGLE_MAPS_ID = import.meta.env.VITE_GOOGLE_MAPS_ID || "demo-map-id";

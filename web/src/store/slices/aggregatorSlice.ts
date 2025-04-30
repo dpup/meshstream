@@ -165,6 +165,7 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
       
       // Update the node with map report data
       const gatewayNode = state.nodes[gatewayNodeId];
+      gatewayNode.isGateway = true;
       gatewayNode.mapReport = { ...data.mapReport };
       gatewayNode.lastHeard = Math.max(gatewayNode.lastHeard, timestamp);
       

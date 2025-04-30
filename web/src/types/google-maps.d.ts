@@ -19,6 +19,26 @@ declare namespace google {
       setIcon(icon: any): void;
       addListener(event: string, handler: () => void): MapsEventListener;
     }
+    
+    namespace marker {
+      class AdvancedMarkerElement {
+        constructor(opts?: AdvancedMarkerElementOptions);
+        position: LatLngLiteral | null;
+        map: Map | null;
+        title: string | null;
+        zIndex: number | null;
+        content: HTMLElement | null;
+        addListener(event: string, handler: () => void): MapsEventListener;
+      }
+    }
+    
+    interface AdvancedMarkerElementOptions {
+      position?: LatLngLiteral;
+      map?: Map;
+      title?: string;
+      zIndex?: number;
+      content?: HTMLElement;
+    }
 
     class Circle {
       constructor(opts?: CircleOptions);
@@ -46,11 +66,13 @@ declare namespace google {
       center?: LatLngLiteral;
       zoom?: number;
       mapTypeId?: string;
+      colorScheme?: string;
       mapTypeControl?: boolean;
       streetViewControl?: boolean;
       fullscreenControl?: boolean;
       zoomControl?: boolean;
       styles?: Array<any>;
+      mapId?: string;
     }
 
     interface MarkerOptions {

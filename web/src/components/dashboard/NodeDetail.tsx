@@ -21,6 +21,7 @@ import {
   Save,
   MessageSquare,
   Thermometer,
+  BoomBox,
 } from "lucide-react";
 import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
@@ -182,7 +183,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           {node.isGateway ? (
             <Network className="w-4 h-4" />
           ) : (
-            <Radio className="w-4 h-4" />
+            <BoomBox className="w-4 h-4" />
           )}
         </div>
         <div className="flex-1 flex flex-col md:flex-row md:items-center">

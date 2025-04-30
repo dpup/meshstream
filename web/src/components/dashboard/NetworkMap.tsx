@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
 import { Position } from "../../lib/types";
 import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
+import { GOOGLE_MAPS_ID } from "../../lib/config";
 
 interface NetworkMapProps {
   /** Height of the map in CSS units */
@@ -21,14 +22,15 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Record<string, google.maps.Marker>>({});
+  const markersRef = useRef<Record<string, google.maps.marker.AdvancedMarkerElement>>({});
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-  const boundsRef = useRef<google.maps.LatLngBounds>(new google.maps.LatLngBounds());
+  const boundsRef = useRef<google.maps.LatLngBounds | null>(null);
   const [nodesWithPosition, setNodesWithPosition] = useState<MapNode[]>([]);
   const animatingNodesRef = useRef<Record<string, number>>({});
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(true);
   // Using any for the event listener since TypeScript can't find the MapsEventListener interface
   const zoomListenerRef = useRef<any>(null);
+  const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
   // Get nodes data from the store
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
@@ -61,61 +63,67 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
 
   // Function to fit map to bounds
   const fitMapToBounds = useCallback(() => {
-    if (!mapInstanceRef.current) return;
+    if (!mapInstanceRef.current || !window.google || !window.google.maps) return;
     
-    // Clear the bounds for recalculation
+    // Create new bounds for calculation
     boundsRef.current = new google.maps.LatLngBounds();
     
     // Extend bounds for each node
     nodesWithPosition.forEach(node => {
       const lat = node.position.latitudeI / 10000000;
       const lng = node.position.longitudeI / 10000000;
-      boundsRef.current.extend({ lat, lng });
+      boundsRef.current?.extend({ lat, lng });
     });
     
     // Fit the bounds to see all nodes
-    mapInstanceRef.current.fitBounds(boundsRef.current);
-    
-    // If we only have one node, ensure we're not too zoomed in
-    if (nodesWithPosition.length === 1) {
-      setTimeout(() => {
-        if (mapInstanceRef.current) {
-          const currentZoom = mapInstanceRef.current.getZoom() || 15;
-          mapInstanceRef.current.setZoom(Math.min(currentZoom, 15));
-        }
-      }, 100);
+    if (boundsRef.current) {
+      mapInstanceRef.current.fitBounds(boundsRef.current);
+      
+      // If we only have one node, ensure we're not too zoomed in
+      if (nodesWithPosition.length === 1) {
+        setTimeout(() => {
+          if (mapInstanceRef.current) {
+            const currentZoom = mapInstanceRef.current.getZoom() || 15;
+            mapInstanceRef.current.setZoom(Math.min(currentZoom, 15));
+          }
+        }, 100);
+      }
     }
   }, [nodesWithPosition]);
 
   // Setup zoom change listener
   const setupZoomListener = useCallback(() => {
-    if (!mapInstanceRef.current || !window.google || !window.google.maps) return;
-    
-    // Remove previous listener if it exists
-    if (zoomListenerRef.current) {
-      // Use google.maps.event.removeListener for better compatibility
-      window.google.maps.event.removeListener(zoomListenerRef.current);
-      zoomListenerRef.current = null;
+    if (!mapInstanceRef.current || !window.google || !window.google.maps) {
+      console.warn("Cannot set up zoom listener - map or Google Maps API not ready");
+      return;
     }
     
-    // Console log to debug
-    console.log("Setting up zoom change listener");
-    
-    // Add new listener - using google.maps.event.addListener directly
-    zoomListenerRef.current = window.google.maps.event.addListener(
-      mapInstanceRef.current, 
-      'zoom_changed', 
-      () => {
-        console.log("Zoom changed detected");
-        // Disable auto-zoom when user manually zooms
-        setAutoZoomEnabled(false);
-        
-        // Notify parent component of auto-zoom state change
-        if (onAutoZoomChange) {
-          onAutoZoomChange(false);
-        }
+    try {
+      // Remove previous listener if it exists
+      if (zoomListenerRef.current) {
+        // Use google.maps.event.removeListener for better compatibility
+        window.google.maps.event.removeListener(zoomListenerRef.current);
+        zoomListenerRef.current = null;
       }
-    );
+          
+      zoomListenerRef.current = window.google.maps.event.addListener(
+        mapInstanceRef.current, 
+        'zoom_changed', 
+        () => {
+          console.log("Zoom changed detected");
+          // Disable auto-zoom when user manually zooms
+          setAutoZoomEnabled(false);
+          
+          // Notify parent component of auto-zoom state change
+          if (onAutoZoomChange) {
+            onAutoZoomChange(false);
+          }
+        }
+      );
+      
+    } catch (error) {
+      console.error("Error setting up zoom listener:", error);
+    }
   }, [onAutoZoomChange]);
 
   // Effect to build the list of nodes with position data
@@ -127,56 +135,98 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   // Check for Google Maps API and initialize
   const tryInitializeMap = useCallback(() => {
     if (mapRef.current && window.google && window.google.maps) {
-      // Initialize map if not already done
-      if (!mapInstanceRef.current) {
-        initializeMap(mapRef.current);
+      try {
+        // Initialize map if not already done
+        if (!mapInstanceRef.current) {
+          initializeMap(mapRef.current);
+        }
+    
+        // Create info window if not already done
+        if (!infoWindowRef.current) {
+          infoWindowRef.current = new google.maps.InfoWindow();
+        }
+    
+        // Update markers and fit the map
+        updateNodeMarkers(nodesWithPosition, navigate);
+        return true;
+      } catch (error) {
+        console.error("Error initializing map:", error);
+        return false;
       }
-  
-      // Create info window if not already done
-      if (!infoWindowRef.current) {
-        infoWindowRef.current = new google.maps.InfoWindow();
-      }
-  
-      // Update markers and fit the map
-      updateNodeMarkers(nodesWithPosition, navigate);
-      return true;
     }
+    console.warn("Cannot initialize map - prerequisites not met");
     return false;
   }, [nodesWithPosition, navigate, updateNodeMarkers, initializeMap]);
 
-  // Handle map initialization and marker creation
+  // Check for Google Maps API loading - make sure all required objects are available
   useEffect(() => {
-    // Try to initialize immediately if Google Maps is already loaded
-    if (tryInitializeMap()) {
+    // Function to check if all required Google Maps components are loaded
+    const checkGoogleMapsLoaded = () => {
+      return window.google && 
+             window.google.maps && 
+             window.google.maps.Map && 
+             window.google.maps.InfoWindow && 
+             window.google.maps.marker && 
+             window.google.maps.marker.AdvancedMarkerElement;
+    };
+    
+    // Check if Google Maps is already loaded with all required components
+    if (checkGoogleMapsLoaded()) {
+      setIsGoogleMapsLoaded(true);
       return;
     }
     
     // Set up a listener for when the API loads
     const handleGoogleMapsLoaded = () => {
-      tryInitializeMap();
+      // Wait a bit to ensure all Maps objects are initialized
+      setTimeout(() => {
+        if (checkGoogleMapsLoaded()) {
+          setIsGoogleMapsLoaded(true);
+        }
+      }, 100);
     };
     
     // Add event listener for Google Maps API loading
     window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
     
-    // Also try initializing after a short delay (backup)
+    // Also try checking after a short delay (backup)
     const timeoutId = setTimeout(() => {
-      tryInitializeMap();
-    }, 1000);
+      if (checkGoogleMapsLoaded()) {
+        setIsGoogleMapsLoaded(true);
+      } else {
+        console.warn("Google Maps API didn't fully load after timeout");
+      }
+    }, 2000);
     
     // Cleanup
     return () => {
       window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
       clearTimeout(timeoutId);
     };
-  }, [nodesWithPosition, navigate, tryInitializeMap]);
+  }, []);
   
-  // Setup zoom listener when map is initialized
+  // Don't try to initialize map until we're sure Google Maps is fully loaded
   useEffect(() => {
-    if (mapInstanceRef.current && window.google && window.google.maps) {
+    if (isGoogleMapsLoaded && 
+        mapRef.current && 
+        window.google?.maps?.Map && 
+        window.google?.maps?.InfoWindow &&
+        window.google?.maps?.marker?.AdvancedMarkerElement) {
+      const initialized = tryInitializeMap();
+      
+      // If we successfully initialized the map, also set up the zoom listener
+      if (initialized && mapInstanceRef.current) {
+        setupZoomListener();
+      }
+    }
+  }, [isGoogleMapsLoaded, nodesWithPosition, navigate, tryInitializeMap, setupZoomListener]);
+  
+  // Also set up zoom listener whenever the map instance changes
+  useEffect(() => {
+    if (mapInstanceRef.current && window.google && window.google.maps && isGoogleMapsLoaded) {
       setupZoomListener();
     }
-  }, [setupZoomListener, mapInstanceRef.current]);
+  }, [setupZoomListener, mapInstanceRef.current, isGoogleMapsLoaded]);
   
   // Update parent component when auto-zoom state changes
   useEffect(() => {
@@ -211,12 +261,54 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       clearTimeout(animatingNodesRef.current[key]);
     }
     
-    // Set the animated style
-    marker.setIcon(getMarkerIcon(node, true));
+    // Get the animated style
+    const iconStyle = getMarkerIcon(node, true);
+    
+    // Create updated content for the marker with animation style
+    const markerContent = document.createElement('div');
+    markerContent.innerHTML = `
+      <svg width="${iconStyle.scale * 2}" height="${iconStyle.scale * 2}" viewBox="0 0 ${iconStyle.scale * 2} ${iconStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
+        <circle 
+          cx="${iconStyle.scale}" 
+          cy="${iconStyle.scale}" 
+          r="${iconStyle.scale - iconStyle.strokeWeight}" 
+          fill="${iconStyle.fillColor}" 
+          fill-opacity="${iconStyle.fillOpacity}"
+          stroke="${iconStyle.strokeColor}" 
+          stroke-width="${iconStyle.strokeWeight}" 
+        />
+      </svg>
+    `;
+    
+    // Set cursor style
+    markerContent.style.cursor = 'pointer';
+    
+    // Update the marker content with animated style
+    marker.content = markerContent;
     
     // Reset after a delay
     animatingNodesRef.current[key] = window.setTimeout(() => {
-      marker.setIcon(getMarkerIcon(node, false));
+      // Reset to non-animated style
+      const normalStyle = getMarkerIcon(node, false);
+      
+      const normalContent = document.createElement('div');
+      normalContent.innerHTML = `
+        <svg width="${normalStyle.scale * 2}" height="${normalStyle.scale * 2}" viewBox="0 0 ${normalStyle.scale * 2} ${normalStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
+          <circle 
+            cx="${normalStyle.scale}" 
+            cy="${normalStyle.scale}" 
+            r="${normalStyle.scale - normalStyle.strokeWeight}" 
+            fill="${normalStyle.fillColor}" 
+            fill-opacity="${normalStyle.fillOpacity}"
+            stroke="${normalStyle.strokeColor}" 
+            stroke-width="${normalStyle.strokeWeight}" 
+          />
+        </svg>
+      `;
+      
+      normalContent.style.cursor = 'pointer';
+      marker.content = normalContent;
+      
       delete animatingNodesRef.current[key];
     }, 1000); // 1 second animation
   }
@@ -231,7 +323,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       }
       
       // Clean up markers
-      Object.values(markersRef.current).forEach(marker => marker.setMap(null));
+      Object.values(markersRef.current).forEach(marker => marker.map = null);
       
       // Clean up any pending animations
       Object.values(animatingNodesRef.current).forEach(timeoutId => 
@@ -249,53 +341,12 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   function initializeMap(element: HTMLDivElement): void {
     const mapOptions: google.maps.MapOptions = {
       zoom: 10,
-      mapTypeId: google.maps.MapTypeId.HYBRID,
+      colorScheme: 'DARK',
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
       zoomControl: true,
-      styles: [
-        {
-          featureType: "all",
-          elementType: "labels.text.fill",
-          stylers: [{ color: "#ffffff" }],
-        },
-        {
-          featureType: "all",
-          elementType: "labels.text.stroke",
-          stylers: [{ visibility: "off" }],
-        },
-        {
-          featureType: "administrative",
-          elementType: "geometry",
-          stylers: [{ visibility: "on" }, { color: "#2d2d2d" }],
-        },
-        {
-          featureType: "landscape",
-          elementType: "geometry",
-          stylers: [{ color: "#1a1a1a" }],
-        },
-        {
-          featureType: "poi",
-          elementType: "geometry",
-          stylers: [{ color: "#1a1a1a" }],
-        },
-        {
-          featureType: "road",
-          elementType: "geometry.fill",
-          stylers: [{ color: "#2d2d2d" }],
-        },
-        {
-          featureType: "road",
-          elementType: "geometry.stroke",
-          stylers: [{ color: "#333333" }],
-        },
-        {
-          featureType: "water",
-          elementType: "geometry",
-          stylers: [{ color: "#0f252e" }],
-        },
-      ],
+      mapId: GOOGLE_MAPS_ID,
     };
 
     mapInstanceRef.current = new google.maps.Map(element, mapOptions);
@@ -307,7 +358,11 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     if (!mapInstanceRef.current) return;
     
     // Clear the bounds for recalculation
-    boundsRef.current = new google.maps.LatLngBounds();
+    if (window.google && window.google.maps) {
+      boundsRef.current = new google.maps.LatLngBounds();
+    } else {
+      boundsRef.current = null;
+    }
     const allKeys = new Set<string>();
 
     // Update markers for each node with position
@@ -321,7 +376,9 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       const position = { lat, lng };
       
       // Extend bounds to include this point
-      boundsRef.current.extend(position);
+      if (boundsRef.current) {
+        boundsRef.current.extend(position);
+      }
       
       // Get node name
       const nodeName = node.shortName || node.longName || 
@@ -338,7 +395,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     // Remove markers that don't exist in the current data set
     Object.keys(markersRef.current).forEach(key => {
       if (!allKeys.has(key)) {
-        markersRef.current[key].setMap(null);
+        markersRef.current[key].map = null;
         delete markersRef.current[key];
       }
     });
@@ -359,16 +416,39 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     if (!mapInstanceRef.current || !infoWindowRef.current) return;
     
     const key = `node-${node.id}`;
-    const marker = new google.maps.Marker({
+    
+    // Get the marker icon style
+    const iconStyle = getMarkerIcon(node);
+    
+    // Create content for the advanced marker
+    const markerContent = document.createElement('div');
+    markerContent.innerHTML = `
+      <svg width="${iconStyle.scale * 2}" height="${iconStyle.scale * 2}" viewBox="0 0 ${iconStyle.scale * 2} ${iconStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
+        <circle 
+          cx="${iconStyle.scale}" 
+          cy="${iconStyle.scale}" 
+          r="${iconStyle.scale - iconStyle.strokeWeight}" 
+          fill="${iconStyle.fillColor}" 
+          fill-opacity="${iconStyle.fillOpacity}"
+          stroke="${iconStyle.strokeColor}" 
+          stroke-width="${iconStyle.strokeWeight}" 
+        />
+      </svg>
+    `;
+    
+    // Set the container style to allow pointer events on it
+    markerContent.style.cursor = 'pointer';
+    
+    const marker = new google.maps.marker.AdvancedMarkerElement({
       position,
       map: mapInstanceRef.current,
       title: nodeName,
-      icon: getMarkerIcon(node),
       zIndex: node.isGateway ? 10 : 5, // Make gateways appear on top
+      content: markerContent,
     });
     
     // Add click listener to show info window
-    marker.addListener("click", () => {
+    marker.addListener('gmp-click', () => {
       showInfoWindow(node, marker, navigate);
     });
     
@@ -378,14 +458,41 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   // Update an existing marker
   function updateMarker(node: MapNode, position: google.maps.LatLngLiteral): void {
     const key = `node-${node.id}`;
-    markersRef.current[key].setPosition(position);
-    markersRef.current[key].setIcon(getMarkerIcon(node));
+    const marker = markersRef.current[key];
+    
+    // Update position
+    marker.position = position;
+    
+    // Get the marker icon style
+    const iconStyle = getMarkerIcon(node);
+    
+    // Create updated content for the marker
+    const markerContent = document.createElement('div');
+    markerContent.innerHTML = `
+      <svg width="${iconStyle.scale * 2}" height="${iconStyle.scale * 2}" viewBox="0 0 ${iconStyle.scale * 2} ${iconStyle.scale * 2}" xmlns="http://www.w3.org/2000/svg">
+        <circle 
+          cx="${iconStyle.scale}" 
+          cy="${iconStyle.scale}" 
+          r="${iconStyle.scale - iconStyle.strokeWeight}" 
+          fill="${iconStyle.fillColor}" 
+          fill-opacity="${iconStyle.fillOpacity}"
+          stroke="${iconStyle.strokeColor}" 
+          stroke-width="${iconStyle.strokeWeight}" 
+        />
+      </svg>
+    `;
+    
+    // Set cursor style
+    markerContent.style.cursor = 'pointer';
+    
+    // Update the marker content
+    marker.content = markerContent;
   }
   
   // Show info window for a node
   function showInfoWindow(
     node: MapNode, 
-    marker: google.maps.Marker, 
+    marker: google.maps.marker.AdvancedMarkerElement, 
     navigate: ReturnType<typeof useNavigate>
   ): void {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
@@ -433,13 +540,26 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     setTimeout(() => {
       const link = document.getElementById(`view-node-${node.id}`);
       if (link) {
-        link.addEventListener('click', () => {
+        link.addEventListener('gmp-click', () => {
           navigate({ to: `/node/$nodeId`, params: { nodeId: node.id.toString(16) } });
         });
       }
     }, 100);
   }
   
+  if (!isGoogleMapsLoaded) {
+    return (
+      <div className="w-full">
+        <div 
+          className="w-full overflow-hidden effect-inset rounded-lg relative flex items-center justify-center"
+          style={{ height }}
+        >
+          <div className="text-gray-400">Loading map...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <div 

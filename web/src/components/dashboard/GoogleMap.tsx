@@ -1,5 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { calculateAccuracyFromPrecisionBits, calculateZoomFromAccuracy } from "../../lib/mapUtils";
+import { GOOGLE_MAPS_ID } from "../../lib/config";
 
 interface GoogleMapProps {
   /** Latitude coordinate */
@@ -23,7 +24,8 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const markerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null);
+  const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
   // Calculate accuracy in meters based on precision bits
   const accuracyMeters = calculateAccuracyFromPrecisionBits(precisionBits);
@@ -51,48 +53,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
         streetViewControl: false,
         fullscreenControl: false,
         zoomControl: true,
-        styles: [
-          {
-            featureType: "all",
-            elementType: "labels.text.fill",
-            stylers: [{ color: "#ffffff" }],
-          },
-          {
-            featureType: "all",
-            elementType: "labels.text.stroke",
-            stylers: [{ visibility: "off" }],
-          },
-          {
-            featureType: "administrative",
-            elementType: "geometry",
-            stylers: [{ visibility: "on" }, { color: "#2d2d2d" }],
-          },
-          {
-            featureType: "landscape",
-            elementType: "geometry",
-            stylers: [{ color: "#1a1a1a" }],
-          },
-          {
-            featureType: "poi",
-            elementType: "geometry",
-            stylers: [{ color: "#1a1a1a" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry.fill",
-            stylers: [{ color: "#2d2d2d" }],
-          },
-          {
-            featureType: "road",
-            elementType: "geometry.stroke",
-            stylers: [{ color: "#333333" }],
-          },
-          {
-            featureType: "water",
-            elementType: "geometry",
-            stylers: [{ color: "#0f252e" }],
-          },
-        ],
+        mapId: GOOGLE_MAPS_ID,
       };
 
       mapInstanceRef.current = new google.maps.Map(mapRef.current, mapOptions);
@@ -100,18 +61,20 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
       // Only add the center marker if we don't have precision information or
       // it's very accurate.
       if (precisionBits === undefined || accuracyMeters < 100) {
-        markerRef.current = new google.maps.Marker({
+        // Create a marker with a custom SVG circle to match the old style
+        const markerContent = document.createElement('div');
+        markerContent.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="8" cy="8" r="6" fill="#4ade80" stroke="#22c55e" stroke-width="2" />
+          </svg>
+        `;
+        
+        // Create the advanced marker element
+        markerRef.current = new google.maps.marker.AdvancedMarkerElement({
           position: { lat, lng },
           map: mapInstanceRef.current,
           title: `Node Position`,
-          icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: "#4ade80",
-            fillOpacity: 1,
-            strokeColor: "#22c55e",
-            strokeWeight: 2,
-          },
+          content: markerContent,
         });
       }
 
@@ -130,33 +93,69 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   };
   
+  // Check for Google Maps API loading - make sure all required objects are available
   useEffect(() => {
-    // Check if Google Maps API is already loaded
-    if (window.google && window.google.maps) {
-      initializeMap();
-    } else {
-      // Set up a listener for when the API loads
-      const handleGoogleMapsLoaded = () => {
-        initializeMap();
-      };
-      
-      // Add event listener for Google Maps API loading
-      window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
-      
-      // Also try initializing after a short delay (backup)
-      const timeoutId = setTimeout(() => {
-        if (window.google && window.google.maps) {
-          initializeMap();
-        }
-      }, 1000);
-      
-      // Cleanup
-      return () => {
-        window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
-        clearTimeout(timeoutId);
-      };
+    // Function to check if all required Google Maps components are loaded
+    const checkGoogleMapsLoaded = () => {
+      return window.google && 
+             window.google.maps && 
+             window.google.maps.Map && 
+             window.google.maps.Circle && 
+             window.google.maps.marker && 
+             window.google.maps.marker.AdvancedMarkerElement;
+    };
+    
+    // Check if Google Maps is already loaded with all required components
+    if (checkGoogleMapsLoaded()) {
+      setIsGoogleMapsLoaded(true);
+      return;
     }
-  }, [lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
+    
+    // Set up a listener for when the API loads
+    const handleGoogleMapsLoaded = () => {
+      // Wait a bit to ensure all Maps objects are initialized
+      setTimeout(() => {
+        if (checkGoogleMapsLoaded()) {
+          setIsGoogleMapsLoaded(true);
+        }
+      }, 100);
+    };
+    
+    // Add event listener for Google Maps API loading
+    window.addEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+    
+    // Also try checking after a short delay (backup)
+    const timeoutId = setTimeout(() => {
+      if (checkGoogleMapsLoaded()) {
+        setIsGoogleMapsLoaded(true);
+      } else {
+        console.warn("Google Maps API didn't fully load after timeout");
+      }
+    }, 2000);
+    
+    // Cleanup
+    return () => {
+      window.removeEventListener('google-maps-loaded', handleGoogleMapsLoaded);
+      clearTimeout(timeoutId);
+    };
+  }, []);
+  
+  // Initialize map when Google Maps is loaded and props change
+  useEffect(() => {
+    if (isGoogleMapsLoaded && mapRef.current) {
+      initializeMap();
+    }
+  }, [isGoogleMapsLoaded, lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
+
+  if (!isGoogleMapsLoaded) {
+    return (
+      <div
+        className="w-full h-full min-h-[300px] rounded-lg overflow-hidden effect-inset flex items-center justify-center"
+      >
+        <div className="text-gray-400">Loading map...</div>
+      </div>
+    );
+  }
 
   return (
     <div

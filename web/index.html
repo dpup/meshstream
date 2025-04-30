@@ -10,13 +10,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Roboto+Mono:wght@400;500&family=Share+Tech+Mono&family=Space+Mono:wght@400;700&family=VT323&display=swap"
     rel="stylesheet">
-  <!-- Google Maps API with environment variable API key -->
+  <!-- Google Maps API with environment variable API key and Map ID for Advanced Markers -->
   <script>
     function gmapsCallback() {
       window.dispatchEvent(new Event('google-maps-loaded'));
     }
   </script>
-  <script async src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&loading=async&callback=gmapsCallback"></script>
+  <script async src="https://maps.googleapis.com/maps/api/js?key=%VITE_GOOGLE_MAPS_API_KEY%&libraries=marker&loading=async&callback=gmapsCallback&map_ids=%VITE_GOOGLE_MAPS_ID%"></script>
 </head>
 
 <body>

@@ -24,7 +24,7 @@ function MapPage() {
 
   return (
     <PageWrapper>
-      <div className="max-w-6xl">
+      <div>
         <div>
           <NetworkMap 
             height="600px" 
