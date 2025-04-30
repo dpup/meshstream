@@ -29,7 +29,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
         text: "Connecting",
         colorClass: "text-blue-400",
       };
-    } else if (status.includes("Connected")) {
+    } else if (status.includes("Connected") || status.includes("Heartbeat")) {
       return {
         icon: <Wifi className="h-5 w-5 text-green-400" />,
         text: "Connected",

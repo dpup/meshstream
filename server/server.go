@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync/atomic"
+	"time"
 
 	"github.com/dpup/prefab"
 	"github.com/dpup/prefab/logging"
@@ -139,6 +140,10 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	// Signal when the client disconnects
 	notify := ctx.Done()
 
+	// Set up a ticker for heartbeat messages every 30 seconds
+	heartbeatTicker := time.NewTicker(30 * time.Second)
+	defer heartbeatTicker.Stop()
+
 	// Send an initial message with an additional 1.5k payload. This force buffer
 	// flush so the client knows the connection is open.
 	w.WriteHeader(http.StatusOK)
@@ -173,6 +178,13 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			s.config.Broker.Unsubscribe(packetChan)
 			http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 			return
+
+		case <-heartbeatTicker.C:
+			// Send a heartbeat message
+			logger.Debug("Sending heartbeat")
+			heartbeatMsg := fmt.Sprintf("Heartbeat: %s", time.Now().Format(time.RFC3339))
+			fmt.Fprintf(w, "event: info\ndata: %s\n\n", heartbeatMsg)
+			flusher.Flush()
 
 		case packet, ok := <-packetChan:
 			if !ok {
