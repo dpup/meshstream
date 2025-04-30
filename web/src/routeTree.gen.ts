@@ -14,6 +14,7 @@ import { Route as rootRoute } from './routes/__root'
 import { Route as StreamImport } from './routes/stream'
 import { Route as RootImport } from './routes/root'
 import { Route as MapImport } from './routes/map'
+import { Route as InfoImport } from './routes/info'
 import { Route as HomeImport } from './routes/home'
 import { Route as DemoImport } from './routes/demo'
 import { Route as ChannelsImport } from './routes/channels'
@@ -38,6 +39,12 @@ const RootRoute = RootImport.update({
 const MapRoute = MapImport.update({
   id: '/map',
   path: '/map',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const InfoRoute = InfoImport.update({
+  id: '/info',
+  path: '/info',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -109,6 +116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeImport
       parentRoute: typeof rootRoute
     }
+    '/info': {
+      id: '/info'
+      path: '/info'
+      fullPath: '/info'
+      preLoaderRoute: typeof InfoImport
+      parentRoute: typeof rootRoute
+    }
     '/map': {
       id: '/map'
       path: '/map'
@@ -154,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/info': typeof InfoRoute
   '/map': typeof MapRoute
   '/root': typeof RootRoute
   '/stream': typeof StreamRoute
@@ -166,6 +181,7 @@ export interface FileRoutesByTo {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/info': typeof InfoRoute
   '/map': typeof MapRoute
   '/root': typeof RootRoute
   '/stream': typeof StreamRoute
@@ -179,6 +195,7 @@ export interface FileRoutesById {
   '/channels': typeof ChannelsRoute
   '/demo': typeof DemoRoute
   '/home': typeof HomeRoute
+  '/info': typeof InfoRoute
   '/map': typeof MapRoute
   '/root': typeof RootRoute
   '/stream': typeof StreamRoute
@@ -193,6 +210,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/info'
     | '/map'
     | '/root'
     | '/stream'
@@ -204,6 +222,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/info'
     | '/map'
     | '/root'
     | '/stream'
@@ -215,6 +234,7 @@ export interface FileRouteTypes {
     | '/channels'
     | '/demo'
     | '/home'
+    | '/info'
     | '/map'
     | '/root'
     | '/stream'
@@ -228,6 +248,7 @@ export interface RootRouteChildren {
   ChannelsRoute: typeof ChannelsRoute
   DemoRoute: typeof DemoRoute
   HomeRoute: typeof HomeRoute
+  InfoRoute: typeof InfoRoute
   MapRoute: typeof MapRoute
   RootRoute: typeof RootRoute
   StreamRoute: typeof StreamRoute
@@ -240,6 +261,7 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsRoute: ChannelsRoute,
   DemoRoute: DemoRoute,
   HomeRoute: HomeRoute,
+  InfoRoute: InfoRoute,
   MapRoute: MapRoute,
   RootRoute: RootRoute,
   StreamRoute: StreamRoute,
@@ -261,6 +283,7 @@ export const routeTree = rootRoute
         "/channels",
         "/demo",
         "/home",
+        "/info",
         "/map",
         "/root",
         "/stream",
@@ -279,6 +302,9 @@ export const routeTree = rootRoute
     },
     "/home": {
       "filePath": "home.tsx"
+    },
+    "/info": {
+      "filePath": "info.tsx"
     },
     "/map": {
       "filePath": "map.tsx"

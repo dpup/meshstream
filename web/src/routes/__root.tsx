@@ -2,9 +2,10 @@ import { Outlet } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { useAppDispatch } from "../hooks";
 import { Nav } from "../components";
-import { streamPackets, StreamEvent } from "../lib/api";
+import { streamPackets, StreamEvent, ConnectionInfoEvent } from "../lib/api";
 import { processNewPacket } from "../store/slices/aggregatorSlice";
 import { addPacket } from "../store/slices/packetSlice";
+import { updateConnectionInfo, updateConnectionStatus } from "../store/slices/connectionSlice";
 import { createRootRoute } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
@@ -38,7 +39,19 @@ function RootLayout() {
             console.log("[SSE] Connection restored successfully");
             connectionAttemptsRef.current = 0;
             isReconnectingRef.current = false;
+            
+            // Update connection status in Redux
+            dispatch(updateConnectionStatus(true));
           }
+        } else if (event.type === "connection_info") {
+          // Handle connection info events
+          console.log("[SSE] Connection info received:", event.data);
+          
+          // Update connection info in Redux
+          dispatch(updateConnectionInfo((event as ConnectionInfoEvent).data));
+          
+          // Update UI connection status
+          setConnectionStatus(`Connected to ${event.data.mqttServer}`);
         } else if (event.type === "message") {
           // Process message for both the aggregator and packet display
           dispatch(processNewPacket(event.data));
@@ -52,6 +65,9 @@ function RootLayout() {
         console.error("[SSE] Connection error:", error);
         setConnectionStatus("Connection error. Reconnecting...");
         isReconnectingRef.current = true;
+
+        // Update connection status in Redux
+        dispatch(updateConnectionStatus(false));
 
         // Increment connection attempts for UI tracking
         connectionAttemptsRef.current += 1;

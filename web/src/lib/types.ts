@@ -423,10 +423,22 @@ export interface PaddingEvent {
   data: string; // Random data to trigger a flush.
 }
 
+export interface ConnectionInfoEvent {
+  type: "connection_info";
+  data: {
+    mqttServer: string;
+    mqttTopic: string;
+    connected: boolean;
+    serverTime?: number;
+    message?: string;
+  };
+}
+
 export type StreamEvent =
   | InfoEvent
   | MessageEvent
   | PaddingEvent
-  | BadDataEvent;
+  | BadDataEvent
+  | ConnectionInfoEvent;
 
 export type StreamEventHandler = (event: StreamEvent) => void;

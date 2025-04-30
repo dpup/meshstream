@@ -17,10 +17,21 @@ import (
 
 // Config holds server configuration
 type Config struct {
-	Host   string
-	Port   string
-	Logger logging.Logger
-	Broker *mqtt.Broker // The MQTT message broker
+	Host          string
+	Port          string
+	Logger        logging.Logger
+	Broker        *mqtt.Broker // The MQTT message broker
+	MQTTServer    string       // MQTT server hostname
+	MQTTTopicPath string       // MQTT topic path being subscribed to
+}
+
+// Create connection info JSON to send to the client
+type ConnectionInfo struct {
+	Message    string `json:"message"`
+	MQTTServer string `json:"mqttServer"`
+	MQTTTopic  string `json:"mqttTopic"`
+	Connected  bool   `json:"connected"`
+	ServerTime int64  `json:"serverTime"`
 }
 
 // Server encapsulates the HTTP server functionality
@@ -144,19 +155,34 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	heartbeatTicker := time.NewTicker(30 * time.Second)
 	defer heartbeatTicker.Stop()
 
-	// Send an initial message with an additional 1.5k payload. This force buffer
-	// flush so the client knows the connection is open.
+	// Send an initial message with connection information and an additional padding payload.
+	// This forces buffer flush so the client knows the connection is open.
 	w.WriteHeader(http.StatusOK)
 
-	initialMessage := "Connected to stream"
+	connectionInfo := ConnectionInfo{
+		Message:    "Connected to stream",
+		MQTTServer: s.config.MQTTServer,
+		MQTTTopic:  s.config.MQTTTopicPath,
+		Connected:  true,
+		ServerTime: time.Now().Unix(),
+	}
+
+	// Convert to JSON
+	infoJson, err := json.Marshal(connectionInfo)
+	if err != nil {
+		logger.Errorw("Failed to marshal connection info", "error", err)
+		infoJson = []byte(`{"message":"Connected to stream"}`)
+	}
+
+	// Create padding for buffer flush
 	paddingSize := 1500
 	padding := make([]byte, paddingSize)
 	for i := 0; i < paddingSize; i++ {
 		padding[i] = byte('A' + (i % 26))
 	}
 
-	// Send the event with the padded data
-	fmt.Fprintf(w, "event: info\ndata: %s\n\n", initialMessage)
+	// Send the event with connection info and padded data
+	fmt.Fprintf(w, "event: connection_info\ndata: %s\n\n", infoJson)
 	fmt.Fprintf(w, "event: padding\ndata: %s\n\n", padding)
 	flusher.Flush()
 

@@ -226,10 +226,12 @@ func main() {
 
 	// Start the web server
 	webServer := server.New(server.Config{
-		Host:   config.ServerHost,
-		Port:   config.ServerPort,
-		Broker: broker,
-		Logger: logger,
+		Host:          config.ServerHost,
+		Port:          config.ServerPort,
+		Broker:        broker,
+		Logger:        logger,
+		MQTTServer:    config.MQTTBroker,
+		MQTTTopicPath: config.MQTTTopicPrefix + "/#",
 	})
 
 	// Start the server in a goroutine

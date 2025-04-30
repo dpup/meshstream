@@ -17,6 +17,18 @@ export interface ApiResponse<T> {
   error?: string;
 }
 
+// Connection info event type
+export interface ConnectionInfoEvent {
+  type: "connection_info";
+  data: {
+    mqttServer: string;
+    mqttTopic: string;
+    connected: boolean;
+    serverTime?: number;
+    message?: string;
+  };
+}
+
 // Re-export types
 export type {
   InfoEvent,
@@ -78,6 +90,7 @@ export function streamPackets(
       // Remove all event listeners
       source.removeEventListener("message", handleMessage as EventListener);
       source.removeEventListener("info", handleInfo as EventListener);
+      source.removeEventListener("connection_info", handleConnectionInfo as EventListener);
       source.onerror = null;
       
       // Close the connection
@@ -102,6 +115,25 @@ export function streamPackets(
       type: "info",
       data: String(evtData),
     });
+  }
+
+  /**
+   * Handle connection info events
+   */
+  function handleConnectionInfo(event: Event): void {
+    const evtData = (event as any).data;
+    try {
+      // Parse the connection info JSON
+      const parsedData = JSON.parse(String(evtData));
+      
+      // Forward the connection info to the caller
+      onEvent({
+        type: "connection_info",
+        data: parsedData,
+      });
+    } catch (error) {
+      console.warn("[SSE] Failed to parse connection info:", error);
+    }
   }
   
   /**
@@ -185,6 +217,7 @@ export function streamPackets(
       // Set up event handlers
       source.addEventListener("info", handleInfo as EventListener);
       source.addEventListener("message", handleMessage as EventListener);
+      source.addEventListener("connection_info", handleConnectionInfo as EventListener);
       source.onerror = handleError;
     } catch (error) {
       console.error("[SSE] Failed to create EventSource:", error);

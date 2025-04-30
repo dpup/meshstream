@@ -23,7 +23,7 @@ function RootComponent() {
                 Home
               </Link>
               <Link
-                to="/packets"
+                to="/stream"
                 className="hover:underline"
                 activeProps={{
                   className: "font-bold underline",
