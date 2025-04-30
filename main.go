@@ -97,9 +97,7 @@ func main() {
 
 	// Process messages until interrupt received
 	logger.Info("Waiting for messages... Press Ctrl+C to exit")
-	logger.Info("Statistics will be printed every 30 seconds")
-	logger.Info("Messages will be logged to files in the ./logs directory")
-	logger.Infof("Web server running at http://%s:%s\n", serverHost, serverPort)
+	logger.Infof("Web server running at http://%s:%s", serverHost, serverPort)
 
 	// Wait for interrupt signal
 	<-sig

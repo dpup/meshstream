@@ -57,16 +57,6 @@ export const NodeList: React.FC = () => {
           </div>
         ) : (
           sortedNodes.map((node) => {
-            // Calculate time since last heard (in seconds)
-            const secondsSinceLastHeard = Date.now() / 1000 - node.lastHeard;
-
-            // Determine node activity status:
-            // Recent: < 10 minutes (green)
-            // Active: 10-30 minutes (blue)
-            // Inactive: > 30 minutes (grey)
-            const isRecent = secondsSinceLastHeard < 600; // 10 minutes
-            const isActive = !isRecent && secondsSinceLastHeard < 1800; // 10-30 minutes
-
             return (
               <MeshCard
                 key={node.nodeId}
@@ -74,8 +64,6 @@ export const NodeList: React.FC = () => {
                 nodeId={node.nodeId}
                 nodeData={node}
                 onClick={handleNodeClick}
-                isRecent={isRecent}
-                isActive={isActive}
                 lastHeard={node.lastHeard}
               />
             );

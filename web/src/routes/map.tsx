@@ -4,6 +4,7 @@ import { PageWrapper } from "../components";
 import { NetworkMap } from "../components/dashboard";
 import { Button } from "../components/ui";
 import { Locate } from "lucide-react";
+import { getNodeColors, ActivityLevel } from "../lib/activity";
 
 export const Route = createFileRoute("/map")({
   component: MapPage,
@@ -32,15 +33,19 @@ function MapPage() {
           />
           
           <div className="mt-2 bg-neutral-800/50 rounded-lg p-2 text-xs flex items-center justify-between effect-inset">
-            <div>
-              <span className="inline-flex items-center mx-2 px-2 py-0.5 rounded text-green-500 bg-green-900/30">
-                <span className="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
-                Nodes
-              </span>
-              <span className="inline-flex items-center mx-2 px-2 py-0.5 rounded text-amber-500 bg-amber-900/30">
-                <span className="w-2 h-2 bg-amber-500 rounded-full mr-1.5"></span>
-                Gateways
-              </span>
+            <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, false).textClass} ${getNodeColors(ActivityLevel.RECENT, false).background}`}>
+                  <span className={`w-2 h-2 ${getNodeColors(ActivityLevel.RECENT, false).statusDot} rounded-full mr-1.5`}></span>
+                  Nodes
+                </span>
+                <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, true).textClass} ${getNodeColors(ActivityLevel.RECENT, true).background}`}>
+                  <span className={`w-2 h-2 ${getNodeColors(ActivityLevel.RECENT, true).statusDot} rounded-full mr-1.5`}></span>
+                  Gateways
+                </span>
+              </div>
+              
+             
             </div>
             
             {/* Always show the button, but disable it when auto-zoom is enabled */}

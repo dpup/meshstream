@@ -2,6 +2,8 @@ import React, { useEffect } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
+import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
+import { cn } from "../../lib/cn";
 import {
   ArrowLeft,
   Radio,
@@ -47,31 +49,40 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const navigate = useNavigate();
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
 
+  // Construct the gateway ID format from the node ID
+  const gatewayId = `!${nodeId.toString(16).toLowerCase()}`;
+  
+  // Check if there's a gateway with this ID
+  const gateway = gateways[gatewayId];
+  
   // First try to get the node directly from nodes collection
   let node = nodes[nodeId];
-
-  // If node not found in nodes collection, check if it might be a gateway
-  if (!node) {
-    // Construct the gateway ID format from the node ID
-    const gatewayId = `!${nodeId.toString(16).toLowerCase()}`;
-
-    // Check if there's a gateway with this ID
-    const gateway = gateways[gatewayId];
-
-    if (gateway) {
-      // Create a synthetic node from the gateway data
-      node = {
-        nodeId,
-        lastHeard: gateway.lastHeard,
-        messageCount: gateway.messageCount,
-        textMessageCount: gateway.textMessageCount,
-        // Mark this as a gateway node
-        isGateway: true,
-        gatewayId: gatewayId,
-        // Add observed nodes info
-        observedNodeCount: gateway.observedNodes.length,
-      };
-    }
+  
+  // If node exists but doesn't have isGateway set, check if it should be a gateway
+  if (node && !node.isGateway && gateway) {
+    // Update the node with gateway info
+    node = {
+      ...node,
+      isGateway: true,
+      gatewayId: gatewayId,
+      observedNodeCount: gateway.observedNodes.length,
+    };
+  }
+  
+  // If node not found in nodes collection, create a synthetic node from gateway data
+  if (!node && gateway) {
+    // Create a synthetic node from the gateway data
+    node = {
+      nodeId,
+      lastHeard: gateway.lastHeard,
+      messageCount: gateway.messageCount,
+      textMessageCount: gateway.textMessageCount,
+      // Mark this as a gateway node
+      isGateway: true,
+      gatewayId: gatewayId,
+      // Add observed nodes info
+      observedNodeCount: gateway.observedNodes.length,
+    };
   }
 
   useEffect(() => {
@@ -119,23 +130,12 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
   // Calculate how recently node was active
   const secondsAgo = Math.floor(Date.now() / 1000) - node.lastHeard;
-  const minutesAgo = Math.floor(secondsAgo / 60);
-  const hoursAgo = Math.floor(minutesAgo / 60);
-  const daysAgo = Math.floor(hoursAgo / 24);
-
-  let lastSeenText = "";
-  if (secondsAgo < 60) {
-    lastSeenText = `${secondsAgo} seconds ago`;
-  } else if (minutesAgo < 60) {
-    lastSeenText = `${minutesAgo} minute${minutesAgo > 1 ? "s" : ""} ago`;
-  } else if (hoursAgo < 24) {
-    lastSeenText = `${hoursAgo} hour${hoursAgo > 1 ? "s" : ""} ago`;
-  } else {
-    lastSeenText = `${daysAgo} day${daysAgo > 1 ? "s" : ""} ago`;
-  }
-
-  // Is node active
-  const isActive = secondsAgo < 600; // 10 minutes
+  
+  // Use activity helpers
+  const activityLevel = getActivityLevel(node.lastHeard, node.isGateway);
+  const activityColors = getNodeColors(activityLevel, node.isGateway);
+  const statusText = getStatusText(activityLevel);
+  const lastSeenText = formatLastSeen(secondsAgo);
 
   // Get position data if available
   const hasPosition =
@@ -172,7 +172,11 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div
-          className={`p-2 mr-3 rounded-full ${isActive ? "bg-green-900/30 text-green-500" : "bg-neutral-700/30 text-neutral-500"} effect-inset`}
+          className={cn(
+            "p-2 mr-3 rounded-full effect-inset",
+            activityColors.background,
+            activityColors.textClass
+          )}
         >
           {node.isGateway ? (
             <Signal className="w-4 h-4" />
@@ -186,12 +190,15 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           </h1>
           <div className="text-sm text-neutral-400 flex items-center">
             <span
-              className={`inline-block w-2 h-2 rounded-full mr-2 ${isActive ? "bg-green-500" : "bg-neutral-500"}`}
+              className={cn("inline-block w-2 h-2 rounded-full mr-2", activityColors.statusDot)}
             ></span>
-            {isActive ? "Active" : "Inactive"} - last seen {lastSeenText}
+            {statusText} - last seen {lastSeenText}
           </div>
         </div>
-        <div className="text-sm bg-neutral-900/50 px-3 py-1.5 rounded font-mono text-green-400 effect-inset tracking-wider">
+        <div className={cn(
+          "text-sm bg-neutral-900/50 px-3 py-1.5 rounded font-mono effect-inset tracking-wider",
+          activityColors.textClass
+        )}>
           !{nodeId.toString(16)}
         </div>
       </div>
@@ -258,20 +265,20 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
             {/* Show MapReport-specific information for gateways */}
             {node.isGateway && (
               <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
-                <div className="flex justify-between items-center mb-2 bg-blue-900/20 p-2 rounded effect-inset">
-                  <span className="text-blue-400 flex items-center">
+                <div className="flex justify-between items-center mb-2 p-2 rounded effect-inset bg-neutral-700/50 ">
+                  <span className="flex items-center">
                     <Signal className="w-4 h-4 mr-1.5" />
                     Gateway Node
                   </span>
                   {node.observedNodeCount !== undefined && (
-                    <span className="text-blue-400 flex items-center">
+                    <span className="flex items-center">
                       <Users className="w-4 h-4 mr-1.5" />
                       {node.observedNodeCount}{" "}
                       {node.observedNodeCount === 1 ? "node" : "nodes"}
                     </span>
                   )}
                   {node.mapReport?.numOnlineLocalNodes !== undefined && (
-                    <span className="text-emerald-400 text-xs flex items-center font-mono">
+                    <span className="text-xs flex items-center font-mono opacity-80">
                       {node.mapReport.numOnlineLocalNodes} online local nodes
                     </span>
                   )}

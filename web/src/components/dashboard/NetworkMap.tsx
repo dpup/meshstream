@@ -4,6 +4,7 @@ import { useAppSelector } from "../../hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
 import { Position } from "../../lib/types";
+import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
 
 interface NetworkMapProps {
   /** Height of the map in CSS units */
@@ -361,22 +362,30 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   ): void {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
     
-    const nodeName = node.shortName || node.longName || 
-      `${node.isGateway ? 'Gateway' : 'Node'} ${node.id.toString(16)}`;
+    const nodeName = node.longName || node.shortName || `!${node.id.toString(16)}`;
     
     const secondsAgo = node.lastHeard ? Math.floor(Date.now() / 1000) - node.lastHeard : 0;
     const lastSeenText = formatLastSeen(secondsAgo);
     
+    // Get activity level and styles using the helper functions
+    const activityLevel = getActivityLevel(node.lastHeard, node.isGateway);
+    const colors = getNodeColors(activityLevel, node.isGateway);
+    const statusText = getStatusText(activityLevel);
+    
+    // Use the dot color from our activity helper
+    const statusDotColor = colors.fill;
+    
     const infoContent = `
       <div style="font-family: sans-serif; max-width: 240px; color: #181818;">
-        <h3 style="margin: 0 0 8px; font-size: 16px; color: ${node.isGateway ? '#f97316' : '#16a34a'}; font-weight: 600;">
+        <h3 style="margin: 0 0 8px; font-size: 16px; color: ${statusDotColor}; font-weight: 600;">
           ${nodeName}
         </h3>
         <div style="font-size: 12px; color: #555; margin-bottom: 8px; font-weight: 500;">
           ${node.isGateway ? 'Gateway' : 'Node'} · !${node.id.toString(16)}
         </div>
-        <div style="font-size: 12px; margin-bottom: 4px; color: #333;">
-          Last seen: ${lastSeenText}
+        <div style="font-size: 12px; margin-bottom: 4px; color: #333; display: flex; align-items: center;">
+          <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: ${statusDotColor}; margin-right: 6px;"></span>
+          <span>${statusText} - Last seen: ${lastSeenText}</span>
         </div>
         <div style="font-size: 12px; margin-bottom: 8px; color: #333;">
           Packets: ${node.messageCount || 0} · Text: ${node.textMessageCount || 0}
@@ -529,28 +538,16 @@ interface MarkerIconConfig {
 
 // Get marker icon for a node
 function getMarkerIcon(node: MapNode, isAnimating: boolean = false): MarkerIconConfig {
+  // Get activity level and colors using the helper functions
+  const activityLevel = getActivityLevel(node.lastHeard, node.isGateway);
+  const colors = getNodeColors(activityLevel, node.isGateway);
+  
   return {
     path: google.maps.SymbolPath.CIRCLE,
     scale: isAnimating ? 14 : 10, // Increase size during animation
-    fillColor: node.isGateway ? "#fb923c" : "#4ade80", // Orange for gateways, green for nodes
+    fillColor: colors.fill,
     fillOpacity: isAnimating ? 0.8 : 1, // Slightly transparent during animation
-    strokeColor: isAnimating ? "#ffffff" : (node.isGateway ? "#f97316" : "#22c55e"),
+    strokeColor: isAnimating ? "#ffffff" : colors.stroke,
     strokeWeight: isAnimating ? 3 : 2, // Thicker stroke during animation
   };
-}
-
-// Format the "last seen" text
-function formatLastSeen(secondsAgo: number): string {
-  if (secondsAgo < 60) {
-    return `${secondsAgo} seconds ago`;
-  } else if (secondsAgo < 3600) {
-    const minutes = Math.floor(secondsAgo / 60);
-    return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
-  } else if (secondsAgo < 86400) {
-    const hours = Math.floor(secondsAgo / 3600);
-    return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-  } else {
-    const days = Math.floor(secondsAgo / 86400);
-    return `${days} day${days > 1 ? 's' : ''} ago`;
-  }
 }

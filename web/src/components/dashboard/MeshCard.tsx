@@ -2,6 +2,7 @@ import React from "react";
 import { Radio, Signal, Battery, MapPin, Thermometer } from "lucide-react";
 import { Counter } from "../Counter";
 import { NodeData } from "../../store/slices/aggregatorSlice";
+import { getActivityLevel, getNodeColors, ActivityLevel } from "../../lib/activity";
 
 export interface MeshCardProps {
   type: "node" | "gateway";
@@ -9,8 +10,6 @@ export interface MeshCardProps {
   nodeData: NodeData;
   observedNodes?: number[];
   onClick?: (nodeId: number) => void;
-  isActive?: boolean;
-  isRecent?: boolean;
   lastHeard: number;
 }
 
@@ -20,8 +19,6 @@ export const MeshCard: React.FC<MeshCardProps> = ({
   nodeData,
   observedNodes = [],
   onClick,
-  isActive = false,
-  isRecent = false,
   lastHeard,
 }) => {
   // Format last heard time
@@ -44,11 +41,15 @@ export const MeshCard: React.FC<MeshCardProps> = ({
     );
   };
 
+  // Use activity helpers to get styles
+  const activityLevel = getActivityLevel(lastHeard, type === "gateway");
+  const colors = getNodeColors(activityLevel, type === "gateway");
+  
   // Get card style based on activity
   const getCardStyle = () => {
-    if (isRecent) {
+    if (activityLevel === ActivityLevel.RECENT) {
       return "bg-neutral-800 hover:bg-neutral-700";
-    } else if (isActive) {
+    } else if (activityLevel === ActivityLevel.ACTIVE) {
       return "bg-neutral-800/80 hover:bg-neutral-700/80";
     } else {
       return "bg-neutral-800/50 hover:bg-neutral-800";
@@ -57,24 +58,12 @@ export const MeshCard: React.FC<MeshCardProps> = ({
 
   // Get icon style based on activity
   const getIconStyle = () => {
-    if (isRecent) {
-      return "bg-green-900/30 text-green-500";
-    } else if (isActive) {
-      return "bg-green-900/50 text-green-700";
-    } else {
-      return "bg-neutral-700/30 text-neutral-500";
-    }
+    return colors.background + " " + colors.textClass;
   };
 
   // Get status dot color
   const getStatusDotStyle = () => {
-    if (isRecent) {
-      return "bg-green-500";
-    } else if (isActive) {
-      return "bg-green-700";
-    } else {
-      return "bg-neutral-500";
-    }
+    return colors.statusDot;
   };
 
   return (

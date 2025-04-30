@@ -59,11 +59,6 @@ export const GatewayList: React.FC = () => {
               matchingNode = nodes[nodeId];
             }
             
-            // Determine if gateway is active (using stricter timeframe for gateways)
-            const secondsSinceLastHeard = Date.now() / 1000 - gateway.lastHeard;
-            const isRecent = secondsSinceLastHeard < 300; // 5 minutes for gateways
-            const isActive = !isRecent && secondsSinceLastHeard < 900; // 5-15 minutes for gateways
-
             const handleNodeClick = (clickedNodeId: number) => {
               navigate({ to: "/node/$nodeId", params: { nodeId: clickedNodeId.toString(16) } });
             };
@@ -81,8 +76,6 @@ export const GatewayList: React.FC = () => {
                 }}
                 observedNodes={gateway.observedNodes}
                 onClick={handleNodeClick}
-                isRecent={isRecent}
-                isActive={isActive}
                 lastHeard={gateway.lastHeard}
               />
             );
