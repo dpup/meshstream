@@ -19,7 +19,7 @@ build:
 
 # Run the application with json log formatting
 run: build
-	@./dist/meshstream 2>&1 | go tool github.com/dpup/logista
+	@./dist/meshstream --verbose 2>&1 | go tool github.com/dpup/logista
 
 # Generate Go code from Protocol Buffers
 gen-proto: tools
