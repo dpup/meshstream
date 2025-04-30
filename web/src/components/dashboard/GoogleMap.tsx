@@ -11,6 +11,8 @@ interface GoogleMapProps {
   zoom?: number;
   /** Precision bits used for accuracy calculation */
   precisionBits?: number;
+  /** Whether the map should take all available space (default: false) */
+  fullHeight?: boolean;
 }
 
 /**
@@ -21,6 +23,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
   lng,
   zoom,
   precisionBits,
+  fullHeight = false,
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -147,11 +150,12 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   }, [isGoogleMapsLoaded, lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
 
+  // Prepare the container classes based on fullHeight flag
+  const containerClassName = `w-full ${fullHeight ? 'h-full flex-1' : 'min-h-[300px]'} rounded-lg overflow-hidden effect-inset`;
+
   if (!isGoogleMapsLoaded) {
     return (
-      <div
-        className="w-full h-full min-h-[300px] rounded-lg overflow-hidden effect-inset flex items-center justify-center"
-      >
+      <div className={`${containerClassName} flex items-center justify-center`}>
         <div className="text-gray-400">Loading map...</div>
       </div>
     );
@@ -160,7 +164,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
   return (
     <div
       ref={mapRef}
-      className="w-full h-full min-h-[300px] rounded-lg overflow-hidden effect-inset"
+      className={containerClassName}
     />
   );
 };

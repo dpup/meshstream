@@ -24,10 +24,10 @@ function MapPage() {
 
   return (
     <PageWrapper>
-      <div>
-        <div>
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
+        <div className="flex-1 flex flex-col">
           <NetworkMap 
-            height="600px" 
+            fullHeight
             ref={mapRef as any}
             onAutoZoomChange={setAutoZoomEnabled}
           />

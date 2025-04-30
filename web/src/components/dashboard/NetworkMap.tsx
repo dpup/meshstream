@@ -8,17 +8,19 @@ import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "
 import { GOOGLE_MAPS_ID } from "../../lib/config";
 
 interface NetworkMapProps {
-  /** Height of the map in CSS units */
+  /** Height of the map in CSS units (optional, will use flex-grow by default) */
   height?: string;
   /** Callback for when auto-zoom state changes */
   onAutoZoomChange?: (enabled: boolean) => void;
+  /** Whether the map should take all available space (default: false) */
+  fullHeight?: boolean;
 }
 
 /**
  * NetworkMap displays all nodes with position data on a Google Map
  */
 export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, NetworkMapProps>(
-  ({ height = "600px", onAutoZoomChange }, ref) => {
+  ({ height, fullHeight = false, onAutoZoomChange }, ref) => {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -547,12 +549,21 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     }, 100);
   }
   
+  // Prepare the styling for the map container
+  const mapContainerStyle = {
+    ...(height && !fullHeight ? { height } : {}),
+    ...(fullHeight ? { height: '100%' } : {})
+  };
+  
+  const wrapperClassName = `w-full ${fullHeight ? 'h-full flex flex-col' : ''}`;
+  const mapClassName = `w-full overflow-hidden effect-inset rounded-lg relative ${fullHeight ? 'flex-1' : ''}`;
+
   if (!isGoogleMapsLoaded) {
     return (
-      <div className="w-full">
+      <div className={wrapperClassName}>
         <div 
-          className="w-full overflow-hidden effect-inset rounded-lg relative flex items-center justify-center"
-          style={{ height }}
+          className={`${mapClassName} flex items-center justify-center`}
+          style={mapContainerStyle}
         >
           <div className="text-gray-400">Loading map...</div>
         </div>
@@ -561,11 +572,11 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   }
 
   return (
-    <div className="w-full">
+    <div className={wrapperClassName}>
       <div 
         ref={mapRef} 
-        className="w-full overflow-hidden effect-inset rounded-lg relative"
-        style={{ height }}
+        className={mapClassName}
+        style={mapContainerStyle}
       />
     </div>
   );
