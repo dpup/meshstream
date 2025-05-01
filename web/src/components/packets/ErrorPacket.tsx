@@ -20,7 +20,6 @@ export const ErrorPacket: React.FC<ErrorPacketProps> = ({ packet }) => {
       icon={<AlertTriangle />}
       iconBgColor="bg-red-500"
       label="Error"
-      backgroundColor="bg-red-950/5"
     >
       <div className="max-w-md">
         <div className="text-red-400 mb-2 font-medium">

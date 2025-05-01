@@ -1,7 +1,7 @@
 /**
  * API client functions for interacting with the Meshstream server
  */
-import { API_ENDPOINTS } from "./config";
+import { getStreamEndpoint } from "./config";
 import {
   Packet,
   StreamEvent,
@@ -204,8 +204,8 @@ export function streamPackets(
     }
     
     try {
-      // Create a new EventSource connection
-      source = new EventSource(API_ENDPOINTS.STREAM);
+      // Create a new EventSource connection using dynamic endpoint
+      source = new EventSource(getStreamEndpoint());
       
       // Log connection attempt
       if (reconnectAttempt === 0) {

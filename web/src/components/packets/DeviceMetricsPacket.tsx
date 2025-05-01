@@ -43,7 +43,6 @@ export const DeviceMetricsPacket: React.FC<DeviceMetricsPacketProps> = ({
       icon={<Gauge />}
       iconBgColor="bg-amber-500"
       label="Device Telemetry"
-      backgroundColor="bg-amber-950/5"
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">

@@ -23,6 +23,7 @@ type Config struct {
 	Broker        *mqtt.Broker // The MQTT message broker
 	MQTTServer    string       // MQTT server hostname
 	MQTTTopicPath string       // MQTT topic path being subscribed to
+	StaticDir     string       // Directory containing static web files
 }
 
 // Create connection info JSON to send to the client
@@ -75,7 +76,7 @@ func (s *Server) Start() error {
 		prefab.WithPort(port),
 		prefab.WithHTTPHandlerFunc("/api/status", s.handleStatus),
 		prefab.WithHTTPHandlerFunc("/api/stream", s.handleStream),
-		prefab.WithStaticFiles("/", "./server/static"),
+		prefab.WithStaticFiles("/", s.config.StaticDir),
 	)
 
 	// Start the server

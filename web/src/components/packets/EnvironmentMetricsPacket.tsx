@@ -121,7 +121,6 @@ export const EnvironmentMetricsPacket: React.FC<
       icon={<Thermometer />}
       iconBgColor="bg-emerald-700"
       label="Environment Telemetry"
-      backgroundColor="bg-green-950/5"
     >
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">

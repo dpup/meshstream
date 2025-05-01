@@ -1,4 +1,4 @@
-.PHONY: build run gen-proto clean tools web-run web-build web-test web-lint
+.PHONY: build run gen-proto clean tools web-run web-build web-test web-lint docker-build docker-run
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
@@ -68,3 +68,35 @@ web-test:
 # Run linting for the web application
 web-lint:
 	cd $(WEB_DIR) && pnpm lint
+
+# Docker commands
+
+# Build a Docker image
+docker-build:
+	docker build \
+		--build-arg MESHSTREAM_API_BASE_URL=$${MESHSTREAM_API_BASE_URL:-} \
+		--build-arg MESHSTREAM_APP_ENV=$${MESHSTREAM_APP_ENV:-production} \
+		--build-arg MESHSTREAM_SITE_TITLE=$${MESHSTREAM_SITE_TITLE:-Meshstream} \
+		--build-arg MESHSTREAM_SITE_DESCRIPTION=$${MESHSTREAM_SITE_DESCRIPTION:-"Meshtastic activity monitoring"} \
+		--build-arg MESHSTREAM_GOOGLE_MAPS_ID=$${MESHSTREAM_GOOGLE_MAPS_ID:-4f089fb2d9fbb3db} \
+		--build-arg MESHSTREAM_GOOGLE_MAPS_API_KEY=$${MESHSTREAM_GOOGLE_MAPS_API_KEY} \
+		-t meshstream .
+
+# Run Docker container with environment variables
+docker-run: docker-build
+	docker run -p 8080:8080 \
+		-e MESHSTREAM_MQTT_BROKER=$${MESHSTREAM_MQTT_BROKER:-mqtt.bayme.sh} \
+		-e MESHSTREAM_MQTT_USERNAME=$${MESHSTREAM_MQTT_USERNAME:-meshdev} \
+		-e MESHSTREAM_MQTT_PASSWORD=$${MESHSTREAM_MQTT_PASSWORD:-large4cats} \
+		-e MESHSTREAM_MQTT_TOPIC_PREFIX=$${MESHSTREAM_MQTT_TOPIC_PREFIX:-msh/US/bayarea} \
+		-e MESHSTREAM_SERVER_HOST=0.0.0.0 \
+		-e MESHSTREAM_SERVER_PORT=$${MESHSTREAM_SERVER_PORT:-8080} \
+		-e MESHSTREAM_STATIC_DIR=/app/static \
+		-e MESHSTREAM_LOG_LEVEL=$${MESHSTREAM_LOG_LEVEL:-info} \
+		-e MESHSTREAM_VERBOSE_LOGGING=$${MESHSTREAM_VERBOSE_LOGGING:-false} \
+		-e MESHSTREAM_CACHE_SIZE=$${MESHSTREAM_CACHE_SIZE:-50} \
+		meshstream
+
+# Docker compose build and run with .env support
+docker-compose-up:
+	docker-compose up --build

@@ -16,7 +16,6 @@ export const TextMessagePacket: React.FC<TextMessagePacketProps> = ({ packet }) 
       icon={<MessageSquareText />}
       iconBgColor="bg-blue-500"
       label="Text Message"
-      backgroundColor="bg-blue-950/5"
     >
       <div className="max-w-lg bg-neutral-800/30 p-3 rounded-md tracking-tight break-words">
         {data.textMessage || "Empty message"}

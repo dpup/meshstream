@@ -1,0 +1,25 @@
+# Version control
+.git
+.gitignore
+
+# Build artifacts
+dist
+bin
+logs
+node_modules
+web/node_modules
+web/dist
+
+# Editor/IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# Temporary files
+*.log
+tmp
+
+# Documentation
+*.md
+LICENSE

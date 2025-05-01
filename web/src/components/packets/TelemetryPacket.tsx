@@ -57,7 +57,6 @@ export const TelemetryPacket: React.FC<TelemetryPacketProps> = ({ packet }) => {
       icon={<BarChart />}
       iconBgColor="bg-neutral-500"
       label="Unknown Telemetry"
-      backgroundColor="bg-neutral-950/5"
     >
       <div className="text-neutral-400 text-sm">
         Unknown telemetry data received at{' '}

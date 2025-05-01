@@ -13,9 +13,84 @@ go mod tidy
 
 ## Running
 
+### Using Go directly
+
 ```
 go run main.go
 ```
+
+### Using Make
+
+```
+make run
+```
+
+### Using Docker
+
+The application can be built and run in Docker using the provided Dockerfile:
+
+```
+# Build the Docker image
+make docker-build
+
+# Run the Docker container
+make docker-run
+```
+
+Or using Docker Compose:
+
+```
+docker-compose up
+```
+
+#### Docker Environment Variables and Secrets
+
+The application supports two types of environment variables:
+
+1. **Build-time variables** - Used during the web application build (via Docker build args)
+2. **Runtime variables** - Used when the application is running
+
+You can set these variables in two ways:
+
+1. **Using a `.env` file** (recommended for development and secrets):
+
+   ```
+   # Copy the sample file
+   cp .env.example .env
+   
+   # Edit with your values, especially for secrets like Google Maps API key
+   nano .env
+   
+   # Build and run with variables from .env
+   docker-compose up --build
+   ```
+
+2. **Passing variables directly** (useful for CI/CD or one-off runs):
+
+   ```
+   # Example with custom settings
+   docker run -p 8080:8080 \
+     -e MESHSTREAM_MQTT_BROKER=your-mqtt-broker.com \
+     -e MESHSTREAM_MQTT_TOPIC_PREFIX=msh/YOUR/REGION \
+     -e MESHSTREAM_SERVER_HOST=0.0.0.0 \
+     -e MESHSTREAM_STATIC_DIR=/app/static \
+     meshstream
+   ```
+
+For build-time variables (like the Google Maps API key), use Docker build arguments with the MESHSTREAM_ prefix:
+
+```
+docker build \
+  --build-arg MESHSTREAM_GOOGLE_MAPS_API_KEY=your_api_key_here \
+  --build-arg MESHSTREAM_GOOGLE_MAPS_ID=your_maps_id_here \
+  -t meshstream .
+```
+
+**Important Notes:**
+- All environment variables use the `MESHSTREAM_` prefix. 
+- The Dockerfile internally transforms build-time variables like `MESHSTREAM_GOOGLE_MAPS_API_KEY` to `VITE_GOOGLE_MAPS_API_KEY` for the web application build process.
+- Web application configuration (site title, Google Maps API key, etc.) must be set at build time. These values are compiled into the static files and cannot be changed at runtime.
+- To update web application configuration, you must rebuild the Docker image.
 
 ## Decoding Meshtastic Packets
 

@@ -21,7 +21,6 @@ export const NodeInfoPacket: React.FC<NodeInfoPacketProps> = ({ packet }) => {
       icon={<User />}
       iconBgColor="bg-purple-500"
       label="Node Info"
-      backgroundColor="bg-purple-950/5"
     >
       <div className="flex flex-col gap-1.5">
         {/* First row: Long name and short name */}

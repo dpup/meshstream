@@ -27,7 +27,6 @@ import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
 import { Section } from "../ui/Section";
 import { BatteryLevel } from "./BatteryLevel";
-import { NetworkStrength } from "./NetworkStrength";
 import { GoogleMap } from "./GoogleMap";
 import { NodePositionData } from "./NodePositionData";
 import { EnvironmentMetrics } from "./EnvironmentMetrics";

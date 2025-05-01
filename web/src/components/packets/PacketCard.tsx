@@ -35,7 +35,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
             >
               {React.cloneElement(icon as React.ReactElement, {
                 className: "h-3.5 w-3.5 text-white",
-              })}
+              } as React.HTMLAttributes<HTMLElement>)}
             </div>
             {data.from ? (
               <Link

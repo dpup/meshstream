@@ -46,7 +46,6 @@ export const GenericPacket: React.FC<GenericPacketProps> = ({ packet }) => {
       icon={<Package />}
       iconBgColor="bg-slate-500"
       label={portName.replace("_APP", "")}
-      backgroundColor="bg-slate-950/5"
     >
       <div className="max-w-md">
         <KeyValueGrid>

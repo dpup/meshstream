@@ -12,24 +12,18 @@ export const SITE_TITLE = import.meta.env.VITE_SITE_TITLE || "My Mesh";
 export const SITE_DESCRIPTION =
   import.meta.env.VITE_SITE_DESCRIPTION ||
   "Realtime Meshtastic activity via MQTT.";
-
-// API URL configuration
-const getApiBaseUrl = (): string => {
-  // In production, use the same domain (empty string base URL)
-  if (IS_PROD) {
-    return import.meta.env.VITE_API_BASE_URL || "";
-  }
-
-  // In development, use the configured base URL with fallback
-  return import.meta.env.VITE_API_BASE_URL || "http://localhost:8080";
-};
-
-export const API_BASE_URL = getApiBaseUrl();
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
+export const GOOGLE_MAPS_ID = import.meta.env.VITE_GOOGLE_MAPS_ID || "demo-map-id";
+export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "";
 
 // API endpoints
 export const API_ENDPOINTS = {
   STREAM: `${API_BASE_URL}/api/stream`,
 };
 
-// Google Maps configuration
-export const GOOGLE_MAPS_ID = import.meta.env.VITE_GOOGLE_MAPS_ID || "demo-map-id";
+/**
+ * Get the API endpoint for the stream
+ */
+export function getStreamEndpoint(): string {
+  return API_ENDPOINTS.STREAM;
+}

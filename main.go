@@ -28,10 +28,7 @@ type Config struct {
 	// Web server configuration
 	ServerHost string
 	ServerPort string
-
-	// Logging configuration
-	LogLevel  string
-	LogFormat string
+	StaticDir  string
 
 	// Channel keys configuration (name:key pairs)
 	ChannelKeys []string
@@ -75,10 +72,7 @@ func parseConfig() *Config {
 	// Web server configuration
 	flag.StringVar(&config.ServerHost, "server-host", getEnv("SERVER_HOST", "localhost"), "Web server host")
 	flag.StringVar(&config.ServerPort, "server-port", getEnv("SERVER_PORT", "8080"), "Web server port")
-
-	// Logging configuration
-	flag.StringVar(&config.LogLevel, "log-level", getEnv("LOG_LEVEL", "info"), "Log level (debug, info, warn, error)")
-	flag.StringVar(&config.LogFormat, "log-format", getEnv("LOG_FORMAT", "json"), "Log format (json, console)")
+	flag.StringVar(&config.StaticDir, "static-dir", getEnv("STATIC_DIR", "./server/static"), "Directory containing static web files")
 
 	// Channel key configuration (comma separated list of name:key pairs)
 	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey+",ERSN:VIuMtC5uDDJtC/ojdH314HLkDIHanX4LdbK5yViV9jA=")
@@ -146,21 +140,8 @@ func boolFromEnv(key string, defaultValue bool) bool {
 }
 
 func main() {
-	// Parse configuration from flags and environment variables
 	config := parseConfig()
-
-	// Set up logging
-	var logger logging.Logger
-
-	// Use the production logger (JSON format)
-	logger = logging.NewProdLogger()
-
-	// Add main component name
-	logger = logger.Named("main")
-
-	// Log our configuration
-	logger.Infof("Logger initialized with level: %s, format: %s",
-		config.LogLevel, config.LogFormat)
+	logger := logging.NewProdLogger().Named("main")
 
 	// Initialize channel keys
 	for _, channelKeyPair := range config.ChannelKeys {
@@ -232,6 +213,7 @@ func main() {
 		Logger:        logger,
 		MQTTServer:    config.MQTTBroker,
 		MQTTTopicPath: config.MQTTTopicPrefix + "/#",
+		StaticDir:     config.StaticDir,
 	})
 
 	// Start the server in a goroutine

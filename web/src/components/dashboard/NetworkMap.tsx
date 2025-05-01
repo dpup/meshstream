@@ -144,7 +144,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
         }
     
         // Update markers and fit the map
-        updateNodeMarkers(nodesWithPosition, navigate);
+        updateNodeMarkers(nodesWithPosition);
         return true;
       } catch (error) {
         console.error("Error initializing map:", error);
@@ -153,7 +153,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     }
     console.warn("Cannot initialize map - prerequisites not met");
     return false;
-  }, [nodesWithPosition, navigate, updateNodeMarkers, initializeMap]);
+  }, [nodesWithPosition, updateNodeMarkers, initializeMap]);
 
   // Check for Google Maps API loading - make sure all required objects are available
   useEffect(() => {
@@ -274,7 +274,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   }
   
   // Helper function to update node markers on the map
-  function updateNodeMarkers(nodes: MapNode[], navigate: ReturnType<typeof useNavigate>): void {
+  function updateNodeMarkers(nodes: MapNode[]): void {
     if (!mapInstanceRef.current) return;
     
     // Clear the bounds for recalculation
@@ -306,7 +306,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       
       // Create or update marker
       if (!markersRef.current[key]) {
-        createMarker(node, position, nodeName, navigate);
+        createMarker(node, position, nodeName);
       } else {
         updateMarker(node, position);
       }
@@ -330,8 +330,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   function createMarker(
     node: MapNode, 
     position: google.maps.LatLngLiteral, 
-    nodeName: string, 
-    navigate: ReturnType<typeof useNavigate>
+    nodeName: string
   ): void {
     if (!mapInstanceRef.current || !infoWindowRef.current) return;
     
@@ -369,7 +368,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     
     // Add click listener to show info window
     marker.addListener('gmp-click', () => {
-      showInfoWindow(node, marker, navigate);
+      showInfoWindow(node, marker);
     });
     
     markersRef.current[key] = marker;
@@ -412,8 +411,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   // Show info window for a node
   function showInfoWindow(
     node: MapNode, 
-    marker: google.maps.marker.AdvancedMarkerElement, 
-    navigate: ReturnType<typeof useNavigate>
+    marker: google.maps.marker.AdvancedMarkerElement
   ): void {
     if (!infoWindowRef.current || !mapInstanceRef.current) return;
     
@@ -445,8 +443,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
         <div style="font-size: 12px; margin-bottom: 8px; color: #333;">
           Packets: ${node.messageCount || 0} · Text: ${node.textMessageCount || 0}
         </div>
-        <a href="javascript:void(0);" 
-           id="view-node-${node.id}" 
+        <a href="/node/${node.id.toString(16)}" 
            style="font-size: 13px; color: #3b82f6; text-decoration: none; font-weight: 500; display: inline-block; padding: 4px 8px; background-color: #f1f5f9; border-radius: 4px;">
           View details →
         </a>
@@ -455,16 +452,6 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     
     infoWindowRef.current.setContent(infoContent);
     infoWindowRef.current.open(mapInstanceRef.current, marker);
-    
-    // Add listener for the "View details" link with a delay to allow DOM to update
-    setTimeout(() => {
-      const link = document.getElementById(`view-node-${node.id}`);
-      if (link) {
-        link.addEventListener('gmp-click', () => {
-          navigate({ to: `/node/$nodeId`, params: { nodeId: node.id.toString(16) } });
-        });
-      }
-    }, 100);
   }
   
   // Prepare the styling for the map container

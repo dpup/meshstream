@@ -27,19 +27,6 @@ const calculateZoomFromPrecisionBits = (precisionBits?: number): number => {
   return Math.min(18, baseZoom + (additionalZoom / 2)); // Cap at zoom 18
 };
 
-// Function to calculate accuracy in meters from precision bits
-const calculateAccuracyFromPrecisionBits = (precisionBits?: number): number => {
-  if (!precisionBits) return 300; // Default accuracy of 300m
-  
-  // Each precision bit halves the accuracy radius
-  // Starting with Earth's circumference (~40075km), calculate the precision
-  const earthCircumference = 40075000; // in meters
-  const accuracy = earthCircumference / (2 ** precisionBits) / 2;
-  
-  // Limit to reasonable values
-  return Math.max(1, Math.min(accuracy, 10000));
-};
-
 export const Map: React.FC<MapProps> = ({
   latitude,
   longitude,
@@ -55,11 +42,6 @@ export const Map: React.FC<MapProps> = ({
   // Calculate zoom level based on precision bits if zoom is not provided
   const effectiveZoom = zoom || calculateZoomFromPrecisionBits(precisionBits);
   
-  // Calculate accuracy in meters if we have precision bits
-  const accuracyMeters = precisionBits !== undefined 
-    ? calculateAccuracyFromPrecisionBits(precisionBits)
-    : undefined;
-  
   const mapUrl = getStaticMapUrl(
     latitude, 
     longitude, 
@@ -67,8 +49,7 @@ export const Map: React.FC<MapProps> = ({
     width, 
     height, 
     nightMode,
-    precisionBits,
-    accuracyMeters
+    precisionBits
   );
   const googleMapsUrl = getGoogleMapsUrl(latitude, longitude);
   

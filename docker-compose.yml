@@ -1,0 +1,43 @@
+# Create a .env file for overrides. At the very least, set the following:
+#
+# VITE_GOOGLE_MAPS_API_KEY=your_api_key_here
+# VITE_GOOGLE_MAPS_ID=your_maps_id_here
+
+services:
+  meshstream:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Web application build-time variables
+        - MESHSTREAM_API_BASE_URL=${MESHSTREAM_API_BASE_URL:-}
+        - MESHSTREAM_APP_ENV=${MESHSTREAM_APP_ENV:-production}
+        - MESHSTREAM_SITE_TITLE=${MESHSTREAM_SITE_TITLE:-Bay Area Mesh}
+        - MESHSTREAM_SITE_DESCRIPTION=${MESHSTREAM_SITE_DESCRIPTION:-Meshtastic activity in the Bay Area region, CA.}
+        - MESHSTREAM_GOOGLE_MAPS_ID=${MESHSTREAM_GOOGLE_MAPS_ID}
+        - MESHSTREAM_GOOGLE_MAPS_API_KEY=${MESHSTREAM_GOOGLE_MAPS_API_KEY}
+    ports:
+      - "8080:8080"
+    environment:
+      # Runtime configuration with defaults from .env file or inline defaults
+      # MQTT connection settings
+      - MESHSTREAM_MQTT_BROKER=${MESHSTREAM_MQTT_BROKER:-mqtt.bayme.sh}
+      - MESHSTREAM_MQTT_USERNAME=${MESHSTREAM_MQTT_USERNAME:-meshdev}
+      - MESHSTREAM_MQTT_PASSWORD=${MESHSTREAM_MQTT_PASSWORD:-large4cats}
+      - MESHSTREAM_MQTT_TOPIC_PREFIX=${MESHSTREAM_MQTT_TOPIC_PREFIX:-msh/US/bayarea}
+      
+      # Server configuration
+      - MESHSTREAM_SERVER_HOST=${MESHSTREAM_SERVER_HOST:-0.0.0.0}
+      - MESHSTREAM_SERVER_PORT=${MESHSTREAM_SERVER_PORT:-8080}
+      - MESHSTREAM_STATIC_DIR=${MESHSTREAM_STATIC_DIR:-/app/static}
+      
+      # Logging and debugging
+      - MESHSTREAM_LOG_LEVEL=${MESHSTREAM_LOG_LEVEL:-info}
+      - MESHSTREAM_VERBOSE_LOGGING=${MESHSTREAM_VERBOSE_LOGGING:-false}
+      - MESHSTREAM_CACHE_SIZE=${MESHSTREAM_CACHE_SIZE:-1000}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

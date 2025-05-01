@@ -48,7 +48,7 @@ declare namespace google {
     class InfoWindow {
       constructor(opts?: InfoWindowOptions);
       setContent(content: string): void;
-      open(map?: Map, anchor?: Marker): void;
+      open(map?: Map, anchor?: any): void;
       close(): void;
     }
 
@@ -101,6 +101,7 @@ declare namespace google {
 
     // Event-related functionality
     const event: {
+      addListener(instance: object, event: string, listener: (Event) => void): MapsEventListener;
       /**
        * Removes the given listener, which should have been returned by
        * google.maps.event.addListener.
