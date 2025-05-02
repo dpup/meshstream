@@ -83,7 +83,8 @@ func (s *Server) Start() error {
 		prefab.WithPort(port),
 		prefab.WithHTTPHandlerFunc("/api/status", s.handleStatus),
 		prefab.WithHTTPHandlerFunc("/api/stream", s.handleStream),
-		prefab.WithStaticFiles("/", s.config.StaticDir),
+		prefab.WithStaticFiles("/assets", s.config.StaticDir+"/assets"),
+		prefab.WithHTTPHandlerFunc("/", s.fallbackHandler),
 	)
 
 	// Start the server
@@ -122,6 +123,14 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(status)
+}
+
+func (s *Server) fallbackHandler(w http.ResponseWriter, r *http.Request) {
+	logger := s.logger.Named("api.fallback")
+	logger.Info("Fallback handler called")
+
+	// Serve the index.html file from the static directory
+	http.ServeFile(w, r, s.config.StaticDir+"/index.html")
 }
 
 // handleStream handles Server-Sent Events streaming of MQTT messages

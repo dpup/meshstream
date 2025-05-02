@@ -115,29 +115,11 @@
     <div class="container">
         <h1>Meshstream</h1>
         
-        <div class="tabs">
-            <div class="tab active" onclick="showView('simple')">Simple View</div>
-            <div class="tab" onclick="showView('dev')">Development</div>
+        <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
+        <div id="messages">
+            <p>Waiting for messages...</p>
         </div>
-        
-        <div id="simple-view" class="view active">
-            <p>This page displays real-time messages from Meshtastic nodes via MQTT.</p>
-            <div id="messages">
-                <p>Waiting for messages...</p>
-            </div>
-        </div>
-        
-        <div id="dev-view" class="view">
-            <p>
-                A web interface for viewing Meshtastic network traffic.
-                This is a placeholder page for the production build.
-            </p>
-            <a href="http://localhost:3000" class="cta">Open Development Server</a>
-            <p class="note">
-                For production deployment, build the web application with <code>make web-build</code>
-                to replace this placeholder with the full application.
-            </p>
-        </div>
+
     </div>
 
     <script>

@@ -30,14 +30,22 @@ if ! command -v docker &> /dev/null; then
   exit 1
 fi
 
-echo "Building Docker image for Meshstream..."
-docker build \
+# Check if Docker Buildx is available
+if ! docker buildx version &> /dev/null; then
+  echo "Error: Docker Buildx is not available. Please install or enable Docker Buildx."
+  exit 1
+fi
+
+echo "Building Docker image for Meshstream using buildx (linux/amd64 platform)..."
+docker buildx build \
+  --platform linux/amd64 \
   --build-arg MESHSTREAM_API_BASE_URL="${MESHSTREAM_API_BASE_URL:-}" \
   --build-arg MESHSTREAM_APP_ENV="${MESHSTREAM_APP_ENV:-production}" \
   --build-arg MESHSTREAM_SITE_TITLE="${MESHSTREAM_SITE_TITLE:-Bay Area Mesh}" \
   --build-arg MESHSTREAM_SITE_DESCRIPTION="${MESHSTREAM_SITE_DESCRIPTION:-Meshtastic activity in the Bay Area region, CA.}" \
   --build-arg MESHSTREAM_GOOGLE_MAPS_ID="${MESHSTREAM_GOOGLE_MAPS_ID}" \
   --build-arg MESHSTREAM_GOOGLE_MAPS_API_KEY="${MESHSTREAM_GOOGLE_MAPS_API_KEY}" \
+  --load \
   -t meshstream:${IMAGE_TAG} .
 
 echo "Tagging image for ECR repository..."
