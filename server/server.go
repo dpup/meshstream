@@ -85,7 +85,7 @@ func (s *Server) Start() error {
 		prefab.WithPort(port),
 		prefab.WithHTTPHandlerFunc("/api/status", s.handleStatus),
 		prefab.WithHTTPHandlerFunc("/api/stream", s.handleStream),
-		prefab.WithStaticFiles("/assets", s.config.StaticDir+"/assets"),
+		prefab.WithStaticFiles("/assets/", s.config.StaticDir),
 		prefab.WithHTTPHandlerFunc("/", s.fallbackHandler),
 	)
 
