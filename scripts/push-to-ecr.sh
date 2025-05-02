@@ -4,7 +4,17 @@ set -e
 # Load environment variables from .env file
 if [ -f .env ]; then
   echo "Loading environment variables from .env file"
-  export $(grep -v '^#' .env | xargs)
+  # Read .env file line by line to properly handle spaces in values
+  while IFS='=' read -r key value || [ -n "$key" ]; do
+    # Skip comments and empty lines
+    [[ $key =~ ^#.*$ || -z $key ]] && continue
+    # Remove leading/trailing whitespace
+    key=$(echo "$key" | xargs)
+    # Remove quotes from the value if present
+    value=$(echo "$value" | sed -E 's/^"(.*)"$/\1/' | sed -E "s/^'(.*)'$/\1/")
+    # Export the variable preserving spaces in the value
+    export "$key=$value"
+  done < .env
 else
   echo "Warning: .env file not found. Using default environment variables."
 fi
