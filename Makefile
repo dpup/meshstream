@@ -1,4 +1,4 @@
-.PHONY: build run gen-proto clean tools web-run web-build web-test web-lint docker-build docker-run
+.PHONY: build test run gen-proto clean tools web-run web-build web-test web-lint docker-build docker-run fmt fmt-check
 
 ROOT_DIR := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
@@ -16,6 +16,28 @@ PROTO_FILES := $(shell find $(ROOT_DIR) -name "*.proto" | sed 's|$(ROOT_DIR)/||'
 build:
 	mkdir -p dist
 	go build -o dist/meshstream
+
+# Test the server
+test: vet
+	go test ./... -v
+
+# Check Go formatting
+fmt:
+	gofmt -w $(shell find . -name "*.go" | grep -v "/generated/" | grep -v "/node_modules/")
+
+# Check Go formatting without modifying files (returns non-zero if files need formatting)
+fmt-check:
+	@echo "Checking Go formatting..."
+	@if [ "$$(gofmt -l $$(find . -name "*.go" | grep -v "/generated/" | grep -v "/node_modules/") | wc -l)" -gt 0 ]; then \
+		echo "The following files need to be formatted with go fmt:"; \
+		gofmt -l $$(find . -name "*.go" | grep -v "/generated/" | grep -v "/node_modules/"); \
+		exit 1; \
+	else \
+		echo "All Go files are properly formatted."; \
+	fi
+
+vet:
+	go vet ./...
 
 # Run the application with json log formatting
 run: build
