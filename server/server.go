@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -45,6 +46,8 @@ type Server struct {
 	isShuttingDown atomic.Bool
 	// Logger instance
 	logger logging.Logger
+	// Atomic counter for active connections
+	activeConnections atomic.Int64
 }
 
 // New creates a new server instance
@@ -70,8 +73,12 @@ func (s *Server) Start() error {
 		return err
 	}
 
+	baseCtx := context.Background()
+	baseCtx = logging.With(baseCtx, s.logger)
+
 	// Create a new prefab server
 	s.server = prefab.New(
+		prefab.WithContext(baseCtx),
 		prefab.WithHost(s.config.Host),
 		prefab.WithPort(port),
 		prefab.WithHTTPHandlerFunc("/api/status", s.handleStatus),
@@ -99,13 +106,16 @@ func (s *Server) Stop() error {
 	return nil
 }
 
-// handleStatus is a placeholder API endpoint that returns server status
+// handleStatus returns server status including active connections count and MQTT details
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	logger := s.logger.Named("api.status")
 
 	status := map[string]interface{}{
-		"status":  "ok",
-		"message": "Meshtastic Stream API is running",
+		"status":            "ok",
+		"message":           "Meshtastic Stream API is running",
+		"activeConnections": s.activeConnections.Load(),
+		"mqttServer":        s.config.MQTTServer,
+		"mqttTopic":         s.config.MQTTTopicPath,
 	}
 
 	logger.Debug("Status endpoint called")
@@ -119,7 +129,15 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	logger := s.logger.Named("api.sse").With("remoteAddr", r.RemoteAddr)
 	ctx := r.Context()
 
-	logger.Infow("SSE stream requested")
+	// Increment active connections counter
+	currentConnections := s.activeConnections.Add(1)
+	logger.Infow("SSE stream requested", "activeConnections", currentConnections)
+
+	// Ensure we decrement the counter when this function returns
+	defer func() {
+		remaining := s.activeConnections.Add(-1)
+		logger.Infow("SSE stream closed", "activeConnections", remaining)
+	}()
 
 	// Check if the server is shutting down
 	if s.isShuttingDown.Load() {
