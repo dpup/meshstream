@@ -9,6 +9,9 @@ import (
 	"github.com/dpup/prefab/logging"
 )
 
+// Time to wait before giving up on sending cached packets
+var cacheGracePeriod = 1500 * time.Millisecond
+
 // CircularBuffer implements a fixed-size circular buffer for caching packets
 type CircularBuffer struct {
 	buffer []*meshtreampb.Packet // Fixed size buffer to store packets
@@ -128,7 +131,7 @@ func (b *Broker) Subscribe(bufferSize int) <-chan *meshtreampb.Packet {
 				select {
 				case subscriberChan <- packet:
 					// Successfully sent packet
-				case <-time.After(1500 * time.Millisecond):
+				case <-time.After(cacheGracePeriod):
 					// Give up after waiting some time to avoid blocking indefinitely
 					b.logger.Warn("Timeout when sending cached packet to new subscriber")
 					return

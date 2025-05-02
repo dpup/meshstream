@@ -8,6 +8,7 @@ import (
 
 	meshtreampb "meshstream/generated/meshstream"
 	pb "meshstream/generated/meshtastic"
+
 	"google.golang.org/protobuf/proto"
 )
 
@@ -27,7 +28,8 @@ func TestManualDecode(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Failed to unmarshal as MapReport: %v\n", err)
 	} else {
-		fmt.Printf("Successfully decoded as MapReport: %+v\n", mapReport)
+		// Use the pointer to avoid copying mutex
+		fmt.Printf("Successfully decoded as MapReport: %v\n", mapReport.String())
 	}
 
 	// Try decoding as ServiceEnvelope
@@ -37,7 +39,8 @@ func TestManualDecode(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Failed to unmarshal as ServiceEnvelope: %v\n", err)
 	} else {
-		fmt.Printf("Successfully decoded as ServiceEnvelope: %+v\n", serviceEnvelope)
+		// Use the pointer to avoid copying mutex
+		fmt.Printf("Successfully decoded as ServiceEnvelope: %v\n", serviceEnvelope.String())
 	}
 
 	// Try decoding as MeshPacket
@@ -47,7 +50,8 @@ func TestManualDecode(t *testing.T) {
 	if err != nil {
 		fmt.Printf("Failed to unmarshal as MeshPacket: %v\n", err)
 	} else {
-		fmt.Printf("Successfully decoded as MeshPacket: %+v\n", meshPacket)
+		// Use the pointer to avoid copying mutex
+		fmt.Printf("Successfully decoded as MeshPacket: %v\n", meshPacket.String())
 	}
 }
 
@@ -60,41 +64,41 @@ func TestDecodeMapReport(t *testing.T) {
 
 	// Try to decode as different message types
 	testCases := []struct {
-		name        string
-		unmarshal   func([]byte, proto.Message) error
-		message     proto.Message
-		shouldPass  bool
+		name       string
+		unmarshal  func([]byte, proto.Message) error
+		message    proto.Message
+		shouldPass bool
 	}{
 		{
-			name:        "MapReport",
-			unmarshal:   proto.Unmarshal,
-			message:     &pb.MapReport{},
-			shouldPass:  false, // Expected to fail based on our findings
+			name:       "MapReport",
+			unmarshal:  proto.Unmarshal,
+			message:    &pb.MapReport{},
+			shouldPass: false, // Expected to fail based on our findings
 		},
 		{
-			name:        "ServiceEnvelope",
-			unmarshal:   proto.Unmarshal,
-			message:     &pb.ServiceEnvelope{},
-			shouldPass:  true, // This should work
+			name:       "ServiceEnvelope",
+			unmarshal:  proto.Unmarshal,
+			message:    &pb.ServiceEnvelope{},
+			shouldPass: true, // This should work
 		},
 		{
-			name:        "MeshPacket",
-			unmarshal:   proto.Unmarshal,
-			message:     &pb.MeshPacket{},
-			shouldPass:  true, // This also works - but with unparsed fields
+			name:       "MeshPacket",
+			unmarshal:  proto.Unmarshal,
+			message:    &pb.MeshPacket{},
+			shouldPass: true, // This also works - but with unparsed fields
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := tc.unmarshal(data, tc.message)
-			
+
 			if tc.shouldPass && err != nil {
 				t.Errorf("Expected %s to parse successfully, but got error: %v", tc.name, err)
 			} else if !tc.shouldPass && err == nil {
-				t.Errorf("Expected %s to fail parsing, but it succeeded: %+v", tc.name, tc.message)
+				t.Errorf("Expected %s to fail parsing, but it succeeded", tc.name)
 			}
-			
+
 			if err == nil {
 				// Do some additional validation if needed
 				if tc.name == "ServiceEnvelope" {
@@ -106,11 +110,11 @@ func TestDecodeMapReport(t *testing.T) {
 						t.Errorf("Expected ServiceEnvelope to have a decoded packet")
 					}
 					if envelope.GetPacket().GetDecoded().GetPortnum() != pb.PortNum_MAP_REPORT_APP {
-						t.Errorf("Expected PortNum to be MAP_REPORT_APP, got %s", 
+						t.Errorf("Expected PortNum to be MAP_REPORT_APP, got %s",
 							envelope.GetPacket().GetDecoded().GetPortnum())
 					}
 				}
-				
+
 				t.Logf("Successfully decoded as %s", tc.name)
 			} else {
 				t.Logf("Failed to decode as %s: %v", tc.name, err)
@@ -157,15 +161,15 @@ func TestDecodeMessageWithMapPayload(t *testing.T) {
 
 	// Format the output and check it contains expected components
 	formattedOutput := FormatTopicAndPacket(topicInfo, decodedData)
-	
+
 	// Print out the formatted output to debug
 	t.Logf("Formatted output: %s", formattedOutput)
-	
+
 	// Just verify the basic information is included
 	if !strings.Contains(formattedOutput, "Format: map") {
 		t.Error("Expected formatted output to contain 'Format: map'")
 	}
-	
+
 	if !strings.Contains(formattedOutput, "Port:") {
 		t.Error("Expected formatted output to contain 'Port:' in packet information")
 	}
