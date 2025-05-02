@@ -47,7 +47,7 @@ baymesh: build
 	@./dist/meshstream --verbose --mqtt-topic-prefix "msh/US/bayarea" 2>&1 | go tool github.com/dpup/logista
 
 # Generate Go code from Protocol Buffers
-gen-proto: tools
+gen-proto:
 	@mkdir -p $(ROOT_DIR)/generated
 	PATH="$(TOOLS_DIR):$$PATH" protoc \
 		-Iproto/ \

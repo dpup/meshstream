@@ -19,6 +19,6 @@ describe('PacketList', () => {
       </Provider>
     );
 
-    expect(screen.getByText('No packets received yet')).toBeInTheDocument();
+    expect(screen.getByText('Waiting for packets')).toBeInTheDocument();
   });
 });
