@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -25,6 +26,7 @@ type Config struct {
 	MQTTServer    string       // MQTT server hostname
 	MQTTTopicPath string       // MQTT topic path being subscribed to
 	StaticDir     string       // Directory containing static web files
+	ChannelKeys   []string     // Channel keys for decryption
 }
 
 // Create connection info JSON to send to the client
@@ -111,12 +113,22 @@ func (s *Server) Stop() error {
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	logger := s.logger.Named("api.status")
 
+	// Extract channel names without keys for security
+	var channelNames []string
+	for _, channelKeyPair := range s.config.ChannelKeys {
+		parts := strings.SplitN(channelKeyPair, ":", 2)
+		if len(parts) == 2 {
+			channelNames = append(channelNames, parts[0])
+		}
+	}
+
 	status := map[string]interface{}{
 		"status":            "ok",
 		"message":           "Meshtastic Stream API is running",
 		"activeConnections": s.activeConnections.Load(),
 		"mqttServer":        s.config.MQTTServer,
 		"mqttTopic":         s.config.MQTTTopicPath,
+		"channels":          channelNames,
 	}
 
 	logger.Debug("Status endpoint called")

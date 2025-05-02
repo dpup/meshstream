@@ -35,6 +35,9 @@ services:
       - MESHSTREAM_LOG_LEVEL=${MESHSTREAM_LOG_LEVEL:-info}
       - MESHSTREAM_VERBOSE_LOGGING=${MESHSTREAM_VERBOSE_LOGGING:-false}
       - MESHSTREAM_CACHE_SIZE=${MESHSTREAM_CACHE_SIZE:-1000}
+      
+      # Channel keys for decryption
+      - MESHSTREAM_CHANNEL_KEYS=${MESHSTREAM_CHANNEL_KEYS:-}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:8080/api/status"]

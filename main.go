@@ -75,7 +75,7 @@ func parseConfig() *Config {
 	flag.StringVar(&config.StaticDir, "static-dir", getEnv("STATIC_DIR", "./server/static"), "Directory containing static web files")
 
 	// Channel key configuration (comma separated list of name:key pairs)
-	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey+",ERSN:VIuMtC5uDDJtC/ojdH314HLkDIHanX4LdbK5yViV9jA=")
+	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey)
 	channelKeysFlag := flag.String("channel-keys", channelKeysDefault, "Comma-separated list of channel:key pairs for encrypted channels")
 
 	// Statistics configuration
@@ -214,6 +214,7 @@ func main() {
 		MQTTServer:    config.MQTTBroker,
 		MQTTTopicPath: config.MQTTTopicPrefix + "/#",
 		StaticDir:     config.StaticDir,
+		ChannelKeys:   config.ChannelKeys,
 	})
 
 	// Start the server in a goroutine

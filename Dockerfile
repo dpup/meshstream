@@ -111,6 +111,7 @@ ENV MESHSTREAM_MQTT_USERNAME=meshdev
 ENV MESHSTREAM_MQTT_PASSWORD=large4cats
 ENV MESHSTREAM_MQTT_TOPIC_PREFIX=msh/US/bayarea
 ENV MESHSTREAM_MQTT_CLIENT_ID=meshstream
+ENV MESHSTREAM_CHANNEL_KEYS=""
 
 # Note: Web app configuration is set at build time
 # and baked into the static files
