@@ -9,13 +9,13 @@ import (
 
 // SubscriberConfig holds configuration for creating a subscriber
 type SubscriberConfig struct {
-	Name       string                       // Descriptive name for the subscriber
-	Broker     *Broker                      // The broker to subscribe to
-	BufferSize int                          // Channel buffer size
-	Processor  func(*meshtreampb.Packet)    // Function to process each packet
-	StartHook  func()                       // Optional hook called when starting
-	CloseHook  func()                       // Optional hook called when closing
-	Logger     logging.Logger               // Logger instance to use
+	Name       string                    // Descriptive name for the subscriber
+	Broker     *Broker                   // The broker to subscribe to
+	BufferSize int                       // Channel buffer size
+	Processor  func(*meshtreampb.Packet) // Function to process each packet
+	StartHook  func()                    // Optional hook called when starting
+	CloseHook  func()                    // Optional hook called when closing
+	Logger     logging.Logger            // Logger instance to use
 }
 
 // BaseSubscriber implements common subscriber functionality

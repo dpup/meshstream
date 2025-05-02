@@ -23,7 +23,7 @@ func FormatTopicAndPacket(topic *meshtreampb.TopicInfo, data *meshtreampb.Data) 
 
 	// Packet information
 	sb.WriteString("\n===== Packet Info =====\n")
-	
+
 	// Check if we have a decode error
 	if data.DecodeError != "" {
 		sb.WriteString(fmt.Sprintf("ERROR: %s\n", data.DecodeError))
@@ -39,49 +39,49 @@ func FormatTopicAndPacket(topic *meshtreampb.TopicInfo, data *meshtreampb.Data) 
 	sb.WriteString(fmt.Sprintf("Port: %s\n", data.PortNum.String()))
 	sb.WriteString(fmt.Sprintf("Hop Limit: %d\n", data.HopLimit))
 	sb.WriteString(fmt.Sprintf("Request ID: %d\n", data.RequestId))
-	
+
 	// Payload type-specific information
 	sb.WriteString("\n===== Payload Info =====\n")
-	
+
 	switch data.Payload.(type) {
 	case *meshtreampb.Data_TextMessage:
 		sb.WriteString(fmt.Sprintf("Type: Text Message\nContent: %s\n", data.GetTextMessage()))
-		
+
 	case *meshtreampb.Data_Position:
 		pos := data.GetPosition()
 		lat := float64(pos.GetLatitudeI()) / 10000000.0
 		lon := float64(pos.GetLongitudeI()) / 10000000.0
-		sb.WriteString(fmt.Sprintf("Type: Position\nLatitude: %.6f\nLongitude: %.6f\nAltitude: %d\n", 
+		sb.WriteString(fmt.Sprintf("Type: Position\nLatitude: %.6f\nLongitude: %.6f\nAltitude: %d\n",
 			lat, lon, pos.GetAltitude()))
-		
+
 	case *meshtreampb.Data_Telemetry:
 		telemetry := data.GetTelemetry()
 		sb.WriteString("Type: Telemetry\n")
 		if telemetry.GetEnvironmentMetrics() != nil {
 			env := telemetry.GetEnvironmentMetrics()
-			sb.WriteString(fmt.Sprintf("Environment: Temp %.1f°C, Rel Humidity %.1f%%\n", 
+			sb.WriteString(fmt.Sprintf("Environment: Temp %.1f°C, Rel Humidity %.1f%%\n",
 				env.GetTemperature(), env.GetRelativeHumidity()))
 		}
 		if telemetry.GetDeviceMetrics() != nil {
 			dev := telemetry.GetDeviceMetrics()
-			sb.WriteString(fmt.Sprintf("Device: Battery %d%%, Voltage %.1fV\n", 
+			sb.WriteString(fmt.Sprintf("Device: Battery %d%%, Voltage %.1fV\n",
 				dev.GetBatteryLevel(), dev.GetVoltage()))
 		}
-		
+
 	case *meshtreampb.Data_NodeInfo:
 		user := data.GetNodeInfo()
-		sb.WriteString(fmt.Sprintf("Type: User Info\nID: %s\nLongName: %s\nShortName: %s\n", 
+		sb.WriteString(fmt.Sprintf("Type: User Info\nID: %s\nLongName: %s\nShortName: %s\n",
 			user.GetId(), user.GetLongName(), user.GetShortName()))
-		
+
 	case *meshtreampb.Data_MapReport:
 		sb.WriteString(fmt.Sprintf("Type: Map Report\n"))
-		
+
 	case *meshtreampb.Data_BinaryData:
 		sb.WriteString(fmt.Sprintf("Type: Binary Data\nLength: %d bytes\n", len(data.GetBinaryData())))
-		
+
 	default:
 		sb.WriteString("Type: Unknown\n")
 	}
-	
+
 	return sb.String()
 }
