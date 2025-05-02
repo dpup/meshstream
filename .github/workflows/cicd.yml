@@ -22,9 +22,6 @@ jobs:
       with:
         go-version: ${{ env.GO_VERSION }}
         cache: true
-    
-    - name: For some reason this fixes the build
-      run: make clean
 
     - name: Install Protocol Buffers Compiler
       run: |
