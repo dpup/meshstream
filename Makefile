@@ -71,6 +71,7 @@ $(TOOLS_DIR):
 # Install the protoc-gen-go tool
 $(PROTOC_GEN_GO): $(TOOLS_DIR)
 	GOBIN=$(abspath $(TOOLS_DIR)) go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+	echo "Installed protoc-gen-go in $(TOOLS_DIR)"
 	ls $(TOOLS_DIR)
 
 # Web application commands

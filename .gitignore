@@ -74,3 +74,4 @@ temp/
 
 # Binary output type
 #meshstream
+**/.claude/settings.local.json

@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { calculateAccuracyFromPrecisionBits, calculateZoomFromAccuracy } from "../../lib/mapUtils";
 import { GOOGLE_MAPS_ID } from "../../lib/config";
 
@@ -39,7 +39,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
   // Track whether the map has been initialized
   const isInitializedRef = useRef(false);
 
-  const initializeMap = () => {
+  const initializeMap = useCallback(() => {
     if (
       mapRef.current && 
       window.google && 
@@ -94,7 +94,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
         radius: accuracyMeters,
       });
     }
-  };
+  }, [lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
   
   // Check for Google Maps API loading - make sure all required objects are available
   useEffect(() => {
@@ -148,7 +148,7 @@ export const GoogleMap: React.FC<GoogleMapProps> = ({
     if (isGoogleMapsLoaded && mapRef.current) {
       initializeMap();
     }
-  }, [isGoogleMapsLoaded, lat, lng, effectiveZoom, accuracyMeters, precisionBits]);
+  }, [isGoogleMapsLoaded, initializeMap]);
 
   // Prepare the container classes based on fullHeight flag
   const containerClassName = `w-full ${fullHeight ? 'h-full flex-1' : 'min-h-[300px]'} rounded-lg overflow-hidden effect-inset`;
