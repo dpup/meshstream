@@ -72,8 +72,8 @@ func parseConfig() *Config {
 	flag.StringVar(&config.MQTTBroker, "mqtt-broker", getEnv("MQTT_BROKER", "mqtt.bayme.sh"), "MQTT broker address")
 	flag.StringVar(&config.MQTTUsername, "mqtt-username", getEnv("MQTT_USERNAME", "meshdev"), "MQTT username")
 	flag.StringVar(&config.MQTTPassword, "mqtt-password", getEnv("MQTT_PASSWORD", "large4cats"), "MQTT password")
-	flag.StringVar(&config.MQTTTopicPrefix, "mqtt-topic-prefix", getEnv("MQTT_TOPIC_PREFIX", "msh/US/CA/Motherlode"), "MQTT topic prefix")
-	flag.StringVar(&config.MQTTClientID, "mqtt-client-id", getEnv("MQTT_CLIENT_ID", "meshstream-client"), "MQTT client ID")
+	flag.StringVar(&config.MQTTTopicPrefix, "mqtt-topic-prefix", getEnv("MQTT_TOPIC_PREFIX", "msh/US/bayarea"), "MQTT topic prefix")
+	flag.StringVar(&config.MQTTClientID, "mqtt-client-id", getEnv("MQTT_CLIENT_ID", "meshstream"), "MQTT client ID")
 
 	// MQTT connection tuning parameters
 	flag.IntVar(&config.MQTTKeepAlive, "mqtt-keepalive", intFromEnv("MQTT_KEEPALIVE", 60), "MQTT keep alive interval in seconds")
@@ -98,13 +98,14 @@ func parseConfig() *Config {
 	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 50), "Number of packets to cache for new subscribers")
 	flag.BoolVar(&config.VerboseLogging, "verbose", boolFromEnv("VERBOSE_LOGGING", false), "Enable verbose message logging")
 
-	// Parse flags
 	flag.Parse()
 
-	// Process channel keys from the command line
 	if *channelKeysFlag != "" {
 		config.ChannelKeys = strings.Split(*channelKeysFlag, ",")
 	}
+
+	// Unique client ID for this process.
+	config.MQTTClientID = fmt.Sprintf("%s-%d-%d", config.MQTTClientID, os.Getpid(), time.Now().Unix())
 
 	return config
 }

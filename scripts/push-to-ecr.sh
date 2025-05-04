@@ -14,6 +14,7 @@ if [ -f .env ]; then
     value=$(echo "$value" | sed -E 's/^"(.*)"$/\1/' | sed -E "s/^'(.*)'$/\1/")
     # Export the variable preserving spaces in the value
     export "$key=$value"
+    echo "$key=$value"
   done < .env
 else
   echo "Warning: .env file not found. Using default environment variables."

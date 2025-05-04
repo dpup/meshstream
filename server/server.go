@@ -96,15 +96,18 @@ func (s *Server) Start() error {
 
 // Stop shuts down the server
 func (s *Server) Stop() error {
-	// Set the shutdown flag first to prevent new connections from starting streams
-	s.isShuttingDown.Store(true)
+	if !s.isShuttingDown.Load() {
+		s.logger.Info("Stopping server...")
+		// Set the shutdown flag first to prevent new connections from starting streams
+		s.isShuttingDown.Store(true)
 
-	// Signal all active connections to close
-	close(s.shutdown)
+		// Signal all active connections to close
+		close(s.shutdown)
 
-	// Then shut down the HTTP server
-	if s.server != nil {
-		return s.server.Shutdown()
+		// Then shut down the HTTP server
+		if s.server != nil {
+			return s.server.Shutdown()
+		}
 	}
 	return nil
 }
