@@ -5,7 +5,7 @@
 /* Set default background and text colors and font family */
 @layer base {
   html, body {
-    @apply bg-neutral-800;
+    @apply bg-neutral-700;
     @apply text-neutral-200;
     @apply font-sans;
   }

@@ -47,6 +47,13 @@ if ! docker buildx version &> /dev/null; then
 fi
 
 echo "Building Docker image for Meshstream using buildx (linux/amd64 platform)..."
+echo "Generating a unique MQTT client ID if not set..."
+# Generate a unique client ID if not already set
+if [ -z "${MESHSTREAM_MQTT_CLIENT_ID}" ]; then
+  export MESHSTREAM_MQTT_CLIENT_ID="meshstream-aws-$(date +%s)"
+  echo "Using generated MQTT client ID: ${MESHSTREAM_MQTT_CLIENT_ID}"
+fi
+
 docker buildx build \
   --platform linux/amd64 \
   --build-arg MESHSTREAM_API_BASE_URL="${MESHSTREAM_API_BASE_URL:-}" \

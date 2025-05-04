@@ -13,11 +13,20 @@ import (
 
 // Config holds configuration for the MQTT client
 type Config struct {
+	// Connection settings
 	Broker   string
 	Username string
 	Password string
 	ClientID string
 	Topic    string
+	
+	// Connection tuning parameters
+	KeepAlive        int           // Keep alive interval in seconds (default: 60)
+	ConnectTimeout   time.Duration // Connection timeout (default: 30s)
+	PingTimeout      time.Duration // Ping timeout (default: 10s)
+	MaxReconnectTime time.Duration // Maximum time between reconnect attempts (default: 5m)
+	UseTLS           bool          // Whether to use TLS/SSL (default: false)
+	TLSPort          int           // TLS port to use if UseTLS is true (default: 8883)
 }
 
 // Client manages the MQTT connection and message processing
@@ -41,26 +50,91 @@ func NewClient(config Config, logger logging.Logger) *Client {
 
 // Connect establishes a connection to the MQTT broker
 func (c *Client) Connect() error {
+	// Set default values for optional parameters
+	keepAlive := 60
+	if c.config.KeepAlive > 0 {
+		keepAlive = c.config.KeepAlive
+	}
+	
+	connectTimeout := 30 * time.Second
+	if c.config.ConnectTimeout > 0 {
+		connectTimeout = c.config.ConnectTimeout
+	}
+	
+	pingTimeout := 10 * time.Second
+	if c.config.PingTimeout > 0 {
+		pingTimeout = c.config.PingTimeout
+	}
+	
+	maxReconnectTime := 5 * time.Minute
+	if c.config.MaxReconnectTime > 0 {
+		maxReconnectTime = c.config.MaxReconnectTime
+	}
+	
+	// Determine protocol and port
+	protocol := "tcp"
+	port := 1883
+	if c.config.UseTLS {
+		protocol = "ssl"
+		port = 8883
+		if c.config.TLSPort > 0 {
+			port = c.config.TLSPort
+		}
+	}
+	
+	// Log detailed connection settings
+	c.logger.Infow("Connecting to MQTT broker with settings",
+		"broker", c.config.Broker,
+		"port", port,
+		"protocol", protocol,
+		"clientID", c.config.ClientID,
+		"username", c.config.Username,
+		"passwordLength", len(c.config.Password),
+		"topic", c.config.Topic,
+		"keepAlive", keepAlive,
+		"connectTimeout", connectTimeout,
+		"pingTimeout", pingTimeout,
+		"maxReconnectTime", maxReconnectTime,
+		"useTLS", c.config.UseTLS,
+	)
+
 	opts := mqtt.NewClientOptions()
-	opts.AddBroker(fmt.Sprintf("tcp://%s:1883", c.config.Broker))
+	opts.AddBroker(fmt.Sprintf("%s://%s:%d", protocol, c.config.Broker, port))
 	opts.SetClientID(c.config.ClientID)
 	opts.SetUsername(c.config.Username)
 	opts.SetPassword(c.config.Password)
 	opts.SetDefaultPublishHandler(c.messageHandler)
-	opts.SetPingTimeout(1 * time.Second)
+	opts.SetKeepAlive(time.Duration(keepAlive) * time.Second)
+	opts.SetConnectTimeout(connectTimeout)
+	opts.SetPingTimeout(pingTimeout)
+	opts.SetMaxReconnectInterval(maxReconnectTime)
+	opts.SetAutoReconnect(true)
+	opts.SetCleanSession(true)
 	opts.OnConnect = c.connectHandler
 	opts.OnConnectionLost = c.connectionLostHandler
+	opts.OnReconnecting = c.reconnectingHandler
 
 	// Create and start the client
 	c.client = mqtt.NewClient(opts)
 	if token := c.client.Connect(); token.Wait() && token.Error() != nil {
+		c.logger.Errorw("Failed to connect to MQTT broker", 
+			"error", token.Error(),
+			"broker", c.config.Broker,
+			"clientID", c.config.ClientID)
 		return fmt.Errorf("error connecting to MQTT broker: %v", token.Error())
 	}
 
 	// Subscribe to the configured topic
 	token := c.client.Subscribe(c.config.Topic, 0, nil)
 	token.Wait()
-	c.logger.Infof("Subscribed to topic: %s", c.config.Topic)
+	if token.Error() != nil {
+		c.logger.Errorw("Failed to subscribe to topic",
+			"error", token.Error(),
+			"topic", c.config.Topic)
+		return fmt.Errorf("error subscribing to topic %s: %v", c.config.Topic, token.Error())
+	}
+	
+	c.logger.Infof("Successfully subscribed to topic: %s", c.config.Topic)
 
 	return nil
 }
@@ -127,10 +201,24 @@ func (c *Client) messageHandler(client mqtt.Client, msg mqtt.Message) {
 
 // connectHandler is called when the client connects to the broker
 func (c *Client) connectHandler(client mqtt.Client) {
-	c.logger.Info("Connected to MQTT Broker")
+	c.logger.Infow("Connected to MQTT Broker", 
+		"broker", c.config.Broker,
+		"clientID", c.config.ClientID,
+		"topic", c.config.Topic)
 }
 
 // connectionLostHandler is called when the client loses connection
 func (c *Client) connectionLostHandler(client mqtt.Client, err error) {
-	c.logger.Errorw("Connection lost", "error", err)
+	c.logger.Errorw("Connection lost", 
+		"error", err,
+		"errorType", fmt.Sprintf("%T", err),
+		"broker", c.config.Broker,
+		"clientID", c.config.ClientID)
+}
+
+// reconnectingHandler is called when the client is attempting to reconnect
+func (c *Client) reconnectingHandler(client mqtt.Client, opts *mqtt.ClientOptions) {
+	c.logger.Infow("Attempting to reconnect to MQTT broker",
+		"broker", c.config.Broker,
+		"clientID", c.config.ClientID)
 }

@@ -82,9 +82,9 @@ function RootLayout() {
   }, [dispatch]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-900">
+    <div className="flex h-screen overflow-hidden bg-neutral-800">
       <Nav connectionStatus={connectionStatus} />
-      <main className="ml-64 flex-1 py-6 overflow-hidden flex flex-col">
+      <main className="md:ml-64 flex-1 pt-16 md:pt-6 pb-2 md:py-6 overflow-hidden flex flex-col bg-neutral-50/5">
         <Outlet />
       </main>
     </div>

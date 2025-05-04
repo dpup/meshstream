@@ -19,11 +19,17 @@ import (
 // Config holds all the configuration parameters
 type Config struct {
 	// MQTT Configuration
-	MQTTBroker      string
-	MQTTUsername    string
-	MQTTPassword    string
-	MQTTTopicPrefix string
-	MQTTClientID    string
+	MQTTBroker         string
+	MQTTUsername       string
+	MQTTPassword       string
+	MQTTTopicPrefix    string
+	MQTTClientID       string
+	MQTTKeepAlive      int
+	MQTTConnectTimeout time.Duration
+	MQTTPingTimeout    time.Duration
+	MQTTMaxReconnect   time.Duration
+	MQTTUseTLS         bool
+	MQTTTLSPort        int
 
 	// Web server configuration
 	ServerHost string
@@ -69,6 +75,14 @@ func parseConfig() *Config {
 	flag.StringVar(&config.MQTTTopicPrefix, "mqtt-topic-prefix", getEnv("MQTT_TOPIC_PREFIX", "msh/US/CA/Motherlode"), "MQTT topic prefix")
 	flag.StringVar(&config.MQTTClientID, "mqtt-client-id", getEnv("MQTT_CLIENT_ID", "meshstream-client"), "MQTT client ID")
 
+	// MQTT connection tuning parameters
+	flag.IntVar(&config.MQTTKeepAlive, "mqtt-keepalive", intFromEnv("MQTT_KEEPALIVE", 60), "MQTT keep alive interval in seconds")
+	flag.DurationVar(&config.MQTTConnectTimeout, "mqtt-connect-timeout", durationFromEnv("MQTT_CONNECT_TIMEOUT", 30*time.Second), "MQTT connection timeout")
+	flag.DurationVar(&config.MQTTPingTimeout, "mqtt-ping-timeout", durationFromEnv("MQTT_PING_TIMEOUT", 10*time.Second), "MQTT ping timeout")
+	flag.DurationVar(&config.MQTTMaxReconnect, "mqtt-max-reconnect", durationFromEnv("MQTT_MAX_RECONNECT", 5*time.Minute), "MQTT maximum reconnect interval")
+	flag.BoolVar(&config.MQTTUseTLS, "mqtt-use-tls", boolFromEnv("MQTT_USE_TLS", false), "Use TLS for MQTT connection")
+	flag.IntVar(&config.MQTTTLSPort, "mqtt-tls-port", intFromEnv("MQTT_TLS_PORT", 8883), "MQTT TLS port")
+
 	// Web server configuration
 	flag.StringVar(&config.ServerHost, "server-host", getEnv("SERVER_HOST", "localhost"), "Web server host")
 	flag.StringVar(&config.ServerPort, "server-port", getEnv("SERVER_PORT", "8080"), "Web server port")
@@ -101,6 +115,20 @@ func mustParseDuration(durationStr string) time.Duration {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Invalid duration format: %s\n", durationStr)
 		os.Exit(1)
+	}
+	return duration
+}
+
+// Helper function to parse duration from environment with default
+func durationFromEnv(key string, defaultValue time.Duration) time.Duration {
+	envVal := getEnv(key, "")
+	if envVal == "" {
+		return defaultValue
+	}
+	duration, err := time.ParseDuration(envVal)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Invalid duration format for %s: %s\n", key, envVal)
+		return defaultValue
 	}
 	return duration
 }
@@ -156,7 +184,7 @@ func main() {
 
 		err := decoder.AddChannelKey(channelName, channelKey)
 		if err != nil {
-			logger.Errorw("Failed to initialize channel key", "channel", channelName, "error", err)
+			logger.Errorw("Failed to initialize channel key", "channel", channelName, "key", channelKey, "error", err)
 		} else {
 			logger.Infof("Initialized channel key for '%s'", channelName)
 		}
@@ -164,14 +192,22 @@ func main() {
 
 	// Configure and create the MQTT client
 	mqttConfig := mqtt.Config{
+		// Basic connection parameters
 		Broker:   config.MQTTBroker,
 		Username: config.MQTTUsername,
 		Password: config.MQTTPassword,
 		ClientID: config.MQTTClientID,
 		Topic:    config.MQTTTopicPrefix + "/#",
+
+		// Advanced connection parameters
+		KeepAlive:        config.MQTTKeepAlive,
+		ConnectTimeout:   config.MQTTConnectTimeout,
+		PingTimeout:      config.MQTTPingTimeout,
+		MaxReconnectTime: config.MQTTMaxReconnect,
+		UseTLS:           config.MQTTUseTLS,
+		TLSPort:          config.MQTTTLSPort,
 	}
 
-	logger.Infof("Connecting to MQTT broker: %s with topic prefix: %s", config.MQTTBroker, config.MQTTTopicPrefix)
 	mqttClient := mqtt.NewClient(mqttConfig, logger)
 
 	// Connect to the MQTT broker
