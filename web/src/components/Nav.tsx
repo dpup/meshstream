@@ -116,14 +116,18 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
   return (
     <>
       {/* Mobile header (always visible on mobile) */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-20  border-neutral-700 border-b shadow-inner bg-neutral-800/40">
+      <div className="md:hidden fixed top-0 left-0 right-0 z-20 bg-neutral-800/40">
         <div className="flex items-center justify-between p-3">
-          <div className="flex items-center">
+          <Link 
+            to="/home"
+            className="flex items-center"
+            onClick={() => isMobileView && setIsMobileMenuOpen(false)}
+          >
             <div className="bg-pink-400 rounded-md mr-3 p-1.5 flex items-center justify-center">
               <Layers className="h-5 w-5 text-neutral-800" />
             </div>
             <h1 className="text-xl font-thin tracking-wide text-neutral-100">{SITE_TITLE}</h1>
-          </div>
+          </Link>
           <Button 
             variant="ghost" 
             icon={isMobileMenuOpen ? X : Menu} 
@@ -161,12 +165,12 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
       {/* Desktop sidebar (hidden on mobile) */}
       <aside className="hidden md:flex w-64 text-neutral-100 h-screen fixed left-0 top-0 flex-col">
         {/* Logo and title section */}
-        <div className="p-4 flex items-center">
+        <Link to="/home" className="p-4 flex items-center hover:bg-neutral-800/50 transition-colors">
           <div className="bg-pink-400 rounded-md mr-3 p-1.5 flex items-center justify-center">
             <Layers className="h-5 w-5 text-neutral-800" />
           </div>
           <h1 className="text-xl font-thin tracking-wide">{SITE_TITLE}</h1>
-        </div>
+        </Link>
 
         <Separator className="mt-1" />
 

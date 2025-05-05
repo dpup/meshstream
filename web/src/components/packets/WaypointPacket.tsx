@@ -49,7 +49,7 @@ export const WaypointPacket: React.FC<WaypointPacketProps> = ({ packet }) => {
               <div className="text-base text-neutral-300">{waypoint.name}</div>
             </div>
           )}
-          <KeyValueGrid>
+          <KeyValueGrid className="grid-cols-1 sm:grid-cols-2">
             {latitude !== undefined && (
               <KeyValuePair label="Latitude" value={latitude.toFixed(6)} vertical monospace />
             )}

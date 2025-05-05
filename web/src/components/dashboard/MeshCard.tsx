@@ -2,7 +2,8 @@ import React from "react";
 import { Battery, MapPin, Thermometer, Network, BoomBox } from "lucide-react";
 import { Counter } from "../Counter";
 import { NodeData } from "../../store/slices/aggregatorSlice";
-import { getActivityLevel, getNodeColors, ActivityLevel } from "../../lib/activity";
+import { getActivityLevel, getNodeColors } from "../../lib/activity";
+import { cn } from "@/lib/cn";
 
 export interface MeshCardProps {
   type: "node" | "gateway";
@@ -45,17 +46,6 @@ export const MeshCard: React.FC<MeshCardProps> = ({
   const activityLevel = getActivityLevel(lastHeard, type === "gateway");
   const colors = getNodeColors(activityLevel, type === "gateway");
   
-  // Get card style based on activity
-  const getCardStyle = () => {
-    if (activityLevel === ActivityLevel.RECENT) {
-      return "bg-neutral-800 hover:bg-neutral-700";
-    } else if (activityLevel === ActivityLevel.ACTIVE) {
-      return "bg-neutral-800/80 hover:bg-neutral-700/80";
-    } else {
-      return "bg-neutral-800/50 hover:bg-neutral-800";
-    }
-  };
-
   // Get icon style based on activity
   const getIconStyle = () => {
     return colors.background + " " + colors.textClass;
@@ -69,10 +59,10 @@ export const MeshCard: React.FC<MeshCardProps> = ({
   return (
     <div
       onClick={handleClick}
-      className={`flex items-center p-2 rounded-lg ${getCardStyle()} ${onClick ? "cursor-pointer transition-colors" : ""}`}
+      className={cn('flex items-center p-2 rounded-lg bg-neutral-700/50 hover:bg-neutral-700', {"cursor-pointer transition-colors" : !!onClick})}
     >
       <div className="mr-2">
-        <div className={`p-1.5 rounded-full ${getIconStyle()}`}>
+        <div className={cn('p-1.5 rounded-full', getIconStyle())}>
           {getIcon()}
         </div>
       </div>
@@ -98,7 +88,7 @@ export const MeshCard: React.FC<MeshCardProps> = ({
         </div>
         <div className="text-xs text-neutral-400 flex items-center">
           <span
-            className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${getStatusDotStyle()}`}
+            className={cn('inline-block w-1.5 h-1.5 rounded-full mr-1', getStatusDotStyle())}
           ></span>
           {timeString}
         </div>

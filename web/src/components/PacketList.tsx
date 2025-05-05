@@ -154,7 +154,7 @@ export const PacketList: React.FC = () => {
   return (
     <div className="flex flex-col h-full">
       <div className="sticky top-0 z-10">
-        <div className="flex justify-between items-center mb-2">
+        <div className="flex flex-col md:flex-row space-y-2 md:space-y-0 justify-between md:items-center mb-2">
           <div className="flex items-center space-x-3">
             {/* Show buffered count when paused */}
             {streamPaused && bufferedPackets.length > 0 && (
@@ -240,44 +240,40 @@ export const PacketList: React.FC = () => {
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <>
-            <Separator className="mx-0 mt-4" />
-            <div className="flex justify-between items-center text-sm py-2 bg-neutral-800/50 sticky bottom-0">
-              <div className="text-sm text-neutral-400 px-2">
-                Page {currentPage} of {totalPages}
-              </div>
+        <Separator className="mx-0 mt-4" />
+        <div className="flex justify-between items-center text-sm sticky bottom-0">
+          <div className="text-sm text-neutral-400 px-2">
+            Page {currentPage} of {totalPages}
+          </div>
 
-              <div className="flex items-center space-x-3">
-                <Button
-                  onClick={() =>
-                    setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
-                  }
-                  disabled={currentPage === 1}
-                  icon={ChevronLeft}
-                  variant="secondary"
-                  size="md"
-                >
-                  Previous
-                </Button>
+          <div className="flex items-center space-x-3">
+            <Button
+              onClick={() =>
+                setCurrentPage(currentPage > 1 ? currentPage - 1 : 1)
+              }
+              disabled={currentPage === 1}
+              icon={ChevronLeft}
+              variant="secondary"
+              size="md"
+            >
+              Previous
+            </Button>
 
-                <Button
-                  onClick={() =>
-                    setCurrentPage(
-                      currentPage < totalPages ? currentPage + 1 : totalPages
-                    )
-                  }
-                  disabled={currentPage === totalPages}
-                  icon={ChevronRight}
-                  variant="secondary"
-                  size="md"
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
+            <Button
+              onClick={() =>
+                setCurrentPage(
+                  currentPage < totalPages ? currentPage + 1 : totalPages
+                )
+              }
+              disabled={currentPage === totalPages}
+              icon={ChevronRight}
+              variant="secondary"
+              size="md"
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );

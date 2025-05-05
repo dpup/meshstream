@@ -35,7 +35,7 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
     >
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <KeyValueGrid>
+          <KeyValueGrid className="grid-cols-2">
             <KeyValuePair 
               label="Latitude" 
               value={latitude !== undefined ? latitude.toFixed(6) : 'N/A'} 

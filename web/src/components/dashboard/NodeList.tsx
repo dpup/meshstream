@@ -31,8 +31,6 @@ export const NodeList: React.FC = () => {
     navigate({ to: "/node/$nodeId", params: { nodeId: nodeId.toString(16) } });
   };
 
-  // Instead of early return, we'll handle the empty state in the JSX
-
   return (
     <div className="space-y-1">
       <div className="flex justify-between items-center mb-2">

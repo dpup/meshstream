@@ -609,8 +609,8 @@ function getMarkerIcon(node: MapNode): MarkerIconConfig {
     path: google.maps.SymbolPath.CIRCLE,
     scale: 12, 
     fillColor: colors.fill,
-    fillOpacity: 0.8,
+    fillOpacity: 1,
     strokeColor: colors.stroke,
-    strokeWeight: 4,
+    strokeWeight: 2,
   };
 }

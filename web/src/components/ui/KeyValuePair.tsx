@@ -94,8 +94,22 @@ export const KeyValueGrid: React.FC<{
   columns?: number;
   className?: string;
 }> = ({ children, columns = 2, className }) => {
+  // Generate the appropriate grid columns class based on the columns prop
+  let gridColsClass = 'grid-cols-2'; // Default
+  
+  if (className && className.includes('grid-cols-')) {
+    // If className already includes a grid-cols class, don't add another one
+    gridColsClass = '';
+  } else if (columns === 1) {
+    gridColsClass = 'grid-cols-1';
+  } else if (columns === 3) {
+    gridColsClass = 'grid-cols-3';
+  } else if (columns === 4) {
+    gridColsClass = 'grid-cols-4';
+  }
+  
   return (
-    <div className={cn(`grid grid-cols-${columns} gap-x-6 gap-y-3`, className)}>
+    <div className={cn(`grid ${gridColsClass} gap-x-6 gap-y-3`, className)}>
       {children}
     </div>
   );

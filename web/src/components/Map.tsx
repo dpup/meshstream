@@ -58,7 +58,7 @@ export const Map: React.FC<MapProps> = ({
 
   const mapContainerClasses = flush 
     ? `w-full h-full overflow-hidden relative ${className}`
-    : `${className} relative overflow-hidden rounded-lg border border-neutral-700 bg-neutral-800/50`;
+    : `${className} relative overflow-hidden rounded-xl border border-neutral-700 bg-neutral-800/50`;
   
   if (!apiKeyAvailable) {
     return (

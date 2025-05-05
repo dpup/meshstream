@@ -293,10 +293,17 @@ export const MapReportPacket: React.FC<MapReportPacketProps> = ({ packet }) => {
               )}
             </div>
             {/* Position information */}
-            <div className="grid grid-cols-2 gap-3 mt-3 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-sm">
               <KeyValuePair 
-                label="Coordinates"
-                value={`${center.latitude.toFixed(6)}, ${center.longitude.toFixed(6)}`}
+                label="Latitude"
+                value={center.latitude.toFixed(6)}
+                monospace={true}
+                inset={true}
+              />
+              
+              <KeyValuePair 
+                label="Longitude"
+                value={center.longitude.toFixed(6)}
                 monospace={true}
                 inset={true}
               />

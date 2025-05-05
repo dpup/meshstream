@@ -24,7 +24,7 @@ function MapPage() {
 
   return (
     <PageWrapper>
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
+      <div className="flex flex-col h-[calc(100vh-7rem)] md:h-[calc(100vh-5rem)]">
         <div className="flex-1 flex flex-col">
           <NetworkMap 
             fullHeight
@@ -32,7 +32,7 @@ function MapPage() {
             onAutoZoomChange={setAutoZoomEnabled}
           />
           
-          <div className="mt-2 bg-neutral-800/50 rounded-lg p-2 text-xs flex items-center justify-between effect-inset">
+          <div className="mt-2 rounded-lg p-2 text-xs flex items-center justify-between effect-inset">
             <div className="flex flex-wrap gap-2">
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, false).textClass} ${getNodeColors(ActivityLevel.RECENT, false).background}`}>
