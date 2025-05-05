@@ -76,8 +76,7 @@ export const ChannelDetail: React.FC<ChannelDetailProps> = ({ channelId }) => {
 
   return (
     <div className="max-w-4xl h-full flex flex-col">
-      {/* Header with back button and channel info */}
-      <div className="flex items-center px-4 bg-neutral-800/50 rounded-lg">
+      <div className="flex items-center bg-neutral-800/50 rounded-lg effect-inset p-4">
         <button
           onClick={handleBack}
           className="flex items-center mr-4 p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 rounded-full transition-colors effect-outset"
@@ -114,8 +113,7 @@ export const ChannelDetail: React.FC<ChannelDetailProps> = ({ channelId }) => {
 
       <Separator />
 
-      {/* Message List - Chat style without title */}
-      <div className="flex-1 overflow-y-auto pb-4 mt-4">
+      <div className="flex-1 overflow-y-auto pb-4">
         {channelMessages.length === 0 ? (
           <div className="bg-neutral-800/50 rounded-lg p-6 text-center text-neutral-400 effect-inset">
             <p>No messages in this channel yet.</p>

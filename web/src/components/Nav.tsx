@@ -85,7 +85,7 @@ export const Nav: React.FC<NavProps> = ({ connectionStatus }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Navigation links component to avoid duplication
+  // Navigation links component to avoid duplication across desktop and mobile
   const NavLinks = () => (
     <ul className="space-y-1">
       {navigationItems.map((item) => (

@@ -164,8 +164,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
   return (
     <div className="max-w-4xl">
-      {/* Header with back button and basic node info */}
-      <div className="flex items-center px-4 bg-neutral-800/50 rounded-lg">
+      <div className="flex items-center p-4 bg-neutral-800/50 rounded-lg effect-inset">
         <button
           onClick={handleBack}
           className="flex items-center mr-4 p-2 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-700 rounded-full transition-colors effect-outset"

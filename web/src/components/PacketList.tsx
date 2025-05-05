@@ -51,7 +51,7 @@ export const PacketList: React.FC = () => {
     [hashString]
   );
 
-  // Get the earliest reception time from the packets
+  // Get the earliest reception time from the packets with date context
   const getEarliestTime = useCallback((): string => {
     if (packets.length === 0) return "";
 
@@ -72,11 +72,53 @@ export const PacketList: React.FC = () => {
       return "unknown time";
     }
 
-    // Format the time in a nice way
-    const date = new Date(earliestTime * 1000);
-    return date.toLocaleTimeString([], {
+    // Create date objects for comparison
+    const packetDate = new Date(earliestTime * 1000);
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    
+    // Format the time component
+    const timeStr = packetDate.toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
+    });
+    
+    // Check if the packet is from today
+    if (
+      packetDate.getDate() === today.getDate() &&
+      packetDate.getMonth() === today.getMonth() &&
+      packetDate.getFullYear() === today.getFullYear()
+    ) {
+      return timeStr; // Just show the time for today
+    }
+    
+    // Check if the packet is from yesterday
+    if (
+      packetDate.getDate() === yesterday.getDate() &&
+      packetDate.getMonth() === yesterday.getMonth() &&
+      packetDate.getFullYear() === yesterday.getFullYear()
+    ) {
+      return `${timeStr} yesterday`;
+    }
+    
+    // If it's earlier than yesterday, show the day name
+    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    
+    // Within the last week, show day name
+    const lastWeek = new Date();
+    lastWeek.setDate(today.getDate() - 6); // 6 days ago plus today = 7 days total
+    
+    if (packetDate >= lastWeek) {
+      const dayName = daysOfWeek[packetDate.getDay()];
+      return `${timeStr} ${dayName}`;
+    }
+    
+    // For older dates, show the full date
+    return packetDate.toLocaleDateString([], {
+      month: 'short',
+      day: 'numeric',
+      year: packetDate.getFullYear() !== today.getFullYear() ? 'numeric' : undefined
     });
   }, [packets]);
 
@@ -110,7 +152,7 @@ export const PacketList: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full max-w-4xl ">
+    <div className="flex flex-col h-full">
       <div className="sticky top-0 z-10">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center space-x-3">
