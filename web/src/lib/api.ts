@@ -62,6 +62,9 @@ export function streamPackets(
   const MAX_RECONNECT_DELAY = 30000;    // 30 seconds
   const MAX_RECONNECT_ATTEMPTS = 30;    // Give up after this many attempts
   
+  // Packet age settings
+  const MAX_PACKET_AGE_HOURS = 12;      // Ignore packets older than this many hours
+  
   /**
    * Calculate delay for exponential backoff
    */
@@ -144,6 +147,24 @@ export function streamPackets(
     try {
       // Parse the event data as JSON
       const parsedData = JSON.parse(String(evtData)) as Packet;
+      
+      // Check if the packet has a timestamp and filter by age
+      if (parsedData.data && parsedData.data.rxTime) {
+        const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+        const packetTime = parsedData.data.rxTime;
+        const ageInSeconds = currentTime - packetTime;
+        const maxAgeInSeconds = MAX_PACKET_AGE_HOURS * 60 * 60;
+        
+        // Skip packets older than our threshold
+        if (ageInSeconds > maxAgeInSeconds) {
+          console.debug(
+            `[SSE] Ignoring old packet: age=${Math.round(ageInSeconds / 3600)}h ` +
+            `(max=${MAX_PACKET_AGE_HOURS}h)`,
+            parsedData.data.id
+          );
+          return;
+        }
+      }
       
       // Forward the message to the caller
       onEvent({
