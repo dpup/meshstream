@@ -92,9 +92,6 @@ func parseConfig() *Config {
 	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey)
 	channelKeysFlag := flag.String("channel-keys", channelKeysDefault, "Comma-separated list of channel:key pairs for encrypted channels")
 
-	// Statistics configuration
-	statsIntervalStr := getEnv("STATS_INTERVAL", "30s")
-	flag.DurationVar(&config.StatsInterval, "stats-interval", mustParseDuration(statsIntervalStr), "Interval for statistics reporting")
 	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 50), "Number of packets to cache for new subscribers")
 	flag.BoolVar(&config.VerboseLogging, "verbose", boolFromEnv("VERBOSE_LOGGING", false), "Enable verbose message logging")
 
@@ -224,11 +221,6 @@ func main() {
 	broker := mqtt.NewBroker(messagesChan, config.CacheSize, logger)
 	logger.Infof("Message broker initialized with cache size: %d", config.CacheSize)
 
-	// Create a stats tracker that subscribes to the broker
-	// with statistics printed based on configured interval
-	stats := mqtt.NewMessageStats(broker, config.StatsInterval, logger)
-	logger.Infof("Stats tracker initialized with interval: %s", config.StatsInterval)
-
 	// Create a message logger that subscribes to the broker
 	// and also logs to stdout
 	messageLogger, err := mqtt.NewMessageLogger(
@@ -286,9 +278,6 @@ func main() {
 	if messageLogger != nil {
 		messageLogger.Close()
 	}
-
-	// Stop the stats collector
-	stats.Close()
 
 	// Close the broker (which will close all subscriber channels)
 	broker.Close()
