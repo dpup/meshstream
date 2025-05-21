@@ -2,6 +2,7 @@ package mqtt
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/dpup/prefab/logging"
@@ -36,6 +37,9 @@ type Client struct {
 	decodedMessages chan *meshtreampb.Packet
 	done            chan struct{}
 	logger          logging.Logger
+	isConnected     bool
+	connectionMutex sync.RWMutex
+	healthCheckStop chan struct{}
 }
 
 // NewClient creates a new MQTT client with the provided configuration
@@ -45,6 +49,7 @@ func NewClient(config Config, logger logging.Logger) *Client {
 		decodedMessages: make(chan *meshtreampb.Packet, 100),
 		done:            make(chan struct{}),
 		logger:          logger.Named("mqtt.client"),
+		isConnected:     false,
 	}
 }
 
@@ -107,7 +112,8 @@ func (c *Client) Connect() error {
 	opts.SetKeepAlive(time.Duration(keepAlive) * time.Second)
 	opts.SetConnectTimeout(connectTimeout)
 	opts.SetPingTimeout(pingTimeout)
-	opts.SetMaxReconnectInterval(maxReconnectTime)
+	opts.SetConnectRetryInterval(1 * time.Second)  // Start with 1 second retry
+	opts.SetMaxReconnectInterval(1 * time.Minute)  // Cap at 1 minute instead of 5
 	opts.SetAutoReconnect(true)
 	opts.SetCleanSession(true)
 	opts.SetOrderMatters(false)
@@ -125,23 +131,29 @@ func (c *Client) Connect() error {
 		return fmt.Errorf("error connecting to MQTT broker: %v", token.Error())
 	}
 
-	// Subscribe to the configured topic
-	token := c.client.Subscribe(c.config.Topic, 0, nil)
-	token.Wait()
-	if token.Error() != nil {
-		c.logger.Errorw("Failed to subscribe to topic",
-			"error", token.Error(),
-			"topic", c.config.Topic)
-		return fmt.Errorf("error subscribing to topic %s: %v", c.config.Topic, token.Error())
-	}
-
-	c.logger.Infof("Successfully subscribed to topic: %s", c.config.Topic)
+	// Initial connection status
+	c.connectionMutex.Lock()
+	c.isConnected = true
+	c.connectionMutex.Unlock()
+	
+	// Start health check
+	c.healthCheckStop = make(chan struct{})
+	go c.monitorConnectionHealth(30 * time.Second) // Check every 30 seconds
+	
+	// Note: We don't need to subscribe to the topic here anymore
+	// as it's now handled in the connectHandler which is called
+	// after each successful connection and reconnection
 
 	return nil
 }
 
 // Disconnect cleanly disconnects from the MQTT broker
 func (c *Client) Disconnect() {
+	// Stop health check
+	if c.healthCheckStop != nil {
+		close(c.healthCheckStop)
+	}
+	
 	close(c.done)
 	token := c.client.Unsubscribe(c.config.Topic)
 	token.Wait()
@@ -152,6 +164,71 @@ func (c *Client) Disconnect() {
 // The consumer should read from this channel to receive decoded messages
 func (c *Client) Messages() <-chan *meshtreampb.Packet {
 	return c.decodedMessages
+}
+
+// IsConnected returns the current connection status
+func (c *Client) IsConnected() bool {
+	c.connectionMutex.RLock()
+	defer c.connectionMutex.RUnlock()
+	return c.isConnected
+}
+
+// monitorConnectionHealth periodically checks the connection status
+// and logs warnings if the connection appears to be down
+func (c *Client) monitorConnectionHealth(interval time.Duration) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	
+	consecutiveFailures := 0
+	maxConsecutiveFailures := 3
+	
+	for {
+		select {
+		case <-ticker.C:
+			if !c.client.IsConnected() {
+				consecutiveFailures++
+				c.logger.Warnw("MQTT connection appears to be down despite auto-reconnect",
+					"broker", c.config.Broker,
+					"clientID", c.config.ClientID,
+					"consecutiveFailures", consecutiveFailures)
+				
+				// Update our internal connection state
+				c.connectionMutex.Lock()
+				c.isConnected = false
+				c.connectionMutex.Unlock()
+				
+				// If we've had too many consecutive failures, try to force reconnection
+				if consecutiveFailures >= maxConsecutiveFailures {
+					c.logger.Warnw("Too many consecutive connection failures, forcing reconnection attempt",
+						"consecutiveFailures", consecutiveFailures,
+						"maxFailures", maxConsecutiveFailures)
+					
+					// Since we can't force reconnection directly, we can try to disconnect
+					// and let the auto-reconnect logic handle it
+					if c.client.IsConnectionOpen() {
+						c.client.Disconnect(100)
+					}
+					
+					consecutiveFailures = 0
+				}
+			} else {
+				// Reset failure counter when connection is good
+				if consecutiveFailures > 0 {
+					c.logger.Infow("MQTT connection restored", 
+						"broker", c.config.Broker,
+						"clientID", c.config.ClientID)
+					consecutiveFailures = 0
+				}
+				
+				// Update our internal connection state
+				c.connectionMutex.Lock()
+				c.isConnected = true
+				c.connectionMutex.Unlock()
+			}
+		case <-c.healthCheckStop:
+			return
+		}
+	}
 }
 
 // messageHandler processes incoming MQTT messages
@@ -206,6 +283,16 @@ func (c *Client) connectHandler(client mqtt.Client) {
 		"broker", c.config.Broker,
 		"clientID", c.config.ClientID,
 		"topic", c.config.Topic)
+	
+	// Subscribe to the configured topic after each reconnection
+	token := client.Subscribe(c.config.Topic, 0, nil)
+	if token.Wait() && token.Error() != nil {
+		c.logger.Errorw("Failed to subscribe to topic on reconnect",
+			"error", token.Error(),
+			"topic", c.config.Topic)
+	} else {
+		c.logger.Infof("Successfully (re)subscribed to topic: %s", c.config.Topic)
+	}
 }
 
 // connectionLostHandler is called when the client loses connection
@@ -215,6 +302,11 @@ func (c *Client) connectionLostHandler(client mqtt.Client, err error) {
 		"errorType", fmt.Sprintf("%T", err),
 		"broker", c.config.Broker,
 		"clientID", c.config.ClientID)
+	
+	// Update connection status
+	c.connectionMutex.Lock()
+	c.isConnected = false
+	c.connectionMutex.Unlock()
 }
 
 // reconnectingHandler is called when the client is attempting to reconnect
