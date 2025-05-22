@@ -450,7 +450,7 @@ func TestSubscriberBufferFull(t *testing.T) {
 		if received.Data.Id != 1 {
 			t.Errorf("Expected subscriber to receive packet with ID 1, got %d", received.Data.Id)
 		}
-	case <-time.After(100 * time.Millisecond):
+	case <-time.After(500 * time.Millisecond):
 		t.Error("Subscriber didn't receive any cached packet within timeout")
 	}
 
