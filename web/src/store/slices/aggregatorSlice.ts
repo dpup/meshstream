@@ -31,6 +31,10 @@ export interface NodeData {
   observedNodeCount?: number;
   // MapReport payload for this node
   mapReport?: MapReport;
+  // User-specific fields
+  isLicensed?: boolean;
+  role?: string;
+  publicKey?: string;
 }
 
 export interface TextMessage {
@@ -359,6 +363,9 @@ const updateNodeInfo = (node: NodeData, nodeInfo: User) => {
   if (nodeInfo.batteryLevel !== undefined)
     node.batteryLevel = nodeInfo.batteryLevel;
   if (nodeInfo.snr !== undefined) node.snr = nodeInfo.snr;
+  if (nodeInfo.isLicensed !== undefined) node.isLicensed = nodeInfo.isLicensed;
+  if (nodeInfo.role) node.role = nodeInfo.role;
+  if (nodeInfo.publicKey) node.publicKey = nodeInfo.publicKey;
 };
 
 // Helper to update telemetry data

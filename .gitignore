@@ -75,4 +75,7 @@ temp/
 
 # Binary output type
 #meshstream
+
+# AI Agent files
 **/.claude/settings.local.json
+.private-journal/*

@@ -72,6 +72,15 @@ func RemoveChannelKey(channelId string) {
 	delete(channelKeys, channelId)
 }
 
+// IsChannelConfigured checks if a channel has a specific key configured
+func IsChannelConfigured(channelId string) bool {
+	channelKeysMutex.RLock()
+	defer channelKeysMutex.RUnlock()
+
+	_, ok := channelKeys[channelId]
+	return ok
+}
+
 // PadKey ensures the key is properly padded to be a valid AES key length (16, 24, or 32 bytes)
 func PadKey(key []byte) []byte {
 	// If key length is already valid, return as is

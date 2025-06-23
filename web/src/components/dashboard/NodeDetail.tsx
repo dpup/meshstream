@@ -22,6 +22,10 @@ import {
   MessageSquare,
   Thermometer,
   BoomBox,
+  Shield,
+  Key,
+  Copy,
+  UserCheck,
 } from "lucide-react";
 import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
@@ -39,6 +43,38 @@ import {
   getRegionName,
   getModemPresetName,
 } from "../../utils/formatters";
+
+// Format role string for display
+const formatRole = (role?: string): string => {
+  if (!role) return "Unknown";
+  return role;
+};
+
+// Format public key for display with copy functionality
+const formatPublicKey = (publicKey?: string): string => {
+  if (!publicKey) return "";
+  // Show first 8 and last 8 characters with ellipsis
+  if (publicKey.length > 16) {
+    return `${publicKey.slice(0, 8)}...${publicKey.slice(-8)}`;
+  }
+  return publicKey;
+};
+
+// Copy to clipboard function
+const copyToClipboard = async (text: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Fallback for older browsers
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textArea);
+  }
+};
+
 import { SignalStrength } from "./SignalStrength";
 
 interface NodeDetailProps {
@@ -226,13 +262,45 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               />
             )}
 
-            {node.macAddr && (
+            {node.isLicensed && (
               <KeyValuePair
-                label="MAC Address"
-                value={node.macAddr}
+                label="Licensed Operator"
+                value="Yes"
+                icon={<Shield className="w-3 h-3" />}
+                highlight={true}
+                inset={true}
+              />
+            )}
+
+            {node.role && (
+              <KeyValuePair
+                label="Role"
+                value={formatRole(node.role)}
+                icon={<UserCheck className="w-3 h-3" />}
                 monospace={true}
                 inset={true}
               />
+            )}
+
+            {node.publicKey && (
+              <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">
+                <span className="text-neutral-400 flex items-center text-sm">
+                  <Key className="w-3 h-3 mr-2 text-neutral-300" />
+                  Public Key
+                </span>
+                <div className="flex items-center space-x-2">
+                  <span className="font-mono text-sm text-neutral-200">
+                    {formatPublicKey(node.publicKey)}
+                  </span>
+                  <button
+                    onClick={() => copyToClipboard(node.publicKey!)}
+                    className="p-1 text-neutral-400 hover:text-neutral-200 hover:bg-neutral-600 rounded transition-colors"
+                    title="Copy full public key"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
             )}
 
             <div className="flex justify-between items-center bg-neutral-700/50 p-2 rounded effect-inset">

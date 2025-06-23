@@ -8,6 +8,8 @@ import { ErrorPacket } from "./ErrorPacket";
 import { WaypointPacket } from "./WaypointPacket";
 import { MapReportPacket } from "./MapReportPacket";
 import { TraceroutePacket } from "./TraceroutePacket";
+import { NeighborInfoPacket } from "./NeighborInfoPacket";
+import { PrivateMessagePacket } from "./PrivateMessagePacket";
 import { GenericPacket } from "./GenericPacket";
 
 interface PacketRendererProps {
@@ -17,8 +19,11 @@ interface PacketRendererProps {
 export const PacketRenderer: React.FC<PacketRendererProps> = ({ packet }) => {
   const { data } = packet;
 
-  // If there's a decode error, show the error packet
+  // If there's a decode error, check the error type
   if (data.decodeError) {
+    if (data.decodeError.startsWith('PRIVATE_CHANNEL:')) {
+      return <PrivateMessagePacket packet={packet} />;
+    }
     return <ErrorPacket packet={packet} />;
   }
 
@@ -49,6 +54,9 @@ export const PacketRenderer: React.FC<PacketRendererProps> = ({ packet }) => {
       
     case PortNum.TRACEROUTE_APP:
       return <TraceroutePacket packet={packet} />;
+      
+    case PortNum.NEIGHBORINFO_APP:
+      return <NeighborInfoPacket packet={packet} />;
 
     default:
       return <GenericPacket packet={packet} />;

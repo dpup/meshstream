@@ -308,7 +308,12 @@ func decodeEncryptedPayload(data *meshtreampb.Data, encrypted []byte, channelId 
 				TextMessage: string(decrypted),
 			}
 		} else {
-			data.DecodeError = fmt.Sprintf("failed to parse decrypted data: %v", err)
+			// Check if this channel is configured - if not, likely a private message
+			if !IsChannelConfigured(channelId) {
+				data.DecodeError = fmt.Sprintf("PRIVATE_CHANNEL: failed to parse decrypted data on unconfigured channel '%s': %v", channelId, err)
+			} else {
+				data.DecodeError = fmt.Sprintf("PARSE_ERROR: failed to parse decrypted data: %v", err)
+			}
 			data.Payload = &meshtreampb.Data_BinaryData{
 				BinaryData: decrypted,
 			}

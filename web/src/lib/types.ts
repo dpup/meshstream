@@ -101,13 +101,15 @@ export interface User {
   macaddr?: string; // MAC address of the device
   hwModel?: string; // Hardware model name
   hasGps?: boolean; // Whether the node has GPS capability
-  role?: string; // User's role in the mesh (e.g., "ROUTER")
+  role?: string; // User's role in the mesh (e.g., "CLIENT", "ROUTER")
   snr?: number; // Signal-to-noise ratio
   batteryLevel?: number; // Battery level 0-100
   voltage?: number; // Battery voltage
   channelUtilization?: number; // Channel utilization percentage
   airUtilTx?: number; // Air utilization for transmission
   lastHeard?: number; // Last time the node was heard from
+  isLicensed?: boolean; // Whether the user is a licensed ham radio operator
+  publicKey?: string; // The public key of the user's device
 }
 
 // Device metrics for telemetry
