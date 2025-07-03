@@ -2,6 +2,8 @@ import React, { ReactNode } from "react";
 import { Packet } from "../../lib/types";
 import { cn } from "@/lib/cn";
 import { Link } from "@tanstack/react-router";
+import { useAppSelector } from "../../hooks";
+import { getNodeDisplayName, getGatewayDisplayName } from "../../utils/formatters";
 
 interface PacketCardProps {
   packet: Packet;
@@ -19,6 +21,18 @@ export const PacketCard: React.FC<PacketCardProps> = ({
   children,
 }) => {
   const { data } = packet;
+  const { nodes } = useAppSelector((state) => state.aggregator);
+  
+  // Get node data for sender and gateway
+  const senderNode = data.from ? nodes[data.from] : undefined;
+  const gatewayNode = data.gatewayId && data.gatewayId.startsWith('!') 
+    ? nodes[parseInt(data.gatewayId.substring(1), 16)]
+    : undefined;
+  
+  // Check if gateway is the same as sender
+  const isGatewaySelf = data.from && data.gatewayId && data.gatewayId.startsWith('!') 
+    ? data.from === parseInt(data.gatewayId.substring(1), 16)
+    : false;
 
   return (
     <div className="max-w-4xl effect-inset rounded-lg border border-neutral-950/60 bg-neutral-800 overflow-hidden">
@@ -43,7 +57,7 @@ export const PacketCard: React.FC<PacketCardProps> = ({
                 params={{ nodeId: data.from.toString(16).toLowerCase() }}
                 className="font-semibold text-neutral-200 tracking-wide hover:text-blue-400 transition-colors"
               >
-                !{data.from.toString(16).toLowerCase()}
+                {getNodeDisplayName(data.from, senderNode)}
               </Link>
             ) : (
               <span className="font-semibold text-neutral-200 tracking-wide">Unknown</span>
@@ -57,13 +71,15 @@ export const PacketCard: React.FC<PacketCardProps> = ({
             {data.gatewayId && (
               <>
                 <span className="text-neutral-500">via</span>
-                {data.gatewayId.startsWith('!') ? (
+                {isGatewaySelf ? (
+                  <span className="text-neutral-400">self</span>
+                ) : data.gatewayId.startsWith('!') ? (
                   <Link
                     to="/node/$nodeId"
                     params={{ nodeId: data.gatewayId.substring(1) }}
                     className="text-neutral-400 hover:text-blue-400 transition-colors"
                   >
-                    {data.gatewayId}
+                    {getGatewayDisplayName(data.gatewayId, gatewayNode)}
                   </Link>
                 ) : (
                   <span className="text-neutral-400">{data.gatewayId}</span>

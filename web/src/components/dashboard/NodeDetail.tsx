@@ -2,7 +2,12 @@ import React, { useEffect } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
-import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
+import {
+  getActivityLevel,
+  getNodeColors,
+  getStatusText,
+  formatLastSeen,
+} from "../../lib/activity";
 import { cn } from "../../lib/cn";
 import {
   ArrowLeft,
@@ -42,6 +47,7 @@ import {
   formatUptime,
   getRegionName,
   getModemPresetName,
+  getNodeDisplayName,
 } from "../../utils/formatters";
 
 // Format role string for display
@@ -66,11 +72,11 @@ const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
   } catch {
     // Fallback for older browsers
-    const textArea = document.createElement('textarea');
+    const textArea = document.createElement("textarea");
     textArea.value = text;
     document.body.appendChild(textArea);
     textArea.select();
-    document.execCommand('copy');
+    document.execCommand("copy");
     document.body.removeChild(textArea);
   }
 };
@@ -88,13 +94,13 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
   // Construct the gateway ID format from the node ID
   const gatewayId = `!${nodeId.toString(16).toLowerCase()}`;
-  
+
   // Check if there's a gateway with this ID
   const gateway = gateways[gatewayId];
-  
+
   // First try to get the node directly from nodes collection
   let node = nodes[nodeId];
-  
+
   // If node exists but doesn't have isGateway set, check if it should be a gateway
   if (node && !node.isGateway && gateway) {
     // Update the node with gateway info
@@ -105,7 +111,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
       observedNodeCount: gateway.observedNodes.length,
     };
   }
-  
+
   // If node not found in nodes collection, create a synthetic node from gateway data
   if (!node && gateway) {
     // Create a synthetic node from the gateway data
@@ -167,7 +173,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
 
   // Calculate how recently node was active
   const secondsAgo = Math.floor(Date.now() / 1000) - node.lastHeard;
-  
+
   // Use activity helpers
   const activityLevel = getActivityLevel(node.lastHeard, node.isGateway);
   const activityColors = getNodeColors(activityLevel, node.isGateway);
@@ -226,15 +232,20 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           </h1>
           <div className="text-sm text-neutral-400 flex items-center">
             <span
-              className={cn("inline-block w-2 h-2 rounded-full mr-2", activityColors.statusDot)}
+              className={cn(
+                "inline-block w-2 h-2 rounded-full mr-2",
+                activityColors.statusDot
+              )}
             ></span>
             {statusText} - last seen {lastSeenText}
           </div>
         </div>
-        <div className={cn(
-          "text-sm bg-neutral-900/50 px-3 py-1.5 rounded font-mono effect-inset tracking-wider",
-          activityColors.textClass
-        )}>
+        <div
+          className={cn(
+            "text-sm bg-neutral-900/50 px-3 py-1.5 rounded font-mono effect-inset tracking-wider",
+            activityColors.textClass
+          )}
+        >
           !{nodeId.toString(16)}
         </div>
       </div>
@@ -333,23 +344,60 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
             {/* Show MapReport-specific information for gateways */}
             {node.isGateway && (
               <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
-                <div className="flex justify-between items-center mb-2 p-2 rounded effect-inset bg-neutral-700/50 ">
-                  <span className="flex items-center">
-                    <Network className="w-4 h-4 mr-1.5" />
-                    Gateway Node
-                  </span>
-                  {node.observedNodeCount !== undefined && (
+                <div className=" mb-2 p-2 rounded effect-inset bg-neutral-700/50 ">
+                  <div className="flex justify-between items-center">
                     <span className="flex items-center">
-                      <Users className="w-4 h-4 mr-1.5" />
-                      {node.observedNodeCount}{" "}
-                      {node.observedNodeCount === 1 ? "node" : "nodes"}
+                      <Network className="w-4 h-4 mr-1.5" />
+                      Gateway Node
                     </span>
-                  )}
-                  {node.mapReport?.numOnlineLocalNodes !== undefined && (
-                    <span className="text-xs flex items-center font-mono opacity-80">
-                      {node.mapReport.numOnlineLocalNodes} online local nodes
-                    </span>
-                  )}
+                    {node.observedNodeCount !== undefined && (
+                      <span className="flex items-center">
+                        <Users className="w-4 h-4 mr-1.5" />
+                        {node.observedNodeCount}{" "}
+                        {node.observedNodeCount === 1 ? "node" : "nodes"}
+                      </span>
+                    )}
+                    {node.mapReport?.numOnlineLocalNodes !== undefined && (
+                      <span className="text-xs flex items-center font-mono opacity-80">
+                        {node.mapReport.numOnlineLocalNodes} online local nodes
+                      </span>
+                    )}
+                  </div>
+                  {/* Observed Nodes Grid - integrated into Gateway Node section */}
+                  {gateway?.observedNodes &&
+                    gateway.observedNodes.length > 0 && (
+                      <div>
+                        <div className="my-2 text-xs text-neutral-400">
+                          Recently observed nodes:
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                          {gateway.observedNodes.map((observedNodeId) => {
+                            const observedNode = nodes[observedNodeId];
+                            const displayName = getNodeDisplayName(
+                              observedNodeId,
+                              observedNode
+                            );
+                            return (
+                              <Link
+                                key={observedNodeId}
+                                to="/node/$nodeId"
+                                params={{
+                                  nodeId: observedNodeId
+                                    .toString(16)
+                                    .toLowerCase(),
+                                }}
+                                className="flex items-center p-2 bg-neutral-800/50 hover:bg-neutral-700/50 rounded transition-colors text-xs border border-neutral-700/30"
+                              >
+                                <BoomBox className="w-3 h-3 mr-2 text-neutral-400 flex-shrink-0" />
+                                <span className="text-neutral-200 truncate">
+                                  {displayName}
+                                </span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                 </div>
                 {node.mapReport?.region !== undefined && (
                   <KeyValuePair

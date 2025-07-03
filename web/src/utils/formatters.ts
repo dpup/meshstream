@@ -1,4 +1,5 @@
 import { RegionCode, ModemPreset } from "../lib/types";
+import { NodeData } from "../store/slices/aggregatorSlice";
 
 /**
  * Format uptime into a human-readable string
@@ -70,4 +71,42 @@ export const getModemPresetName = (
 
   // Get the name from the map, or return unknown with the value
   return presetNames[preset] || `Unknown (${preset})`;
+};
+
+/**
+ * Get the display name for a node, preferring shortName over longName, with fallback to hex ID
+ */
+export const getNodeDisplayName = (
+  nodeId: number,
+  nodeData?: NodeData
+): string => {
+  if (nodeData?.shortName) {
+    return nodeData.shortName;
+  }
+  
+  if (nodeData?.longName) {
+    return nodeData.longName;
+  }
+  
+  // Fallback to hex ID format
+  return `!${nodeId.toString(16).toLowerCase()}`;
+};
+
+/**
+ * Get the display name for a gateway ID, with optional node data lookup
+ */
+export const getGatewayDisplayName = (
+  gatewayId: string,
+  nodeData?: NodeData
+): string => {
+  if (nodeData?.shortName) {
+    return nodeData.shortName;
+  }
+  
+  if (nodeData?.longName) {
+    return nodeData.longName;
+  }
+  
+  // Return the gateway ID as-is (already in !hex format)
+  return gatewayId;
 };
