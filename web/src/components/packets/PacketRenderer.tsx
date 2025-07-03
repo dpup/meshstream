@@ -10,6 +10,7 @@ import { MapReportPacket } from "./MapReportPacket";
 import { TraceroutePacket } from "./TraceroutePacket";
 import { NeighborInfoPacket } from "./NeighborInfoPacket";
 import { PrivateMessagePacket } from "./PrivateMessagePacket";
+import { AdminMessagePacket } from "./AdminMessagePacket";
 import { GenericPacket } from "./GenericPacket";
 
 interface PacketRendererProps {
@@ -22,6 +23,10 @@ export const PacketRenderer: React.FC<PacketRendererProps> = ({ packet }) => {
   // If there's a decode error, check the error type
   if (data.decodeError) {
     if (data.decodeError.startsWith('PRIVATE_CHANNEL:')) {
+      // Check if this is a PKI admin message
+      if (packet.info.channel === 'PKI' || packet.info.channel === 'pki') {
+        return <AdminMessagePacket packet={packet} />;
+      }
       return <PrivateMessagePacket packet={packet} />;
     }
     return <ErrorPacket packet={packet} />;
