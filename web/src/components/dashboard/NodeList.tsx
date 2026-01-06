@@ -24,8 +24,7 @@ export const NodeList: React.FC = () => {
   // Convert nodes object to array and filter out gateway nodes and routers
   const nodeArray = Object.values(nodes).filter(node =>
     !gatewayNodeIds.has(node.nodeId) &&
-    node.role !== "ROUTER" &&
-    node.role !== 1
+    node.role !== "ROUTER"
   );
 
   // Sort by node ID (stable)

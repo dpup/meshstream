@@ -8,10 +8,10 @@ export const RouterList: React.FC = () => {
   const { nodes } = useAppSelector((state) => state.aggregator);
   const navigate = useNavigate();
 
-  // Filter nodes that are routers (role === "ROUTER" or role === 1)
+  // Filter nodes that are routers (role === "ROUTER")
   // Exclude nodes that are already shown as gateways
   const routerArray = Object.values(nodes).filter(
-    (node) => (node.role === "ROUTER" || node.role === 1) && !node.isGateway
+    (node) => node.role === "ROUTER" && !node.isGateway
   );
 
   // Sort by last heard time (most recent first)
