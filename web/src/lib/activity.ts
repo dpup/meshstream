@@ -20,7 +20,7 @@ export enum NodeType {
 export const TIME_THRESHOLDS = {
   [NodeType.NODE]: {
     recent: 600,   // 10 minutes
-    active: 1800,  // 30 minutes
+    active: 3600,  // 60 minutes
   },
   [NodeType.GATEWAY]: {
     recent: 600,   // 10 minutes
