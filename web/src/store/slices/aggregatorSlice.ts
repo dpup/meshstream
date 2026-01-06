@@ -90,7 +90,7 @@ const getChannelKey = (channelId: string): string => {
 };
 
 // Maximum number of messages to keep per channel
-const MAX_MESSAGES_PER_CHANNEL = 100;
+const MAX_MESSAGES_PER_CHANNEL = 500;
 
 // Function to process a packet and update the state accordingly
 const processPacket = (state: AggregatorState, packet: Packet) => {

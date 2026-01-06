@@ -63,7 +63,7 @@ export function streamPackets(
   const MAX_RECONNECT_ATTEMPTS = 30;    // Give up after this many attempts
   
   // Packet age settings
-  const MAX_PACKET_AGE_HOURS = 12;      // Ignore packets older than this many hours
+  const MAX_PACKET_AGE_HOURS = 24;      // Ignore packets older than this many hours
   
   /**
    * Calculate delay for exponential backoff

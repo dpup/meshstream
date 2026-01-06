@@ -10,7 +10,7 @@ export const NodeList: React.FC = () => {
 
   // Create a set of node IDs that are already shown as gateways
   const gatewayNodeIds = new Set<number>();
-  
+
   // Extract node IDs from gateway IDs
   Object.keys(gateways).forEach(gatewayId => {
     const nodeIdMatch = gatewayId.match(/^!([0-9a-f]+)/i);
@@ -21,8 +21,12 @@ export const NodeList: React.FC = () => {
     }
   });
 
-  // Convert nodes object to array and filter out gateway nodes
-  const nodeArray = Object.values(nodes).filter(node => !gatewayNodeIds.has(node.nodeId));
+  // Convert nodes object to array and filter out gateway nodes and routers
+  const nodeArray = Object.values(nodes).filter(node =>
+    !gatewayNodeIds.has(node.nodeId) &&
+    node.role !== "ROUTER" &&
+    node.role !== 1
+  );
 
   // Sort by node ID (stable)
   const sortedNodes = nodeArray.sort((a, b) => a.nodeId - b.nodeId);
@@ -47,8 +51,8 @@ export const NodeList: React.FC = () => {
             </div>
             <div className="flex-1 min-w-0">
               <div className="font-medium text-sm text-neutral-400 truncate">
-                {Object.keys(nodes).length > 0 ? 
-                  "All nodes are shown as gateways above" :
+                {Object.keys(nodes).length > 0 ?
+                  "All nodes are shown as gateways or routers above" :
                   "Waiting for node data..."}
               </div>
             </div>

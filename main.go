@@ -92,7 +92,7 @@ func parseConfig() *Config {
 	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey)
 	channelKeysFlag := flag.String("channel-keys", channelKeysDefault, "Comma-separated list of channel:key pairs for encrypted channels")
 
-	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 50), "Number of packets to cache for new subscribers")
+	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 200), "Number of packets to cache for new subscribers")
 	flag.BoolVar(&config.VerboseLogging, "verbose", boolFromEnv("VERBOSE_LOGGING", false), "Enable verbose message logging")
 
 	flag.Parse()
