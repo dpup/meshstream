@@ -103,7 +103,7 @@ docker-build:
 		--build-arg MESHSTREAM_SITE_TITLE=$${MESHSTREAM_SITE_TITLE:-Meshstream} \
 		--build-arg MESHSTREAM_SITE_DESCRIPTION=$${MESHSTREAM_SITE_DESCRIPTION:-"Meshtastic activity monitoring"} \
 		--build-arg MESHSTREAM_GOOGLE_MAPS_ID=$${MESHSTREAM_GOOGLE_MAPS_ID:-4f089fb2d9fbb3db} \
-		--build-arg MESHSTREAM_GOOGLE_MAPS_API_KEY=$${MESHSTREAM_GOOGLE_MAPS_API_KEY} \
+		--build-arg MESHSTREAM_GOOGLE_MAPS_API_KEY=$${MESHSTREAM_GOOGLE_MAPS_API_KEY:-} \
 		--load \
 		-t meshstream .
 
