@@ -1,12 +1,12 @@
 import React from "react";
-import { Battery, MapPin, Thermometer, Network, BoomBox } from "lucide-react";
+import { Battery, MapPin, Thermometer, Network, BoomBox, Router } from "lucide-react";
 import { Counter } from "../Counter";
 import { NodeData } from "../../store/slices/aggregatorSlice";
 import { getActivityLevel, getNodeColors } from "../../lib/activity";
 import { cn } from "@/lib/cn";
 
 export interface MeshCardProps {
-  type: "node" | "gateway";
+  type: "node" | "gateway" | "router";
   nodeId: number;
   nodeData: NodeData;
   observedNodes?: number[];
@@ -35,16 +35,18 @@ export const MeshCard: React.FC<MeshCardProps> = ({
 
   // Get icon based on type
   const getIcon = () => {
-    return type === "gateway" ? (
-      <Network className="w-4 h-4" />
-    ) : (
-      <BoomBox className="w-4 h-4" />
-    );
+    if (type === "gateway") {
+      return <Network className="w-4 h-4" />;
+    } else if (type === "router") {
+      return <Router className="w-4 h-4" />;
+    } else {
+      return <BoomBox className="w-4 h-4" />;
+    }
   };
 
   // Use activity helpers to get styles
-  const activityLevel = getActivityLevel(lastHeard, type === "gateway");
-  const colors = getNodeColors(activityLevel, type === "gateway");
+  const activityLevel = getActivityLevel(lastHeard, type === "gateway", type === "router");
+  const colors = getNodeColors(activityLevel, type === "gateway", type === "router");
   
   // Get icon style based on activity
   const getIconStyle = () => {
