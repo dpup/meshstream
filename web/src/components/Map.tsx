@@ -1,5 +1,6 @@
-import React, { useRef, useState, useEffect, useMemo, useCallback } from "react";
-import ReactMap, { Source, Layer } from "react-map-gl/maplibre";
+import React, { useRef, useState, useEffect, useMemo } from "react";
+import maplibregl from "maplibre-gl";
+import type { GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { CARTO_DARK_STYLE } from "../lib/mapStyle";
@@ -25,9 +26,8 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   precisionBits,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [mapLoaded, setMapLoaded] = useState(false);
-  const handleLoad = useCallback(() => setMapLoaded(true), []);
 
   // Only mount the WebGL map when the container enters the viewport.
   // This prevents exhausting the browser's WebGL context limit (~8-16)
@@ -59,15 +59,58 @@ export const LocationMap: React.FC<LocationMapProps> = ({
   const circleGeoJSON = useMemo((): FeatureCollection => ({
     type: "FeatureCollection",
     features: showAccuracyCircle
-      ? [
-          {
-            type: "Feature",
-            geometry: { type: "Polygon", coordinates: [buildCircleCoords(longitude, latitude, accuracyMeters)] },
-            properties: {},
-          },
-        ]
+      ? [{
+          type: "Feature",
+          geometry: { type: "Polygon", coordinates: [buildCircleCoords(longitude, latitude, accuracyMeters)] },
+          properties: {},
+        }]
       : [],
   }), [latitude, longitude, accuracyMeters, showAccuracyCircle]);
+
+  // Mount map when visible, destroy when hidden
+  useEffect(() => {
+    if (!isVisible || !containerRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: containerRef.current,
+      style: CARTO_DARK_STYLE,
+      center: [longitude, latitude],
+      zoom: effectiveZoom,
+      attributionControl: false,
+    });
+
+    map.addControl(new maplibregl.AttributionControl({ compact: true }));
+
+    map.on("load", () => {
+      if (showAccuracyCircle) {
+        map.addSource("circle", { type: "geojson", data: circleGeoJSON });
+        map.addLayer({ id: "circle-fill", type: "fill", source: "circle", paint: { "fill-color": "#4ade80", "fill-opacity": 0.15 } });
+        map.addLayer({ id: "circle-outline", type: "line", source: "circle", paint: { "line-color": "#22c55e", "line-width": 1.5, "line-opacity": 0.8 } });
+      }
+
+      map.addSource("marker", { type: "geojson", data: markerGeoJSON });
+      map.addLayer({ id: "marker-dot", type: "circle", source: "marker", paint: {
+        "circle-radius": 5,
+        "circle-color": "#4ade80",
+        "circle-stroke-width": 2,
+        "circle-stroke-color": "#22c55e",
+      }});
+    });
+
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isVisible]);
+
+  // Update source data when coordinates change
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !map.isStyleLoaded()) return;
+    (map.getSource("marker") as GeoJSONSource)?.setData(markerGeoJSON);
+    if (showAccuracyCircle) {
+      (map.getSource("circle") as GeoJSONSource)?.setData(circleGeoJSON);
+    }
+  }, [markerGeoJSON, circleGeoJSON, showAccuracyCircle]);
 
   const containerClasses = flush
     ? `w-full h-full overflow-hidden relative ${className}`
@@ -75,39 +118,6 @@ export const LocationMap: React.FC<LocationMapProps> = ({
 
   return (
     <div ref={containerRef} className={containerClasses}>
-      {isVisible && (
-        <ReactMap
-          mapStyle={CARTO_DARK_STYLE}
-          initialViewState={{ longitude, latitude, zoom: effectiveZoom }}
-          style={{ width: "100%", height: "100%" }}
-          attributionControl={{ compact: true }}
-          onLoad={handleLoad}
-        >
-          {mapLoaded && (
-            <>
-              {showAccuracyCircle && (
-                <Source id="circle" type="geojson" data={circleGeoJSON}>
-                  <Layer id="circle-fill" type="fill" paint={{ "fill-color": "#4ade80", "fill-opacity": 0.15 }} />
-                  <Layer id="circle-outline" type="line" paint={{ "line-color": "#22c55e", "line-width": 1.5, "line-opacity": 0.8 }} />
-                </Source>
-              )}
-              <Source id="marker" type="geojson" data={markerGeoJSON}>
-                <Layer
-                  id="marker-dot"
-                  type="circle"
-                  paint={{
-                    "circle-radius": 5,
-                    "circle-color": "#4ade80",
-                    "circle-stroke-width": 2,
-                    "circle-stroke-color": "#22c55e",
-                  }}
-                />
-              </Source>
-            </>
-          )}
-        </ReactMap>
-      )}
-
       {/* External link overlay */}
       <a
         href={googleMapsUrl}
