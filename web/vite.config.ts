@@ -20,13 +20,6 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: true,
   },
-  optimizeDeps: {
-    esbuildOptions: {
-      define: {
-        '__publicField': '(a,b,c)=>(a[b]=c,c)',
-      },
-    },
-  },
   server: {
     port: 5747,
     proxy: {
