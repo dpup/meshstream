@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useAppSelector } from "../../hooks";
 import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
+import { LinkObservation } from "../../store/slices/topologySlice";
 import { Position } from "../../lib/types";
 import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
 import { GOOGLE_MAPS_ID } from "../../lib/config";
@@ -13,13 +14,15 @@ interface NetworkMapProps {
   onAutoZoomChange?: (enabled: boolean) => void;
   /** Whether the map should take all available space (default: false) */
   fullHeight?: boolean;
+  /** Whether to show topology link polylines (default: true) */
+  showLinks?: boolean;
 }
 
 /**
  * NetworkMap displays all nodes with position data on a Google Map
  */
 export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, NetworkMapProps>(
-  ({ height, fullHeight = false, onAutoZoomChange }, ref) => {
+  ({ height, fullHeight = false, onAutoZoomChange, showLinks = true }, ref) => {
   const navigate = useNavigate();
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<google.maps.Map | null>(null);
@@ -31,10 +34,12 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
   const [autoZoomEnabled, setAutoZoomEnabled] = useState(true);
   // Using any for the event listener since TypeScript can't find the MapsEventListener interface
   const zoomListenerRef = useRef<any>(null);
+  const polylinesRef = useRef<Record<string, google.maps.Polyline>>({});
   const [isGoogleMapsLoaded, setIsGoogleMapsLoaded] = useState(false);
 
   // Get nodes data from the store
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
+  const topologyLinks = useAppSelector((state) => state.topology.links);
   
    // Expose the resetAutoZoom function via ref
   React.useImperativeHandle(ref, () => ({
@@ -268,6 +273,71 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     }
   }, [autoZoomEnabled, fitMapToBounds, createMarker, updateMarker]);
 
+  // Update topology polylines on the map
+  const updateLinks = useCallback((
+    links: Record<string, LinkObservation>,
+    nodePositions: MapNode[],
+    visible: boolean
+  ): void => {
+    if (!mapInstanceRef.current || !window.google?.maps) return;
+
+    // Build position lookup
+    const posMap = new Map<number, google.maps.LatLngLiteral>();
+    for (const node of nodePositions) {
+      posMap.set(node.id, {
+        lat: node.position.latitudeI / 10000000,
+        lng: node.position.longitudeI / 10000000,
+      });
+    }
+
+    const activeKeys = new Set<string>();
+
+    for (const link of Object.values(links)) {
+      const posA = posMap.get(link.nodeA);
+      const posB = posMap.get(link.nodeB);
+      if (!posA || !posB) continue;
+
+      activeKeys.add(link.key);
+
+      // Determine color based on best available SNR
+      const snr = link.snrAtoB ?? link.snrBtoA;
+      let strokeColor: string;
+      if (snr === undefined) {
+        strokeColor = "#6b7280"; // gray — no SNR data
+      } else if (snr >= 5) {
+        strokeColor = "#22c55e"; // green — strong
+      } else if (snr >= 0) {
+        strokeColor = "#eab308"; // yellow — marginal
+      } else {
+        strokeColor = "#ef4444"; // red — weak
+      }
+      const strokeOpacity = link.viaMqtt ? 0.4 : 0.7;
+
+      if (polylinesRef.current[link.key]) {
+        const pl = polylinesRef.current[link.key];
+        pl.setPath([posA, posB]);
+        pl.setOptions({ strokeColor, strokeOpacity, visible });
+      } else {
+        polylinesRef.current[link.key] = new google.maps.Polyline({
+          path: [posA, posB],
+          geodesic: true,
+          strokeColor,
+          strokeOpacity,
+          strokeWeight: 2,
+          map: visible ? mapInstanceRef.current : null,
+        });
+      }
+    }
+
+    // Remove polylines for edges no longer in state
+    for (const key of Object.keys(polylinesRef.current)) {
+      if (!activeKeys.has(key)) {
+        polylinesRef.current[key].setMap(null);
+        delete polylinesRef.current[key];
+      }
+    }
+  }, []);
+
   // Check for Google Maps API and initialize
   const tryInitializeMap = useCallback(() => {
     if (mapRef.current && window.google && window.google.maps) {
@@ -284,6 +354,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
 
         // Update markers and fit the map
         updateNodeMarkers(nodesWithPosition);
+        updateLinks(topologyLinks, nodesWithPosition, showLinks);
         return true;
       } catch (error) {
         console.error("Error initializing map:", error);
@@ -292,7 +363,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     }
     console.warn("Cannot initialize map - prerequisites not met");
     return false;
-  }, [nodesWithPosition, updateNodeMarkers, initializeMap]);
+  }, [nodesWithPosition, topologyLinks, showLinks, updateNodeMarkers, updateLinks, initializeMap]);
 
   // Check for Google Maps API loading - make sure all required objects are available
   useEffect(() => {
@@ -378,6 +449,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     const markers = markersRef;
     const animatingNodes = animatingNodesRef;
     const infoWindow = infoWindowRef;
+    const polylines = polylinesRef;
     return () => {
       if (zoomListener.current && window.google && window.google.maps) {
         window.google.maps.event.removeListener(zoomListener.current);
@@ -387,6 +459,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       Object.values(animatingNodes.current).forEach(timeoutId =>
         window.clearTimeout(timeoutId)
       );
+      Object.values(polylines.current).forEach(pl => pl.setMap(null));
       if (infoWindow.current) {
         infoWindow.current.close();
       }

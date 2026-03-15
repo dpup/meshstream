@@ -112,6 +112,8 @@ func DecodeMessage(payload []byte, topicInfo *meshtreampb.TopicInfo) *meshtreamp
 	data.ViaMqtt = packet.GetViaMqtt()
 	data.NextHop = packet.GetNextHop()
 	data.RelayNode = packet.GetRelayNode()
+	data.RxSnr = packet.GetRxSnr()
+	data.RxRssi = packet.GetRxRssi()
 
 	// Process the payload
 	if packet.GetDecoded() != nil {

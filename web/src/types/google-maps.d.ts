@@ -47,9 +47,17 @@ declare namespace google {
 
     class InfoWindow {
       constructor(opts?: InfoWindowOptions);
-      setContent(content: string): void;
+      setContent(content: string | HTMLElement): void;
       open(map?: Map, anchor?: any): void;
       close(): void;
+    }
+
+    class Polyline {
+      constructor(opts?: PolylineOptions);
+      setMap(map: Map | null): void;
+      setPath(path: LatLngLiteral[]): void;
+      setOptions(opts: PolylineOptions): void;
+      setVisible(visible: boolean): void;
     }
 
     class LatLngBounds {
@@ -97,6 +105,16 @@ declare namespace google {
     interface InfoWindowOptions {
       content?: string;
       position?: LatLngLiteral;
+    }
+
+    interface PolylineOptions {
+      path?: LatLngLiteral[];
+      geodesic?: boolean;
+      strokeColor?: string;
+      strokeOpacity?: number;
+      strokeWeight?: number;
+      map?: Map | null;
+      visible?: boolean;
     }
 
     // Event-related functionality

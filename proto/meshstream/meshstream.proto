@@ -91,7 +91,11 @@ message Data {
 
   // Error tracking
   string decode_error = 60;
-  
+
   // Reception timestamp (added by decoder)
   uint64 rx_time = 61;
+
+  // RF reception quality (measured at gateway)
+  float rx_snr = 62;   // SNR at receiving gateway (dB)
+  int32 rx_rssi = 63;  // RSSI at receiving gateway (dBm)
 }

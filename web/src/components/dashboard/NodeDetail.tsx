@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { useAppSelector, useAppDispatch } from "../../hooks";
 import { selectNode } from "../../store/slices/aggregatorSlice";
+import { LinkSource } from "../../store/slices/topologySlice";
 import {
   getActivityLevel,
   getNodeColors,
@@ -91,6 +92,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { nodes, gateways } = useAppSelector((state) => state.aggregator);
+  const topologyLinks = useAppSelector((state) => state.topology.links);
 
   // Construct the gateway ID format from the node ID
   const gatewayId = `!${nodeId.toString(16).toLowerCase()}`;
@@ -601,6 +603,15 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
         </Section>
       )}
 
+      {/* Connections - Full Width */}
+      <Section
+        title="Connections"
+        icon={<Network className="w-4 h-4" />}
+        className="mt-6"
+      >
+        <NodeConnections nodeId={nodeId} links={topologyLinks} nodes={nodes} />
+      </Section>
+
       {/* Recent Packets - Full Width */}
       <Section
         title="Recent Packets"
@@ -609,6 +620,123 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
       >
         <NodePacketList nodeId={nodeId} />
       </Section>
+    </div>
+  );
+};
+
+// ── Source badge helpers ──────────────────────────────────────────────────────
+
+const SOURCE_LABELS: Record<LinkSource, string> = {
+  traceroute: "Traceroute",
+  zero_hop: "Zero-hop",
+  neighbor_info: "Neighbor",
+  relay_inferred: "Relayed",
+  unknown: "Unknown",
+};
+
+const SOURCE_COLORS: Record<LinkSource, string> = {
+  traceroute: "bg-blue-900 text-blue-300",
+  zero_hop: "bg-green-900 text-green-300",
+  neighbor_info: "bg-yellow-900 text-yellow-300",
+  relay_inferred: "bg-neutral-700 text-neutral-300",
+  unknown: "bg-neutral-800 text-neutral-500",
+};
+
+const SOURCE_CONFIDENCE: Record<LinkSource, number> = {
+  traceroute: 4,
+  neighbor_info: 3,
+  zero_hop: 2,
+  relay_inferred: 1,
+  unknown: 0,
+};
+
+function bestSource(a: LinkSource, b: LinkSource): LinkSource {
+  return SOURCE_CONFIDENCE[a] >= SOURCE_CONFIDENCE[b] ? a : b;
+}
+
+// ── NodeConnections component ────────────────────────────────────────────────
+
+interface NodeConnectionsProps {
+  nodeId: number;
+  links: Record<string, import("../../store/slices/topologySlice").LinkObservation>;
+  nodes: Record<number, import("../../store/slices/aggregatorSlice").NodeData>;
+}
+
+const NodeConnections: React.FC<NodeConnectionsProps> = ({ nodeId, links, nodes }) => {
+  const edges = Object.values(links).filter(
+    (l) => l.nodeA === nodeId || l.nodeB === nodeId
+  );
+
+  if (edges.length === 0) {
+    return (
+      <p className="text-sm text-neutral-500">No connections observed yet.</p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {edges.map((link) => {
+        const neighborId = link.nodeA === nodeId ? link.nodeB : link.nodeA;
+        const neighborNode = nodes[neighborId];
+        const neighborName =
+          neighborNode?.shortName ??
+          neighborNode?.longName ??
+          `!${neighborId.toString(16)}`;
+
+        // Determine SNR direction relative to nodeId
+        // snrAtoB = SNR at nodeB receiving from nodeA
+        // snrBtoA = SNR at nodeA receiving from nodeB
+        // "outgoing SNR" = SNR that the neighbor measured (i.e., neighbor receiving from nodeId)
+        // "incoming SNR" = SNR that nodeId measured (i.e., nodeId receiving from neighbor)
+        const outgoingSnr =
+          nodeId === link.nodeA ? link.snrAtoB : link.snrBtoA;
+        const incomingSnr =
+          nodeId === link.nodeA ? link.snrBtoA : link.snrAtoB;
+
+        const source = bestSource(link.sourceAtoB, link.sourceBtoA);
+        const secondsAgo = Math.floor(Date.now() / 1000) - link.lastSeen;
+
+        return (
+          <div
+            key={link.key}
+            className="flex items-start justify-between p-3 bg-neutral-800 rounded-lg border border-neutral-700"
+          >
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="font-mono text-sm text-white font-medium truncate">
+                  {neighborName}
+                </span>
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded font-medium ${SOURCE_COLORS[source]}`}
+                >
+                  {SOURCE_LABELS[source]}
+                </span>
+                {link.viaMqtt && (
+                  <span className="text-xs px-1.5 py-0.5 rounded bg-purple-900 text-purple-300 font-medium">
+                    MQTT
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-3 text-xs text-neutral-400">
+                {outgoingSnr !== undefined && (
+                  <span>→ {outgoingSnr.toFixed(1)} dB</span>
+                )}
+                {incomingSnr !== undefined && (
+                  <span>← {incomingSnr.toFixed(1)} dB</span>
+                )}
+                {link.rssiAtoB !== undefined && nodeId === link.nodeB && (
+                  <span className="text-neutral-500">
+                    RSSI {link.rssiAtoB} dBm
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="text-xs text-neutral-500 ml-3 shrink-0">
+              {formatLastSeen(secondsAgo)}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

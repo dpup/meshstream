@@ -6,6 +6,8 @@ import { streamPackets, StreamEvent, ConnectionInfoEvent } from "../lib/api";
 import { processNewPacket } from "../store/slices/aggregatorSlice";
 import { addPacket } from "../store/slices/packetSlice";
 import { updateConnectionInfo, updateConnectionStatus } from "../store/slices/connectionSlice";
+import { processTopologyPacket } from "../store/slices/topologySlice";
+import { store } from "../store";
 import { createRootRoute } from "@tanstack/react-router";
 
 export const Route = createRootRoute({
@@ -56,6 +58,10 @@ function RootLayout() {
           // Process message for both the aggregator and packet display
           dispatch(processNewPacket(event.data));
           dispatch(addPacket(event.data));
+          // Dispatch topology processing (receives all copies including multi-gateway)
+          const timestamp = event.data.data.rxTime || Math.floor(Date.now() / 1000);
+          const nodeIds = Object.keys(store.getState().aggregator.nodes).map(Number);
+          dispatch(processTopologyPacket({ packet: event.data, timestamp, nodeIds }));
         } else if (event.type === "bad_data") {
           console.warn("[SSE] Received bad data:", event.data);
         }

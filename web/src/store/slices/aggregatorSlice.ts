@@ -29,6 +29,8 @@ export interface NodeData {
   // Fields for gateway nodes
   isGateway?: boolean;
   observedNodeCount?: number;
+  // Number of hops from the gateway (0 = direct RF link)
+  hopsFromGateway?: number;
   // MapReport payload for this node
   mapReport?: MapReport;
   // User-specific fields
@@ -259,6 +261,10 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
     if (data.textMessage) {
       node.textMessageCount++;
     }
+
+    // Track hop distance from gateway
+    const hops = (data.hopStart ?? 0) - (data.hopLimit ?? 0);
+    if (hops >= 0) node.hopsFromGateway = hops;
 
     // Set channelId and gatewayId if available
     if (channelId) {

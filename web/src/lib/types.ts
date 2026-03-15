@@ -394,6 +394,10 @@ export interface Data {
 
   // Reception timestamp (added by decoder)
   rxTime?: number;
+
+  // RF reception quality (measured at gateway)
+  rxSnr?: number;   // SNR at receiving gateway (dB)
+  rxRssi?: number;  // RSSI at receiving gateway (dBm)
 }
 
 // Packet represents a complete decoded MQTT message
