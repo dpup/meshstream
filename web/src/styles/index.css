@@ -17,6 +17,37 @@
   }
 }
 
+/* MapLibre attribution — dark theme, always-compact icon */
+.maplibregl-ctrl-attrib.maplibregl-compact {
+  background: rgba(0, 0, 0, 0.45) !important;
+  border-radius: 4px !important;
+}
+.maplibregl-ctrl-attrib-button {
+  background-color: transparent !important;
+  opacity: 0.6;
+}
+.maplibregl-ctrl-attrib-button:hover {
+  opacity: 1;
+}
+.maplibregl-ctrl-attrib-inner {
+  background: rgba(0, 0, 0, 0.7) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  border-radius: 4px !important;
+  font-size: 10px !important;
+}
+.maplibregl-ctrl-attrib-inner a {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+.maplibregl-ctrl-attrib-inner a:hover {
+  color: #fff !important;
+}
+/* Prevent auto-expand on wide maps */
+.maplibregl-ctrl-attrib.maplibregl-compact-show {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-end !important;
+}
+
 @layer utilities {
   .border-inset {
     @apply border-1;
