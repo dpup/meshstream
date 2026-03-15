@@ -9,7 +9,7 @@ import {
 import { Map as MapIcon, MapPin, Network } from "lucide-react";
 import { PacketCard } from "./PacketCard";
 import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
-import { Map } from "../Map";
+import { LocationMap } from "../Map";
 
 interface MapReportPacketProps {
   packet: Packet;
@@ -275,11 +275,9 @@ export const MapReportPacket: React.FC<MapReportPacketProps> = ({ packet }) => {
               Gateway Location
             </h3>
             <div className="h-[300px] rounded-lg overflow-hidden relative">
-              <Map
+              <LocationMap
                 latitude={center.latitude}
                 longitude={center.longitude}
-                width={400}
-                height={300}
                 flush={true}
                 caption="Gateway Location"
                 precisionBits={precisionBits}

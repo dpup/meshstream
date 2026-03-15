@@ -3,7 +3,7 @@ import { Packet } from "../../lib/types";
 import { MapPin } from "lucide-react";
 import { PacketCard } from "./PacketCard";
 import { KeyValueGrid, KeyValuePair } from "../ui/KeyValuePair";
-import { Map } from "../Map";
+import { LocationMap } from "../Map";
 
 interface PositionPacketProps {
   packet: Packet;
@@ -84,11 +84,9 @@ export const PositionPacket: React.FC<PositionPacketProps> = ({ packet }) => {
         
         {latitude !== undefined && longitude !== undefined && (
           <div className="h-[240px] w-full rounded-lg overflow-hidden">
-            <Map 
+            <LocationMap 
               latitude={latitude} 
               longitude={longitude} 
-              width={400}
-              height={240}
               flush={true}
             />
           </div>

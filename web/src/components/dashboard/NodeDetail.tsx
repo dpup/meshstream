@@ -37,7 +37,7 @@ import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
 import { Section } from "../ui/Section";
 import { BatteryLevel } from "./BatteryLevel";
-import { GoogleMap } from "./GoogleMap";
+import { NodeLocationMap } from "./GoogleMap";
 import { NodePositionData } from "./NodePositionData";
 import { EnvironmentMetrics } from "./EnvironmentMetrics";
 import { NodePacketList } from "./NodePacketList";
@@ -585,7 +585,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           className="mt-6"
         >
           <div className="h-[400px] rounded-lg overflow-hidden relative shadow-inner">
-            <GoogleMap
+            <NodeLocationMap
               lat={latitude}
               lng={longitude}
               precisionBits={precisionBits}

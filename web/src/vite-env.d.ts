@@ -1,9 +1,7 @@
 /// <reference types="vite/client" />
 
-interface ImportMetaEnv {
-  readonly VITE_GOOGLE_MAPS_API_KEY: string;
-  // Add other environment variables as needed
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface ImportMetaEnv {}
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
