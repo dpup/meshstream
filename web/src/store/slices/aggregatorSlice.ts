@@ -72,8 +72,8 @@ interface AggregatorState {
   channels: Record<string, ChannelData>;
   messages: Record<string, TextMessage[]>;
   selectedNodeId?: number;
-  // Track already processed packet IDs to prevent duplicates
-  processedPackets: Record<string, boolean>;
+  // Track already processed packet IDs to prevent duplicates (value = unix timestamp)
+  processedPackets: Record<string, number>;
 }
 
 const initialState: AggregatorState = {
@@ -108,11 +108,19 @@ const processPacket = (state: AggregatorState, packet: Packet) => {
   const nodeIdHex = `!${nodeId.toString(16).toLowerCase()}`;
   const packetKey = `${nodeIdHex}_${data.id}`;
 
+  // Prune processed packets older than 24 hours
+  const cutoff = timestamp - 86400;
+  for (const key of Object.keys(state.processedPackets)) {
+    if (state.processedPackets[key] < cutoff) {
+      delete state.processedPackets[key];
+    }
+  }
+
   // Check if we've already processed this packet
   const isNewPacket = !state.processedPackets[packetKey];
 
-  // Always mark this packet as processed
-  state.processedPackets[packetKey] = true;
+  // Always mark this packet as processed with its timestamp
+  state.processedPackets[packetKey] = timestamp;
 
   // Update gateway data
   // Handle both cases:

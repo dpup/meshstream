@@ -10,7 +10,7 @@ interface PacketState {
   error: string | null;
   streamPaused: boolean;
   bufferedPackets: Packet[]; // Holds packets received while paused
-  seenPackets: Record<string, boolean>; // Tracks already seen packet IDs to prevent duplicates
+  seenPackets: Record<string, number>; // Tracks already seen packet IDs (value = unix timestamp) to prevent duplicates
 }
 
 const initialState: PacketState = {
@@ -19,7 +19,7 @@ const initialState: PacketState = {
   error: null,
   streamPaused: false,
   bufferedPackets: [],
-  seenPackets: {}, // Empty object to track seen packets
+  seenPackets: {}, // Empty object to track seen packets (key → unix timestamp)
 };
 
 const packetSlice = createSlice({
@@ -40,7 +40,8 @@ const packetSlice = createSlice({
           const packetKey = `${nodeId}_${packet.data.id}`;
 
           if (!state.seenPackets[packetKey]) {
-            state.seenPackets[packetKey] = true;
+            const ts = packet.data.rxTime || Math.floor(Date.now() / 1000);
+            state.seenPackets[packetKey] = ts;
             uniquePackets.push(packet);
           }
         } else {
@@ -65,6 +66,16 @@ const packetSlice = createSlice({
         return;
       }
 
+      const now = packet.data.rxTime || Math.floor(Date.now() / 1000);
+
+      // Prune seen packets older than 24 hours
+      const cutoff = now - 86400;
+      for (const key of Object.keys(state.seenPackets)) {
+        if (state.seenPackets[key] < cutoff) {
+          delete state.seenPackets[key];
+        }
+      }
+
       // Create a Meshtastic node ID format
       const nodeId = `!${packet.data.from.toString(16).toLowerCase()}`;
       const packetKey = `${nodeId}_${packet.data.id}`;
@@ -75,8 +86,8 @@ const packetSlice = createSlice({
         return;
       }
 
-      // Mark this packet as seen
-      state.seenPackets[packetKey] = true;
+      // Mark this packet as seen with its timestamp
+      state.seenPackets[packetKey] = now;
 
       if (state.streamPaused) {
         // When paused, add to buffer instead of main list

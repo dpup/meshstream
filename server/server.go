@@ -236,7 +236,6 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			// Client disconnected, unsubscribe and return
 			logger.Info("Client disconnected, unsubscribing from broker")
 			s.config.Broker.Unsubscribe(packetChan)
-			http.Error(w, "Client disconnected", http.StatusGone)
 			return
 
 		case <-s.shutdown:
@@ -245,7 +244,6 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, "event: info\ndata: Server shutting down, connection closed\n\n")
 			flusher.Flush()
 			s.config.Broker.Unsubscribe(packetChan)
-			http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 			return
 
 		case <-heartbeatTicker.C:
@@ -259,7 +257,6 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				// Channel closed, probably shutting down
 				logger.Info("Packet channel closed, ending stream")
-				http.Error(w, "Server is shutting down", http.StatusServiceUnavailable)
 				return
 			}
 
@@ -278,8 +275,7 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 			data, err := marshaler.Marshal(packet)
 			if err != nil {
 				logger.Errorw("Error marshaling packet to JSON", "error", err)
-				http.Error(w, "Error marshaling packet", http.StatusInternalServerError)
-				return
+				continue
 			}
 
 			// Send the event

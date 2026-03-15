@@ -107,16 +107,6 @@ func parseConfig() *Config {
 	return config
 }
 
-// Helper function to parse duration from environment
-func mustParseDuration(durationStr string) time.Duration {
-	duration, err := time.ParseDuration(durationStr)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Invalid duration format: %s\n", durationStr)
-		os.Exit(1)
-	}
-	return duration
-}
-
 // Helper function to parse duration from environment with default
 func durationFromEnv(key string, defaultValue time.Duration) time.Duration {
 	envVal := getEnv(key, "")
