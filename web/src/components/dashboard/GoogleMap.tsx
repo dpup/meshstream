@@ -30,7 +30,7 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
 }) => {
   const accuracyMeters = calculateAccuracyFromPrecisionBits(precisionBits);
   const effectiveZoom = zoom ?? calculateZoomFromAccuracy(accuracyMeters);
-  const showCenterDot = precisionBits === undefined || accuracyMeters < 100;
+  const showCenterDot = true;
 
   const markerGeoJSON = useMemo((): FeatureCollection => ({
     type: "FeatureCollection",

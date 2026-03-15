@@ -589,6 +589,7 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               lat={latitude}
               lng={longitude}
               precisionBits={precisionBits}
+              fullHeight
             />
           </div>
           <NodePositionData
