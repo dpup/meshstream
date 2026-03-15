@@ -58,6 +58,7 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
         mapStyle={CARTO_DARK_STYLE}
         initialViewState={{ longitude: lng, latitude: lat, zoom: effectiveZoom }}
         style={{ width: "100%", height: "100%" }}
+        attributionControl={{ compact: true }}
       >
         <Source id="circle" type="geojson" data={circleGeoJSON}>
           <Layer

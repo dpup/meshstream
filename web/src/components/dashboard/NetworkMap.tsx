@@ -174,6 +174,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
             mapStyle={CARTO_DARK_STYLE_LABELLED}
             initialViewState={{ longitude: -98, latitude: 39, zoom: 4 }}
             style={{ width: "100%", height: "100%" }}
+            attributionControl={{ compact: true }}
             interactiveLayerIds={["nodes-circles"]}
             onMouseEnter={() => {
               if (mapRef.current) mapRef.current.getMap().getCanvas().style.cursor = "pointer";
