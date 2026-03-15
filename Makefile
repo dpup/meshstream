@@ -10,7 +10,7 @@ WEB_DIST_DIR := $(ROOT_DIR)/dist/static
 
 # Proto compilation
 PROTOC_GEN_GO := $(TOOLS_DIR)/protoc-gen-go
-PROTO_FILES := $(shell find $(ROOT_DIR) -name "*.proto" | sed 's|$(ROOT_DIR)/||' )
+PROTO_FILES := $(shell find $(ROOT_DIR)/proto -name "*.proto" | sed 's|$(ROOT_DIR)/||' )
 
 # Build the application
 build:
@@ -56,23 +56,16 @@ gen-proto: tools
 		$(PROTO_FILES)
 	@echo "Generated Go code from Protocol Buffers"
 
-# Clean generated files
+# Clean generated files and tool binaries
 clean:
 	rm -rf dist
 	rm -rf $(BIN_DIR)
 	find . -name "*.pb.go" -type f -delete
 
-# Install tools needed for development
-tools: $(PROTOC_GEN_GO)
-
-$(TOOLS_DIR):
+# Install tools needed for development (always reinstalls to ensure correct platform binary)
+tools:
 	mkdir -p $(TOOLS_DIR)
-
-# Install the protoc-gen-go tool
-$(PROTOC_GEN_GO): $(TOOLS_DIR)
 	GOBIN=$(abspath $(TOOLS_DIR)) go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	echo "Installed protoc-gen-go in $(TOOLS_DIR)"
-	ls $(TOOLS_DIR)
 
 # Web application commands
 # Run the web application in development mode
@@ -102,21 +95,19 @@ docker-build:
 		--build-arg "MESHSTREAM_APP_ENV=$${MESHSTREAM_APP_ENV:-production}" \
 		--build-arg "MESHSTREAM_SITE_TITLE=$${MESHSTREAM_SITE_TITLE:-Meshstream}" \
 		--build-arg "MESHSTREAM_SITE_DESCRIPTION=$${MESHSTREAM_SITE_DESCRIPTION:-Meshtastic activity monitoring}" \
-		--build-arg "MESHSTREAM_GOOGLE_MAPS_ID=$${MESHSTREAM_GOOGLE_MAPS_ID:-4f089fb2d9fbb3db}" \
-		--build-arg "MESHSTREAM_GOOGLE_MAPS_API_KEY=$${MESHSTREAM_GOOGLE_MAPS_API_KEY:-}" \
 		--load \
 		-t meshstream \
 		.
 
 # Run Docker container with environment variables
 docker-run: docker-build
-	docker run -p 8080:8080 \
+	docker run -p 5446:5446 \
 		-e MESHSTREAM_MQTT_BROKER=$${MESHSTREAM_MQTT_BROKER:-mqtt.bayme.sh} \
 		-e MESHSTREAM_MQTT_USERNAME=$${MESHSTREAM_MQTT_USERNAME:-meshdev} \
 		-e MESHSTREAM_MQTT_PASSWORD=$${MESHSTREAM_MQTT_PASSWORD:-large4cats} \
 		-e MESHSTREAM_MQTT_TOPIC_PREFIX=$${MESHSTREAM_MQTT_TOPIC_PREFIX:-msh/US/bayarea} \
 		-e MESHSTREAM_SERVER_HOST=0.0.0.0 \
-		-e MESHSTREAM_SERVER_PORT=$${MESHSTREAM_SERVER_PORT:-8080} \
+		-e MESHSTREAM_SERVER_PORT=$${MESHSTREAM_SERVER_PORT:-5446} \
 		-e MESHSTREAM_STATIC_DIR=/app/static \
 		-e MESHSTREAM_LOG_LEVEL=$${MESHSTREAM_LOG_LEVEL:-info} \
 		-e MESHSTREAM_VERBOSE_LOGGING=$${MESHSTREAM_VERBOSE_LOGGING:-false} \

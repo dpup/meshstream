@@ -40,9 +40,10 @@ type Config struct {
 	ChannelKeys []string
 
 	// Statistics configuration
-	StatsInterval  time.Duration
-	CacheSize      int
-	VerboseLogging bool
+	StatsInterval   time.Duration
+	CacheSize       int
+	CacheRetention  time.Duration
+	VerboseLogging  bool
 }
 
 // getEnv retrieves an environment variable with the given prefix or returns the default value
@@ -85,14 +86,15 @@ func parseConfig() *Config {
 
 	// Web server configuration
 	flag.StringVar(&config.ServerHost, "server-host", getEnv("SERVER_HOST", "localhost"), "Web server host")
-	flag.StringVar(&config.ServerPort, "server-port", getEnv("SERVER_PORT", "8080"), "Web server port")
+	flag.StringVar(&config.ServerPort, "server-port", getEnv("SERVER_PORT", "5446"), "Web server port")
 	flag.StringVar(&config.StaticDir, "static-dir", getEnv("STATIC_DIR", "./server/static"), "Directory containing static web files")
 
 	// Channel key configuration (comma separated list of name:key pairs)
 	channelKeysDefault := getEnv("CHANNEL_KEYS", "LongFast:"+decoder.DefaultPrivateKey)
 	channelKeysFlag := flag.String("channel-keys", channelKeysDefault, "Comma-separated list of channel:key pairs for encrypted channels")
 
-	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 200), "Number of packets to cache for new subscribers")
+	flag.IntVar(&config.CacheSize, "cache-size", intFromEnv("CACHE_SIZE", 5000), "Maximum number of packets to retain in the cache")
+	flag.DurationVar(&config.CacheRetention, "cache-retention", durationFromEnv("CACHE_RETENTION", 3*time.Hour), "How long to retain a node's packets after its last activity")
 	flag.BoolVar(&config.VerboseLogging, "verbose", boolFromEnv("VERBOSE_LOGGING", false), "Enable verbose message logging")
 
 	flag.Parse()
@@ -208,8 +210,8 @@ func main() {
 
 	// Create a message broker to distribute messages to multiple consumers
 	// Cache packets for new subscribers based on configuration
-	broker := mqtt.NewBroker(messagesChan, config.CacheSize, logger)
-	logger.Infof("Message broker initialized with cache size: %d", config.CacheSize)
+	broker := mqtt.NewBroker(messagesChan, config.CacheSize, config.CacheRetention, logger)
+	logger.Infof("Message broker initialized with cache size: %d, retention: %s", config.CacheSize, config.CacheRetention)
 
 	// Create a message logger that subscribes to the broker
 	// and also logs to stdout

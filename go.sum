@@ -10,12 +10,6 @@ github.com/cpuguy83/go-md2man/v2 v2.0.6/go.mod h1:oOW0eioCTA6cOiMLiUPZOpcVxMig6N
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dpup/logista v1.0.7 h1:TTlwktow4qw2C1p454wQt1a/WoXJGMd+DstF/+cap+s=
-github.com/dpup/logista v1.0.7/go.mod h1:B8txXLc5xuzFilYllCZbh+jBOqACXmjjRan0mwtog8U=
-github.com/dpup/logista v1.0.8 h1:aP90nYVITQdKkP9JDpoz8EslMl+IUQLbq3sI2aCen+4=
-github.com/dpup/logista v1.0.8/go.mod h1:B8txXLc5xuzFilYllCZbh+jBOqACXmjjRan0mwtog8U=
-github.com/dpup/logista v1.0.9 h1:0jAyW5IW9rjqrz+5M81RhGEvEIa/Ua5++EiQ/7CJn9M=
-github.com/dpup/logista v1.0.9/go.mod h1:B8txXLc5xuzFilYllCZbh+jBOqACXmjjRan0mwtog8U=
 github.com/dpup/logista v1.0.10 h1:d4zi4/wXhC6trcYLMyw47VK+8A6ELlfIDq/DoKXnEJ0=
 github.com/dpup/logista v1.0.10/go.mod h1:B8txXLc5xuzFilYllCZbh+jBOqACXmjjRan0mwtog8U=
 github.com/dpup/prefab v0.2.0 h1:g9SB58vTX0DO+U74occ0WR5xGEY0HXg6BillxnVTDJU=

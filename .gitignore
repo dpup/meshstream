@@ -78,4 +78,4 @@ temp/
 
 # AI Agent files
 **/.claude/settings.local.json
-.private-journal/*
+.private-journal/*.pnpm-store/

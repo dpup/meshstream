@@ -27,6 +27,7 @@ type Config struct {
 	MQTTTopicPath string       // MQTT topic path being subscribed to
 	StaticDir     string       // Directory containing static web files
 	ChannelKeys   []string     // Channel keys for decryption
+	AllowedOrigin string       // CORS allowed origin; defaults to "*" (public stream)
 }
 
 // Create connection info JSON to send to the client
@@ -67,6 +68,16 @@ func New(config Config) *Server {
 	}
 }
 
+// securityHeaders wraps a handler to add common HTTP security headers.
+func securityHeaders(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "DENY")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next(w, r)
+	}
+}
+
 // Start initializes and starts the web server
 func (s *Server) Start() error {
 	// Get port as integer
@@ -83,8 +94,8 @@ func (s *Server) Start() error {
 		prefab.WithContext(baseCtx),
 		prefab.WithHost(s.config.Host),
 		prefab.WithPort(port),
-		prefab.WithHTTPHandlerFunc("/api/status", s.handleStatus),
-		prefab.WithHTTPHandlerFunc("/api/stream", s.handleStream),
+		prefab.WithHTTPHandlerFunc("/api/status", securityHeaders(s.handleStatus)),
+		prefab.WithHTTPHandlerFunc("/api/stream", securityHeaders(s.handleStream)),
 		prefab.WithStaticFiles("/assets/", s.config.StaticDir),
 		prefab.WithHTTPHandlerFunc("/", s.fallbackHandler),
 	)
@@ -176,10 +187,14 @@ func (s *Server) handleStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Set headers for SSE
+	allowedOrigin := s.config.AllowedOrigin
+	if allowedOrigin == "" {
+		allowedOrigin = "*"
+	}
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
-	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 
 	// Make sure that the writer supports flushing
 	flusher, ok := w.(http.Flusher)

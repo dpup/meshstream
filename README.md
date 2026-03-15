@@ -80,14 +80,15 @@ Meshstream can be configured through environment variables, command-line flags, 
 
 ### Web UI Configuration (Build-time)
 
-These must be set at build time (via Docker build args):
+These must be set at build time (via Docker build args or `web/.env.local`):
 
-| Build Variable | Description |
-|----------------|-------------|
-| `MESHSTREAM_GOOGLE_MAPS_API_KEY` | Google Maps API key for map visualization |
-| `MESHSTREAM_GOOGLE_MAPS_ID` | Google Maps map ID |
-| `MESHSTREAM_SITE_TITLE` | Custom site title |
-| `MESHSTREAM_SITE_DESCRIPTION` | Custom site description |
+| Build Variable | Default | Description |
+|----------------|---------|-------------|
+| `VITE_SITE_TITLE` | My Mesh | Site title shown in the browser tab |
+| `VITE_SITE_DESCRIPTION` | Realtime Meshtastic activity via MQTT. | Meta description |
+| `VITE_API_BASE_URL` | _(empty — same origin)_ | API base URL, if serving from a different host |
+
+Maps use [MapLibre GL JS](https://maplibre.org/) with free CartoDB Dark Matter tiles — no API key required.
 
 For complete configuration options, see the Dockerfile and docker-compose.yml.
 
