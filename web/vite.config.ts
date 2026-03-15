@@ -5,6 +5,12 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    // Some pre-compiled npm packages use __publicField (a TypeScript/esbuild helper)
+    // without bundling it. Rewrite bare references to a globalThis property that
+    // we polyfill in index.html before any module code runs.
+    '__publicField': 'globalThis.__publicField',
+  },
   plugins: [
     react(),
     TanStackRouterVite(),
