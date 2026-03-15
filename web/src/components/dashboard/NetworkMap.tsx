@@ -187,55 +187,58 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
             onZoomStart={handleUserInteraction}
             onLoad={() => setMapLoaded(true)}
           >
-            {/* Topology links — always mounted, visibility controlled via layout property */}
-            <Source id="links" type="geojson" data={linksGeoJSON}>
-              <Layer
-                id="links-line"
-                type="line"
-                layout={{
-                  "line-join": "round",
-                  "line-cap": "round",
-                  "visibility": showLinks ? "visible" : "none",
-                }}
-                paint={{
-                  "line-color": ["get", "color"],
-                  "line-width": 2,
-                  "line-opacity": ["get", "opacity"],
-                }}
-              />
-            </Source>
+            {/* Sources and layers — only after map style has loaded */}
+            {mapLoaded && (
+              <>
+                <Source id="links" type="geojson" data={linksGeoJSON}>
+                  <Layer
+                    id="links-line"
+                    type="line"
+                    layout={{
+                      "line-join": "round",
+                      "line-cap": "round",
+                      "visibility": showLinks ? "visible" : "none",
+                    }}
+                    paint={{
+                      "line-color": ["get", "color"],
+                      "line-width": 2,
+                      "line-opacity": ["get", "opacity"],
+                    }}
+                  />
+                </Source>
 
-            {/* Node circles */}
-            <Source id="nodes" type="geojson" data={nodesGeoJSON}>
-              <Layer
-                id="nodes-circles"
-                type="circle"
-                paint={{
-                  "circle-radius": ["get", "radius"],
-                  "circle-color": ["get", "fillColor"],
-                  "circle-stroke-width": 2,
-                  "circle-stroke-color": ["get", "strokeColor"],
-                  "circle-opacity": 0.9,
-                  "circle-stroke-opacity": 1,
-                }}
-              />
-              <Layer
-                id="nodes-labels"
-                type="symbol"
-                layout={{
-                  "text-field": ["get", "name"],
-                  "text-size": 11,
-                  "text-offset": [0, 1.5],
-                  "text-anchor": "top",
-                  "text-optional": true,
-                }}
-                paint={{
-                  "text-color": "#e5e7eb",
-                  "text-halo-color": "#111827",
-                  "text-halo-width": 1.5,
-                }}
-              />
-            </Source>
+                <Source id="nodes" type="geojson" data={nodesGeoJSON}>
+                  <Layer
+                    id="nodes-circles"
+                    type="circle"
+                    paint={{
+                      "circle-radius": ["get", "radius"],
+                      "circle-color": ["get", "fillColor"],
+                      "circle-stroke-width": 2,
+                      "circle-stroke-color": ["get", "strokeColor"],
+                      "circle-opacity": 0.9,
+                      "circle-stroke-opacity": 1,
+                    }}
+                  />
+                  <Layer
+                    id="nodes-labels"
+                    type="symbol"
+                    layout={{
+                      "text-field": ["get", "name"],
+                      "text-size": 11,
+                      "text-offset": [0, 1.5],
+                      "text-anchor": "top",
+                      "text-optional": true,
+                    }}
+                    paint={{
+                      "text-color": "#e5e7eb",
+                      "text-halo-color": "#111827",
+                      "text-halo-width": 1.5,
+                    }}
+                  />
+                </Source>
+              </>
+            )}
 
             {/* Node popup */}
             {selectedNode && (

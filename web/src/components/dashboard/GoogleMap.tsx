@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import ReactMap, { Source, Layer } from "react-map-gl/maplibre";
 import type { FeatureCollection } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -30,14 +30,12 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
 }) => {
   const accuracyMeters = calculateAccuracyFromPrecisionBits(precisionBits);
   const effectiveZoom = zoom ?? calculateZoomFromAccuracy(accuracyMeters);
-  const showCenterDot = true;
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   const markerGeoJSON = useMemo((): FeatureCollection => ({
     type: "FeatureCollection",
-    features: showCenterDot
-      ? [{ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: {} }]
-      : [],
-  }), [lat, lng, showCenterDot]);
+    features: [{ type: "Feature", geometry: { type: "Point", coordinates: [lng, lat] }, properties: {} }],
+  }), [lat, lng]);
 
   const circleGeoJSON = useMemo((): FeatureCollection => ({
     type: "FeatureCollection",
@@ -59,33 +57,38 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
         initialViewState={{ longitude: lng, latitude: lat, zoom: effectiveZoom }}
         style={{ width: "100%", height: "100%" }}
         attributionControl={{ compact: true }}
+        onLoad={() => setMapLoaded(true)}
       >
-        <Source id="circle" type="geojson" data={circleGeoJSON}>
-          <Layer
-            id="circle-fill"
-            type="fill"
-            paint={{ "fill-color": "#4ade80", "fill-opacity": 0.15 }}
-          />
-          <Layer
-            id="circle-outline"
-            type="line"
-            paint={{ "line-color": "#22c55e", "line-width": 2, "line-opacity": 0.8 }}
-          />
-        </Source>
+        {mapLoaded && (
+          <>
+            <Source id="circle" type="geojson" data={circleGeoJSON}>
+              <Layer
+                id="circle-fill"
+                type="fill"
+                paint={{ "fill-color": "#4ade80", "fill-opacity": 0.15 }}
+              />
+              <Layer
+                id="circle-outline"
+                type="line"
+                paint={{ "line-color": "#22c55e", "line-width": 2, "line-opacity": 0.8 }}
+              />
+            </Source>
 
-        <Source id="marker" type="geojson" data={markerGeoJSON}>
-          <Layer
-            id="marker-dot"
-            type="circle"
-            paint={{
-              "circle-radius": 6,
-              "circle-color": "#4ade80",
-              "circle-stroke-width": 2,
-              "circle-stroke-color": "#22c55e",
-              "circle-opacity": 1,
-            }}
-          />
-        </Source>
+            <Source id="marker" type="geojson" data={markerGeoJSON}>
+              <Layer
+                id="marker-dot"
+                type="circle"
+                paint={{
+                  "circle-radius": 6,
+                  "circle-color": "#4ade80",
+                  "circle-stroke-width": 2,
+                  "circle-stroke-color": "#22c55e",
+                  "circle-opacity": 1,
+                }}
+              />
+            </Source>
+          </>
+        )}
       </ReactMap>
     </div>
   );
