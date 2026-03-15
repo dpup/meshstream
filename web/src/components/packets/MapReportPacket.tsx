@@ -279,16 +279,8 @@ export const MapReportPacket: React.FC<MapReportPacketProps> = ({ packet }) => {
                 latitude={center.latitude}
                 longitude={center.longitude}
                 flush={true}
-                caption="Gateway Location"
                 precisionBits={precisionBits}
               />
-              {precisionBits !== undefined && (
-                <div className="bg-black/60 px-3 py-1 text-xs text-white absolute bottom-0 left-0 right-0">
-                  {positionAccuracy < 1000 
-                    ? `Location Accuracy: ±${positionAccuracy.toFixed(0)}m`
-                    : `Location Accuracy: ±${(positionAccuracy / 1000).toFixed(1)}km`}
-                </div>
-              )}
             </div>
             {/* Position information */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 text-sm">

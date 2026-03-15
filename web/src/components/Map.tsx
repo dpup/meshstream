@@ -78,7 +78,7 @@ export const LocationMap: React.FC<LocationMapProps> = ({
           mapStyle={CARTO_DARK_STYLE}
           initialViewState={{ longitude, latitude, zoom: effectiveZoom }}
           style={{ width: "100%", height: "100%" }}
-          attributionControl={{}}
+          attributionControl={{ compact: true }}
         >
           {showAccuracyCircle && (
             <Source id="circle" type="geojson" data={circleGeoJSON}>

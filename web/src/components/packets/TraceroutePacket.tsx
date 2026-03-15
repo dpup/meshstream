@@ -3,6 +3,7 @@ import { Packet } from "../../lib/types";
 import { PacketCard } from "./PacketCard";
 import { RouteIcon } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { useAppSelector } from "../../hooks";
 
 interface TraceroutePacketProps {
   packet: Packet;
@@ -11,6 +12,7 @@ interface TraceroutePacketProps {
 export const TraceroutePacket: React.FC<TraceroutePacketProps> = ({ packet }) => {
   const { data } = packet;
   const routeDiscovery = data.routeDiscovery;
+  const { nodes } = useAppSelector((state) => state.aggregator);
 
   if (!routeDiscovery) {
     return null;
@@ -19,6 +21,11 @@ export const TraceroutePacket: React.FC<TraceroutePacketProps> = ({ packet }) =>
   // Convert a nodenum to hex format for display and linking
   const formatNodeId = (nodeNum: number) => {
     return nodeNum.toString(16).toLowerCase();
+  };
+
+  const getNodeName = (nodeNum: number): string => {
+    const node = nodes[nodeNum];
+    return node?.shortName || node?.longName || `!${formatNodeId(nodeNum)}`;
   };
 
   // Renders a node hop with SNR info if available
@@ -33,7 +40,7 @@ export const TraceroutePacket: React.FC<TraceroutePacketProps> = ({ packet }) =>
           params={{ nodeId: nodeHex }}
           className="text-blue-400 hover:underline"
         >
-          !{nodeHex}
+          {getNodeName(nodeNum)}
         </Link>
         {snr !== undefined && (
           <span className="text-neutral-400 text-xs ml-1">

@@ -50,7 +50,7 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
     ],
   }), [lat, lng, accuracyMeters]);
 
-  const containerClassName = `w-full ${fullHeight ? "h-full flex-1" : "min-h-[300px]"} rounded-lg overflow-hidden effect-inset`;
+  const containerClassName = `w-full ${fullHeight ? "h-full flex-1" : "h-[300px]"} rounded-lg overflow-hidden effect-inset`;
 
   return (
     <div className={containerClassName}>
