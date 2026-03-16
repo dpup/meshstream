@@ -60,10 +60,10 @@ func TestNodeAwareCacheBasicOrdering(t *testing.T) {
 func TestPressureEvictsOldestOfLowestPriority(t *testing.T) {
 	c := NewNodeAwareCache(3, time.Hour)
 
-	c.Add(pkt(1, 1, pb.PortNum_NODEINFO_APP))       // priority 2
-	c.Add(pkt(2, 1, pb.PortNum_NEIGHBORINFO_APP))   // priority 4
-	c.Add(pkt(3, 1, pb.PortNum_NODEINFO_APP))       // priority 2 — at cap
-	c.Add(pkt(4, 1, pb.PortNum_NODEINFO_APP))       // pressure: evicts oldest pri=2 (ID 1)
+	c.Add(pkt(1, 1, pb.PortNum_NODEINFO_APP))     // priority 2
+	c.Add(pkt(2, 1, pb.PortNum_NEIGHBORINFO_APP)) // priority 4
+	c.Add(pkt(3, 1, pb.PortNum_NODEINFO_APP))     // priority 2 — at cap
+	c.Add(pkt(4, 1, pb.PortNum_NODEINFO_APP))     // pressure: evicts oldest pri=2 (ID 1)
 
 	got := c.GetAll()
 	if len(got) != 3 {

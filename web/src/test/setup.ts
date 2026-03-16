@@ -1,6 +1,14 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Mock URL.createObjectURL (required by maplibre-gl worker setup)
+if (typeof window.URL.createObjectURL === 'undefined') {
+  window.URL.createObjectURL = vi.fn(() => '');
+}
+if (typeof window.URL.revokeObjectURL === 'undefined') {
+  window.URL.revokeObjectURL = vi.fn();
+}
+
 // Mock for window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
