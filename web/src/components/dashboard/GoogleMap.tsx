@@ -33,7 +33,7 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   const accuracyMeters = calculateAccuracyFromPrecisionBits(precisionBits);
-  const effectiveZoom = zoom ?? calculateZoomFromAccuracy(accuracyMeters);
+  const effectiveZoom = zoom ?? Math.max(1, calculateZoomFromAccuracy(accuracyMeters) - 1);
 
   const markerGeoJSON = useMemo((): FeatureCollection => ({
     type: "FeatureCollection",
@@ -62,6 +62,7 @@ export const NodeLocationMap: React.FC<NodeLocationMapProps> = ({
     });
 
     map.addControl(new maplibregl.AttributionControl({ compact: true }));
+    map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
     map.on("load", () => {
       map.addSource("circle", { type: "geojson", data: circleGeoJSON });
