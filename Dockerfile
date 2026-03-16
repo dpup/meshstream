@@ -37,7 +37,7 @@ RUN pnpm build
 ###############################################################################
 # Stage 2: Build the Go server
 ###############################################################################
-FROM golang:1.24-alpine AS go-builder
+FROM golang:1.24.1-alpine AS go-builder
 
 WORKDIR /app
 
