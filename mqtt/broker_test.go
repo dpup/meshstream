@@ -28,6 +28,22 @@ func pkt(id, from uint32, port pb.PortNum) *meshtreampb.Packet {
 	}
 }
 
+// routerNodeInfoPkt builds a NODEINFO_APP packet whose User.Role is ROUTER,
+// causing the cache to mark the sender as a router node.
+func routerNodeInfoPkt(id, from uint32) *meshtreampb.Packet {
+	return &meshtreampb.Packet{
+		Data: &meshtreampb.Data{
+			Id:      id,
+			From:    from,
+			PortNum: pb.PortNum_NODEINFO_APP,
+			Payload: &meshtreampb.Data_NodeInfo{
+				NodeInfo: &pb.User{Role: pb.Config_DeviceConfig_ROUTER},
+			},
+		},
+		Info: &meshtreampb.TopicInfo{},
+	}
+}
+
 // ── NodeAwareCache unit tests ──────────────────────────────────────────────────
 
 func TestNodeAwareCacheEmpty(t *testing.T) {
@@ -290,6 +306,94 @@ func TestGlobalCapSamePriorityFIFO(t *testing.T) {
 	}
 	if got[0].Data.Id != 2 {
 		t.Errorf("expected oldest surviving ID 2, got %d", got[0].Data.Id)
+	}
+}
+
+// TestRouterNodeSurvivesRetention verifies that router nodes are exempt from
+// the retention window: GetAll still returns their packets after a long silence.
+func TestRouterNodeSurvivesRetention(t *testing.T) {
+	now := time.Now()
+	c := NewNodeAwareCache(1000, 3*time.Hour)
+	c.nowFunc = func() time.Time { return now }
+
+	c.Add(routerNodeInfoPkt(1, 1))            // router node
+	c.Add(pkt(2, 2, pb.PortNum_NODEINFO_APP)) // regular node
+
+	// Advance past both nodes' retention window.
+	c.nowFunc = func() time.Time { return now.Add(3*time.Hour + 1*time.Second) }
+
+	got := c.GetAll()
+	var routerSurvived, regularSurvived bool
+	for _, p := range got {
+		switch p.Data.Id {
+		case 1:
+			routerSurvived = true
+		case 2:
+			regularSurvived = true
+		}
+	}
+	if !routerSurvived {
+		t.Error("router node's packet should survive past the retention window")
+	}
+	if regularSurvived {
+		t.Error("regular node's packet should be excluded after the retention window")
+	}
+}
+
+// TestRouterNodeNotPrunedUnderPressure verifies that pruneStale skips router
+// nodes even when the cache is over capacity and regular stale nodes are removed.
+func TestRouterNodeNotPrunedUnderPressure(t *testing.T) {
+	now := time.Now()
+	c := NewNodeAwareCache(4, 3*time.Hour)
+	c.nowFunc = func() time.Time { return now }
+
+	c.Add(routerNodeInfoPkt(1, 1))            // router node
+	c.Add(pkt(2, 2, pb.PortNum_NODEINFO_APP)) // regular node
+
+	// Advance past both nodes' retention window.
+	c.nowFunc = func() time.Time { return now.Add(3*time.Hour + 1*time.Second) }
+
+	// Two new packets push the cache over cap, triggering pruneStale.
+	c.Add(pkt(3, 3, pb.PortNum_NODEINFO_APP))
+	c.Add(pkt(4, 4, pb.PortNum_NODEINFO_APP))
+	c.Add(pkt(5, 5, pb.PortNum_NODEINFO_APP))
+
+	got := c.GetAll()
+	routerSurvived := false
+	for _, p := range got {
+		if p.Data.Id == 1 {
+			routerSurvived = true
+		}
+	}
+	if !routerSurvived {
+		t.Error("router node's packet should not be pruned under cache pressure")
+	}
+}
+
+// TestRouterNodeInfoElevatedPriority verifies that NODEINFO_APP and POSITION_APP
+// packets from router nodes are protected over the same types from regular nodes.
+func TestRouterNodeInfoElevatedPriority(t *testing.T) {
+	c := NewNodeAwareCache(5, time.Hour)
+
+	c.Add(routerNodeInfoPkt(1, 1))            // router NODEINFO — elevated to priority 4
+	c.Add(pkt(2, 2, pb.PortNum_NODEINFO_APP)) // regular NODEINFO — priority 2
+	c.Add(pkt(3, 3, pb.PortNum_NODEINFO_APP)) // regular NODEINFO — priority 2
+	c.Add(pkt(4, 4, pb.PortNum_NODEINFO_APP)) // regular NODEINFO — priority 2
+	c.Add(pkt(5, 5, pb.PortNum_NODEINFO_APP)) // regular NODEINFO — priority 2, at cap
+	c.Add(pkt(6, 6, pb.PortNum_NODEINFO_APP)) // pressure: must evict a regular NODEINFO
+
+	got := c.GetAll()
+	if len(got) != 5 {
+		t.Fatalf("expected cap=5, got %d: %v", len(got), ids(got))
+	}
+	routerSurvived := false
+	for _, p := range got {
+		if p.Data.Id == 1 {
+			routerSurvived = true
+		}
+	}
+	if !routerSurvived {
+		t.Error("router node's NODEINFO should survive eviction due to elevated priority")
 	}
 }
 

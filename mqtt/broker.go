@@ -40,12 +40,17 @@ var typePriority = map[pb.PortNum]int{
 // defaultTypePriority applies to any port type not listed above.
 const defaultTypePriority = 1
 
-// packetPriority returns the eviction priority for p.
-func packetPriority(p *meshtreampb.Packet) int {
-	if pri, ok := typePriority[p.GetData().GetPortNum()]; ok {
-		return pri
+// isRouterRole returns true for device roles that act as infrastructure nodes.
+// These nodes transmit position and node-info far less often than client nodes,
+// so their state packets need elevated protection from eviction.
+func isRouterRole(role pb.Config_DeviceConfig_Role) bool {
+	switch role {
+	case pb.Config_DeviceConfig_ROUTER,
+		pb.Config_DeviceConfig_ROUTER_CLIENT,
+		pb.Config_DeviceConfig_ROUTER_LATE:
+		return true
 	}
-	return defaultTypePriority
+	return false
 }
 
 // entry wraps a packet with its cache insertion timestamp.
@@ -68,6 +73,8 @@ type entry struct {
 //
 // Node retention: once a node has been silent for [retention], its packets are
 // excluded from GetAll and proactively pruned when the cache is under pressure.
+// Router nodes (ROUTER, ROUTER_CLIENT, ROUTER_LATE) are exempt from retention
+// pruning — they transmit far less frequently and their state must be preserved.
 //
 // Packets with from=0 (no identified source node) are always included in GetAll.
 // They are never associated with a node's send rate, so they survive eviction
@@ -75,8 +82,9 @@ type entry struct {
 type NodeAwareCache struct {
 	mu           sync.Mutex
 	entries      []entry
-	nodeLastSeen map[uint32]int64 // nodeID → unix timestamp of most recent packet
-	maxSize      int              // global safety cap
+	nodeLastSeen map[uint32]int64  // nodeID → unix timestamp of most recent packet
+	routerNodes  map[uint32]bool   // nodeIDs identified as router-role devices
+	maxSize      int               // global safety cap
 	retention    time.Duration
 	nowFunc      func() time.Time // injectable for testing
 }
@@ -87,10 +95,30 @@ func NewNodeAwareCache(maxSize int, retention time.Duration) *NodeAwareCache {
 	return &NodeAwareCache{
 		entries:      make([]entry, 0, min(maxSize, 256)),
 		nodeLastSeen: make(map[uint32]int64),
+		routerNodes:  make(map[uint32]bool),
 		maxSize:      maxSize,
 		retention:    retention,
 		nowFunc:      time.Now,
 	}
+}
+
+// packetPriority returns the eviction priority for p. Router nodes' position
+// and node-info packets are elevated to priority 4 (equal to NEIGHBORINFO_APP)
+// because those nodes transmit far less frequently and their state is harder to
+// replace.
+// Must be called with c.mu held.
+func (c *NodeAwareCache) packetPriority(p *meshtreampb.Packet) int {
+	port := p.GetData().GetPortNum()
+	if c.routerNodes[p.GetData().GetFrom()] {
+		switch port {
+		case pb.PortNum_POSITION_APP, pb.PortNum_NODEINFO_APP:
+			return 4 // elevated: same tier as NEIGHBORINFO_APP
+		}
+	}
+	if pri, ok := typePriority[port]; ok {
+		return pri
+	}
+	return defaultTypePriority
 }
 
 // Add records a packet. Recent packets (younger than minEvictAge) are never
@@ -105,6 +133,17 @@ func (c *NodeAwareCache) Add(packet *meshtreampb.Packet) {
 
 	if nodeID != 0 {
 		c.nodeLastSeen[nodeID] = nowUnix
+
+		// Keep router-node membership up to date from NODEINFO_APP packets.
+		if packet.GetData().GetPortNum() == pb.PortNum_NODEINFO_APP {
+			if user := packet.GetData().GetNodeInfo(); user != nil {
+				if isRouterRole(user.GetRole()) {
+					c.routerNodes[nodeID] = true
+				} else {
+					delete(c.routerNodes, nodeID)
+				}
+			}
+		}
 	}
 
 	c.entries = append(c.entries, entry{pkt: packet, insertedAt: nowUnix})
@@ -132,7 +171,7 @@ func (c *NodeAwareCache) GetAll() []*meshtreampb.Packet {
 
 	activeNodes := make(map[uint32]bool, len(c.nodeLastSeen))
 	for nodeID, lastSeen := range c.nodeLastSeen {
-		if lastSeen >= cutoff {
+		if c.routerNodes[nodeID] || lastSeen >= cutoff {
 			activeNodes[nodeID] = true
 		}
 	}
@@ -183,7 +222,7 @@ func (c *NodeAwareCache) pickEvictTarget(ageThreshold int64) int {
 		if ageThreshold >= 0 && e.insertedAt > ageThreshold {
 			continue
 		}
-		if pri := packetPriority(e.pkt); minPri < 0 || pri < minPri {
+		if pri := c.packetPriority(e.pkt); minPri < 0 || pri < minPri {
 			minPri = pri
 		}
 	}
@@ -199,7 +238,7 @@ func (c *NodeAwareCache) pickEvictTarget(ageThreshold int64) int {
 		if ageThreshold >= 0 && e.insertedAt > ageThreshold {
 			continue
 		}
-		if packetPriority(e.pkt) != minPri {
+		if c.packetPriority(e.pkt) != minPri {
 			continue
 		}
 		nodeID := e.pkt.GetData().GetFrom()
@@ -220,7 +259,7 @@ func (c *NodeAwareCache) pruneStale(nowUnix int64) {
 
 	stale := make(map[uint32]bool)
 	for nodeID, lastSeen := range c.nodeLastSeen {
-		if lastSeen < cutoff {
+		if !c.routerNodes[nodeID] && lastSeen < cutoff {
 			stale[nodeID] = true
 			delete(c.nodeLastSeen, nodeID)
 		}
