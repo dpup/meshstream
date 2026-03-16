@@ -5,12 +5,6 @@ import { resolve } from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  define: {
-    // Some pre-compiled npm packages use __publicField (a TypeScript/esbuild helper)
-    // without bundling it. Rewrite bare references to a globalThis property that
-    // we polyfill in index.html before any module code runs.
-    '__publicField': 'globalThis.__publicField',
-  },
   plugins: [
     react(),
     TanStackRouterVite(),
@@ -26,6 +20,16 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     css: true,
   },
+  optimizeDeps: {
+    esbuildOptions: {
+      // maplibre-gl v5 distributes bundles that reference __publicField and
+      // other esbuild class-field helpers without defining them. Setting
+      // target to esnext tells esbuild to emit native class fields instead
+      // of helper-based transforms, which avoids the missing-symbol error.
+      // See: https://github.com/maplibre/maplibre-gl-js/issues/6680
+      target: 'esnext',
+    },
+  },
   server: {
     port: 5747,
     proxy: {
@@ -36,6 +40,7 @@ export default defineConfig({
     },
   },
   build: {
+    target: 'esnext',
     outDir: 'dist',
     emptyOutDir: true,
   },
