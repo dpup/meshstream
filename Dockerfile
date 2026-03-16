@@ -31,15 +31,14 @@ ENV VITE_API_BASE_URL=${MESHSTREAM_API_BASE_URL} \
     VITE_SITE_TITLE=${MESHSTREAM_SITE_TITLE} \
     VITE_SITE_DESCRIPTION=${MESHSTREAM_SITE_DESCRIPTION}
 
-# esbuild's bundled Go binary crashes on kernels with 5-level paging or
-# high-entropy ASLR because Go's lfstack can't handle addresses above 47 bits.
-# setarch --addr-no-randomize disables ASLR for the process via the personality
-# syscall, keeping allocations at low addresses. util-linux provides setarch.
-RUN apt-get update && apt-get install -y --no-install-recommends util-linux \
-    && rm -rf /var/lib/apt/lists/*
+# esbuild's bundled Go binary crashes on kernels with 5-level paging / high-entropy
+# ASLR because Go's GC (gcStart → finishsweep_m → lfstack.push) can't handle
+# addresses above 47 bits. Disabling the GC entirely prevents the crash; memory
+# growth in a short-lived build process is not a problem.
+ENV GOGC=off
 
 # Build the web app
-RUN setarch "$(uname -m)" --addr-no-randomize pnpm build
+RUN pnpm build
 
 ###############################################################################
 # Stage 2: Build the Go server
@@ -96,11 +95,11 @@ RUN chown -R meshstream:meshstream /app
 USER meshstream
 
 # Expose the application port
-EXPOSE 5446
+EXPOSE 8080
 
 # Server configuration
 ENV MESHSTREAM_SERVER_HOST=0.0.0.0
-ENV MESHSTREAM_SERVER_PORT=5446
+ENV MESHSTREAM_SERVER_PORT=8080
 ENV MESHSTREAM_STATIC_DIR=/app/static
 
 # Reporting configuration
