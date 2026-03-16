@@ -22,7 +22,6 @@ import {
   ChevronRight,
   Network,
   Wifi,
-  Users,
   Earth,
   TableConfig,
   Save,
