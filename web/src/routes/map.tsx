@@ -59,7 +59,7 @@ function MapPage() {
                   <span className="inline-block w-5 h-0.5 rounded-full bg-[#6b7280]"></span>Unknown
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 border-t-2 border-dashed border-[#f97316] opacity-80"></span>MQTT
+                  <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>MQTT
                 </span>
               </div>
               

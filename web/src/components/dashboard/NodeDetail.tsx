@@ -679,7 +679,7 @@ const NodeConnections: React.FC<NodeConnectionsProps> = ({ nodeId, links, nodes 
         ];
         const badges: ConnectionBadge[] = [
           { label: SOURCE_LABELS[source], className: SOURCE_COLORS[source] },
-          ...(link.viaMqtt ? [{ label: "MQTT", className: "bg-orange-900 text-orange-300" }] : []),
+          ...(link.viaMqtt ? [{ label: "MQTT", className: "bg-purple-900 text-purple-300" }] : []),
         ];
 
         return (
