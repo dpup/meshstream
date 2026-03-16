@@ -31,6 +31,10 @@ ENV VITE_API_BASE_URL=${MESHSTREAM_API_BASE_URL} \
     VITE_SITE_TITLE=${MESHSTREAM_SITE_TITLE} \
     VITE_SITE_DESCRIPTION=${MESHSTREAM_SITE_DESCRIPTION}
 
+# Prevent esbuild's Go runtime from crashing on kernels with high-entropy ASLR
+# or 5-level paging, which places memory at addresses above 47 bits.
+ENV MALLOC_ARENA_MAX=2
+
 # Build the web app
 RUN pnpm build
 
