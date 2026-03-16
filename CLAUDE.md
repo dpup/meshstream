@@ -6,6 +6,8 @@
 - `make gen-proto`
 - `make clean`
 - `make run` <-- Do not execute the program yourself.
+- `go test ./...` — run Go tests
+- `gofmt -w .` — format Go code (CI enforces this; run before committing)
 
 ## Meshtastic MQTT Protocol Structure
 
