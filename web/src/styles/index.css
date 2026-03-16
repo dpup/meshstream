@@ -42,6 +42,29 @@
 .maplibregl-ctrl-attrib-inner a:hover {
   color: #fff !important;
 }
+/* MapLibre navigation controls — dark theme */
+.maplibregl-ctrl-group {
+  background: rgba(20, 20, 20, 0.75) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4) !important;
+  backdrop-filter: blur(4px);
+}
+.maplibregl-ctrl-group button {
+  background-color: transparent !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+}
+.maplibregl-ctrl-group button:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  color: #fff !important;
+}
+.maplibregl-ctrl-icon {
+  filter: invert(1) opacity(0.8);
+}
+.maplibregl-ctrl-group button:hover .maplibregl-ctrl-icon {
+  filter: invert(1) opacity(1);
+}
+
 /* Prevent auto-expand on wide maps */
 .maplibregl-ctrl-attrib.maplibregl-compact-show {
   display: flex !important;

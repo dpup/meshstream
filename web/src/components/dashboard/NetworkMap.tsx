@@ -114,6 +114,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       });
 
       map.addControl(new maplibregl.AttributionControl({ compact: true }));
+      map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
       map.on("load", () => {
         map.addSource("links", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
