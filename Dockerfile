@@ -31,12 +31,15 @@ ENV VITE_API_BASE_URL=${MESHSTREAM_API_BASE_URL} \
     VITE_SITE_TITLE=${MESHSTREAM_SITE_TITLE} \
     VITE_SITE_DESCRIPTION=${MESHSTREAM_SITE_DESCRIPTION}
 
-# Prevent esbuild's Go runtime from crashing on kernels with high-entropy ASLR
-# or 5-level paging, which places memory at addresses above 47 bits.
-ENV MALLOC_ARENA_MAX=2
+# esbuild's bundled Go binary crashes on kernels with 5-level paging or
+# high-entropy ASLR because Go's lfstack can't handle addresses above 47 bits.
+# setarch --addr-no-randomize disables ASLR for the process via the personality
+# syscall, keeping allocations at low addresses. util-linux provides setarch.
+RUN apt-get update && apt-get install -y --no-install-recommends util-linux \
+    && rm -rf /var/lib/apt/lists/*
 
 # Build the web app
-RUN pnpm build
+RUN setarch "$(uname -m)" --addr-no-randomize pnpm build
 
 ###############################################################################
 # Stage 2: Build the Go server
