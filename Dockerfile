@@ -3,7 +3,7 @@
 ###############################################################################
 # Stage 1: Build the web application
 ###############################################################################
-FROM node:20-alpine AS web-builder
+FROM node:20-bookworm-slim AS web-builder
 
 WORKDIR /app/web
 
