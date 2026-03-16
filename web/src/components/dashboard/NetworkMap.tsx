@@ -134,7 +134,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
           source: "links",
           filter: ["==", ["get", "viaMqtt"], 1],
           layout: { "line-join": "round", "line-cap": "butt", visibility: "visible" },
-          paint: { "line-color": "#a855f7", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [2, 3] },
+          paint: { "line-color": "#f97316", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [2, 3] },
         });
 
         map.addSource("nodes", { type: "geojson", data: { type: "FeatureCollection", features: [] } });

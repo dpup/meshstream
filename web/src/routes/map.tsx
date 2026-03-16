@@ -26,15 +26,15 @@ function MapPage() {
   return (
     <PageWrapper>
       <div className="flex flex-col h-[calc(100vh-7rem)] md:h-[calc(100vh-5rem)]">
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-h-0">
           <NetworkMap
             fullHeight
             ref={mapRef as any}
             onAutoZoomChange={setAutoZoomEnabled}
             showLinks={showLinks}
           />
-          
-          <div className="mt-2 rounded-lg p-2 text-xs flex items-center justify-between effect-inset">
+
+          <div className="mt-2 rounded-lg p-2 text-xs flex items-center justify-between effect-inset flex-shrink-0">
             <div className="flex flex-wrap gap-2">
               <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, false).textClass} ${getNodeColors(ActivityLevel.RECENT, false).background}`}>
@@ -59,7 +59,7 @@ function MapPage() {
                   <span className="inline-block w-5 h-0.5 rounded-full bg-[#6b7280]"></span>Unknown
                 </span>
                 <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>MQTT
+                  <span className="inline-block w-5 border-t-2 border-dashed border-[#f97316] opacity-80"></span>MQTT
                 </span>
               </div>
               

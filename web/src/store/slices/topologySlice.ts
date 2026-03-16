@@ -156,6 +156,8 @@ function processTopology(
     for (let i = 0; i < forwardPath.length - 1; i++) {
       const cap = Math.min(snrTowards.length, forwardPath.length - 1);
       const snr = i < cap ? snrTowards[i] / 4 : undefined;
+      // SNR of exactly 0 indicates an MQTT-bridged hop
+      const hopViaMqtt = snr === 0 || !!data.viaMqtt;
       upsertObservation(
         state,
         forwardPath[i],     // sender
@@ -163,7 +165,7 @@ function processTopology(
         snr,
         undefined,
         "traceroute",
-        !!data.viaMqtt,
+        hopViaMqtt,
         timestamp,
         hopCount
       );
@@ -176,6 +178,8 @@ function processTopology(
     for (let i = 0; i < returnPath.length - 1; i++) {
       const cap = Math.min(snrBack.length, returnPath.length - 1);
       const snr = i < cap ? snrBack[i] / 4 : undefined;
+      // SNR of exactly 0 indicates an MQTT-bridged hop
+      const hopViaMqtt = snr === 0 || !!data.viaMqtt;
       upsertObservation(
         state,
         returnPath[i],
@@ -183,7 +187,7 @@ function processTopology(
         snr,
         undefined,
         "traceroute",
-        !!data.viaMqtt,
+        hopViaMqtt,
         timestamp,
         hopCount
       );
