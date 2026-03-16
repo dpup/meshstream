@@ -82,9 +82,9 @@ type entry struct {
 type NodeAwareCache struct {
 	mu           sync.Mutex
 	entries      []entry
-	nodeLastSeen map[uint32]int64  // nodeID → unix timestamp of most recent packet
-	routerNodes  map[uint32]bool   // nodeIDs identified as router-role devices
-	maxSize      int               // global safety cap
+	nodeLastSeen map[uint32]int64 // nodeID → unix timestamp of most recent packet
+	routerNodes  map[uint32]bool  // nodeIDs identified as router-role devices
+	maxSize      int              // global safety cap
 	retention    time.Duration
 	nowFunc      func() time.Time // injectable for testing
 }
