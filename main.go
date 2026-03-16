@@ -40,10 +40,10 @@ type Config struct {
 	ChannelKeys []string
 
 	// Statistics configuration
-	StatsInterval   time.Duration
-	CacheSize       int
-	CacheRetention  time.Duration
-	VerboseLogging  bool
+	StatsInterval  time.Duration
+	CacheSize      int
+	CacheRetention time.Duration
+	VerboseLogging bool
 }
 
 // getEnv retrieves an environment variable with the given prefix or returns the default value

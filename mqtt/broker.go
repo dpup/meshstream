@@ -30,11 +30,11 @@ var typePriority = map[pb.PortNum]int{
 	pb.PortNum_TEXT_MESSAGE_COMPRESSED_APP: 5,
 	pb.PortNum_NEIGHBORINFO_APP:            4, // rare; protect from eviction
 	pb.PortNum_TRACEROUTE_APP:              3,
-	pb.PortNum_POSITION_APP:               3,
-	pb.PortNum_NODEINFO_APP:               2, // frequent; lower priority
-	pb.PortNum_TELEMETRY_APP:              2,
-	pb.PortNum_ROUTING_APP:                2,
-	pb.PortNum_MAP_REPORT_APP:             2,
+	pb.PortNum_POSITION_APP:                3,
+	pb.PortNum_NODEINFO_APP:                2, // frequent; lower priority
+	pb.PortNum_TELEMETRY_APP:               2,
+	pb.PortNum_ROUTING_APP:                 2,
+	pb.PortNum_MAP_REPORT_APP:              2,
 }
 
 // defaultTypePriority applies to any port type not listed above.
