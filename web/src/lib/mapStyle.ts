@@ -25,7 +25,7 @@ export const CARTO_DARK_STYLE: StyleSpecification = {
 /** CartoDB Dark Matter style with glyph support for GL text labels */
 export const CARTO_DARK_STYLE_LABELLED: StyleSpecification = {
   version: 8,
-  glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+  glyphs: "https://fonts.openmaptiles.org/{fontstack}/{range}.pbf",
   sources: { carto: CARTO_SOURCE },
   layers: [{ id: "carto-dark", type: "raster", source: "carto" }],
 };

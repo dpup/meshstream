@@ -36,7 +36,7 @@ function MapPage() {
           
           <div className="mt-2 rounded-lg p-2 text-xs flex items-center justify-between effect-inset">
             <div className="flex flex-wrap gap-2">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-x-3 gap-y-1 flex-wrap">
                 <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, false).textClass} ${getNodeColors(ActivityLevel.RECENT, false).background}`}>
                   <span className={`w-2 h-2 ${getNodeColors(ActivityLevel.RECENT, false).statusDot} rounded-full mr-1.5`}></span>
                   Nodes
@@ -44,6 +44,22 @@ function MapPage() {
                 <span className={`inline-flex items-center px-2 py-0.5 rounded ${getNodeColors(ActivityLevel.RECENT, true).textClass} ${getNodeColors(ActivityLevel.RECENT, true).background}`}>
                   <span className={`w-2 h-2 ${getNodeColors(ActivityLevel.RECENT, true).statusDot} rounded-full mr-1.5`}></span>
                   Gateways
+                </span>
+                <span className="text-neutral-500">·</span>
+                <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#22c55e]"></span>SNR ≥ 5
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#eab308]"></span>SNR 0–4
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#ef4444]"></span>SNR &lt; 0
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#6b7280]"></span>Unknown
+                </span>
+                <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                  <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>MQTT
                 </span>
               </div>
               

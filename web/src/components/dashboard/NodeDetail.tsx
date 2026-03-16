@@ -8,6 +8,7 @@ import {
   getNodeColors,
   getStatusText,
   formatLastSeen,
+  formatLastSeenShort,
 } from "../../lib/activity";
 import { cn } from "../../lib/cn";
 import {
@@ -36,6 +37,8 @@ import {
 import { Separator } from "../Separator";
 import { KeyValuePair } from "../ui/KeyValuePair";
 import { Section } from "../ui/Section";
+import { ConnectionRow, ConnectionList } from "../ui/ConnectionRow";
+import type { ConnectionBadge, SnrValue } from "../ui/ConnectionRow";
 import { BatteryLevel } from "./BatteryLevel";
 import { NodeLocationMap } from "./GoogleMap";
 import { NodePositionData } from "./NodePositionData";
@@ -343,94 +346,75 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
               </div>
             </div>
 
-            {/* Show MapReport-specific information for gateways */}
-            {node.isGateway && (
-              <div className="mt-4 pt-3 border-t border-neutral-700 space-y-3">
-                <div className=" mb-2 p-2 rounded effect-inset bg-neutral-700/50 ">
-                  <div className="flex justify-between items-center">
-                    <span className="flex items-center">
-                      <Network className="w-4 h-4 mr-1.5" />
-                      Gateway Node
-                    </span>
-                    {node.observedNodeCount !== undefined && (
-                      <span className="flex items-center">
-                        <Users className="w-4 h-4 mr-1.5" />
-                        {node.observedNodeCount}{" "}
-                        {node.observedNodeCount === 1 ? "node" : "nodes"}
-                      </span>
-                    )}
-                    {node.mapReport?.numOnlineLocalNodes !== undefined && (
-                      <span className="text-xs flex items-center font-mono opacity-80">
-                        {node.mapReport.numOnlineLocalNodes} online local nodes
-                      </span>
-                    )}
-                  </div>
-                  {/* Observed Nodes Grid - integrated into Gateway Node section */}
-                  {gateway?.observedNodes &&
-                    gateway.observedNodes.length > 0 && (
-                      <div>
-                        <div className="my-2 text-xs text-neutral-400">
-                          Recently observed nodes:
-                        </div>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                          {gateway.observedNodes.map((observedNodeId) => {
-                            const observedNode = nodes[observedNodeId];
-                            const displayName = getNodeDisplayName(
-                              observedNodeId,
-                              observedNode
-                            );
-                            return (
-                              <Link
-                                key={observedNodeId}
-                                to="/node/$nodeId"
-                                params={{
-                                  nodeId: observedNodeId
-                                    .toString(16)
-                                    .toLowerCase(),
-                                }}
-                                className="flex items-center p-2 bg-neutral-800/50 hover:bg-neutral-700/50 rounded transition-colors text-xs border border-neutral-700/30"
-                              >
-                                <BoomBox className="w-3 h-3 mr-2 text-neutral-400 flex-shrink-0" />
-                                <span className="text-neutral-200 truncate">
-                                  {displayName}
-                                </span>
-                              </Link>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                </div>
-                {node.mapReport?.region !== undefined && (
-                  <KeyValuePair
-                    label="Region"
-                    value={getRegionName(node.mapReport.region)}
-                    icon={<Earth className="w-3 h-3" />}
-                    inset={true}
-                  />
-                )}
-
-                {node.mapReport?.modemPreset !== undefined && (
-                  <KeyValuePair
-                    label="Modem Preset"
-                    value={getModemPresetName(node.mapReport.modemPreset)}
-                    icon={<TableConfig className="w-3 h-3" />}
-                    inset={true}
-                  />
-                )}
-
-                {node.mapReport?.firmwareVersion && (
-                  <KeyValuePair
-                    label="Firmware"
-                    value={node.mapReport.firmwareVersion}
-                    monospace={true}
-                    icon={<Save className="w-3 h-3" />}
-                    inset={true}
-                  />
-                )}
-              </div>
-            )}
           </Section>
+
+          {node.isGateway && (
+            <Section
+              title="Gateway Node"
+              icon={<Network className="w-4 h-4" />}
+              className="mt-4"
+            >
+              {node.mapReport?.numOnlineLocalNodes !== undefined && (
+                <KeyValuePair
+                  label="Online local"
+                  value={String(node.mapReport.numOnlineLocalNodes)}
+                  icon={<Network className="w-3 h-3" />}
+                  inset={true}
+                />
+              )}
+
+              {node.mapReport?.region !== undefined && (
+                <KeyValuePair
+                  label="Region"
+                  value={getRegionName(node.mapReport.region)}
+                  icon={<Earth className="w-3 h-3" />}
+                  inset={true}
+                />
+              )}
+
+              {node.mapReport?.modemPreset !== undefined && (
+                <KeyValuePair
+                  label="Modem Preset"
+                  value={getModemPresetName(node.mapReport.modemPreset)}
+                  icon={<TableConfig className="w-3 h-3" />}
+                  inset={true}
+                />
+              )}
+
+              {node.mapReport?.firmwareVersion && (
+                <KeyValuePair
+                  label="Firmware"
+                  value={node.mapReport.firmwareVersion}
+                  monospace={true}
+                  icon={<Save className="w-3 h-3" />}
+                  inset={true}
+                />
+              )}
+
+              {gateway?.observedNodes && gateway.observedNodes.length > 0 && (
+                <div className="mt-3">
+                  <div className="text-xs text-neutral-500 mb-2">Recently observed nodes ({gateway.observedNodes.length})</div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {gateway.observedNodes.map((observedNodeId) => {
+                      const observedNode = nodes[observedNodeId];
+                      const displayName = getNodeDisplayName(observedNodeId, observedNode);
+                      return (
+                        <Link
+                          key={observedNodeId}
+                          to="/node/$nodeId"
+                          params={{ nodeId: observedNodeId.toString(16).toLowerCase() }}
+                          className="flex items-center p-2 bg-neutral-800/50 hover:bg-neutral-700/50 rounded transition-colors text-xs border border-neutral-700/30"
+                        >
+                          <BoomBox className="w-3 h-3 mr-2 text-neutral-400 flex-shrink-0" />
+                          <span className="text-neutral-200 truncate">{displayName}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </Section>
+          )}
 
           {/* Device Status - Moved from the right column to here */}
           {(node.deviceMetrics ||
@@ -574,6 +558,15 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
                 />
               </Section>
             )}
+
+          {/* Connections */}
+          <Section
+            title="Connections"
+            icon={<Network className="w-4 h-4" />}
+            className="mt-4"
+          >
+            <NodeConnections nodeId={nodeId} links={topologyLinks} nodes={nodes} />
+          </Section>
         </div>
       </div>
 
@@ -603,15 +596,6 @@ export const NodeDetail: React.FC<NodeDetailProps> = ({ nodeId }) => {
           />
         </Section>
       )}
-
-      {/* Connections - Full Width */}
-      <Section
-        title="Connections"
-        icon={<Network className="w-4 h-4" />}
-        className="mt-6"
-      >
-        <NodeConnections nodeId={nodeId} links={topologyLinks} nodes={nodes} />
-      </Section>
 
       {/* Recent Packets - Full Width */}
       <Section
@@ -675,7 +659,7 @@ const NodeConnections: React.FC<NodeConnectionsProps> = ({ nodeId, links, nodes 
   }
 
   return (
-    <div className="space-y-2">
+    <ConnectionList count={edges.length}>
       {edges.map((link) => {
         const neighborId = link.nodeA === nodeId ? link.nodeB : link.nodeA;
         const neighborNode = nodes[neighborId];
@@ -684,60 +668,32 @@ const NodeConnections: React.FC<NodeConnectionsProps> = ({ nodeId, links, nodes 
           neighborNode?.longName ??
           `!${neighborId.toString(16)}`;
 
-        // Determine SNR direction relative to nodeId
-        // snrAtoB = SNR at nodeB receiving from nodeA
-        // snrBtoA = SNR at nodeA receiving from nodeB
-        // "outgoing SNR" = SNR that the neighbor measured (i.e., neighbor receiving from nodeId)
-        // "incoming SNR" = SNR that nodeId measured (i.e., nodeId receiving from neighbor)
-        const outgoingSnr =
-          nodeId === link.nodeA ? link.snrAtoB : link.snrBtoA;
-        const incomingSnr =
-          nodeId === link.nodeA ? link.snrBtoA : link.snrAtoB;
+        const outgoingSnr = nodeId === link.nodeA ? link.snrAtoB : link.snrBtoA;
+        const incomingSnr = nodeId === link.nodeA ? link.snrBtoA : link.snrAtoB;
 
         const source = bestSource(link.sourceAtoB, link.sourceBtoA);
         const secondsAgo = Math.floor(Date.now() / 1000) - link.lastSeen;
 
+        const snrValues: SnrValue[] = [
+          ...(outgoingSnr !== undefined ? [{ label: "↑", value: outgoingSnr }] : []),
+          ...(incomingSnr !== undefined ? [{ label: "↓", value: incomingSnr }] : []),
+        ];
+        const badges: ConnectionBadge[] = [
+          { label: SOURCE_LABELS[source], className: SOURCE_COLORS[source] },
+          ...(link.viaMqtt ? [{ label: "MQTT", className: "bg-purple-900 text-purple-300" }] : []),
+        ];
+
         return (
-          <div
+          <ConnectionRow
             key={link.key}
-            className="flex items-start justify-between p-3 bg-neutral-800 rounded-lg border border-neutral-700"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="font-mono text-sm text-white font-medium truncate">
-                  {neighborName}
-                </span>
-                <span
-                  className={`text-xs px-1.5 py-0.5 rounded font-medium ${SOURCE_COLORS[source]}`}
-                >
-                  {SOURCE_LABELS[source]}
-                </span>
-                {link.viaMqtt && (
-                  <span className="text-xs px-1.5 py-0.5 rounded bg-purple-900 text-purple-300 font-medium">
-                    MQTT
-                  </span>
-                )}
-              </div>
-              <div className="flex gap-3 text-xs text-neutral-400">
-                {outgoingSnr !== undefined && (
-                  <span>→ {outgoingSnr.toFixed(1)} dB</span>
-                )}
-                {incomingSnr !== undefined && (
-                  <span>← {incomingSnr.toFixed(1)} dB</span>
-                )}
-                {link.rssiAtoB !== undefined && nodeId === link.nodeB && (
-                  <span className="text-neutral-500">
-                    RSSI {link.rssiAtoB} dBm
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className="text-xs text-neutral-500 ml-3 shrink-0">
-              {formatLastSeen(secondsAgo)}
-            </div>
-          </div>
+            name={neighborName}
+            nameHref={`/node/${neighborId.toString(16)}`}
+            snrValues={snrValues}
+            badges={badges}
+            time={formatLastSeenShort(secondsAgo)}
+          />
         );
       })}
-    </div>
+    </ConnectionList>
   );
 };

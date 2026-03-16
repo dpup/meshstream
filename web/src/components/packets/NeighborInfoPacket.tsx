@@ -1,9 +1,10 @@
 import React from "react";
 import { Link } from "@tanstack/react-router";
 import { Packet } from "../../lib/types";
-import { Network, ExternalLink } from "lucide-react";
+import { Network } from "lucide-react";
 import { PacketCard } from "./PacketCard";
 import { useAppSelector } from "../../hooks";
+import { ConnectionRow, ConnectionList } from "../ui/ConnectionRow";
 
 interface NeighborInfoPacketProps {
   packet: Packet;
@@ -66,47 +67,17 @@ export const NeighborInfoPacket: React.FC<NeighborInfoPacketProps> = ({ packet }
 
         {/* Neighbors list */}
         {neighborInfo.neighbors && neighborInfo.neighbors.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <div className="text-sm text-neutral-400">
-              {neighborInfo.neighbors.length} neighbor{neighborInfo.neighbors.length !== 1 ? 's' : ''}:
-            </div>
-            <div className="grid gap-2">
-              {neighborInfo.neighbors.map((neighbor, index) => (
-                <div key={index} className="bg-neutral-800/50 rounded p-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Link
-                      to="/node/$nodeId"
-                      params={{ nodeId: neighbor.nodeId.toString(16) }}
-                      className="text-blue-400 hover:text-blue-300 transition-colors font-mono flex items-center gap-1"
-                    >
-                      {getNodeName(neighbor.nodeId)}
-                      <ExternalLink className="w-3 h-3" />
-                    </Link>
-                  </div>
-                  <div className="flex items-center gap-3 text-xs text-neutral-400">
-                    <div>
-                      <span className="text-neutral-500 mr-1">SNR:</span>
-                      <span className={neighbor.snr > 0 ? "text-green-400" : neighbor.snr > -10 ? "text-yellow-400" : "text-red-400"}>
-                        {neighbor.snr.toFixed(1)}dB
-                      </span>
-                    </div>
-                    {neighbor.lastRxTime && (
-                      <div>
-                        <span className="text-neutral-500 mr-1">Last:</span>
-                        <span>{formatTime(neighbor.lastRxTime)}</span>
-                      </div>
-                    )}
-                    {neighbor.nodeBroadcastIntervalSecs && (
-                      <div>
-                        <span className="text-neutral-500 mr-1">Interval:</span>
-                        <span>{formatInterval(neighbor.nodeBroadcastIntervalSecs)}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <ConnectionList count={neighborInfo.neighbors.length} label="neighbor">
+            {neighborInfo.neighbors.map((neighbor, index) => (
+              <ConnectionRow
+                key={index}
+                name={getNodeName(neighbor.nodeId)}
+                nameHref={`/node/${neighbor.nodeId.toString(16)}`}
+                snrValues={[{ label: "", value: neighbor.snr }]}
+                time={neighbor.lastRxTime ? formatTime(neighbor.lastRxTime) : undefined}
+              />
+            ))}
+          </ConnectionList>
         ) : (
           <div className="text-sm text-neutral-500 italic">No neighbors reported</div>
         )}

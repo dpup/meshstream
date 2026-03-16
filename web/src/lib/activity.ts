@@ -198,6 +198,16 @@ export function formatLastSeen(secondsAgo: number): string {
 }
 
 /**
+ * Formats a "last seen" time in compact form: "45s", "5m", "2h", "3d"
+ */
+export function formatLastSeenShort(secondsAgo: number): string {
+  if (secondsAgo < 60) return `${secondsAgo}s`;
+  if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m`;
+  if (secondsAgo < 86400) return `${Math.floor(secondsAgo / 3600)}h`;
+  return `${Math.floor(secondsAgo / 86400)}d`;
+}
+
+/**
  * Gets style classes based on the activity level
  *
  * @param lastHeardTimestamp UNIX timestamp in seconds

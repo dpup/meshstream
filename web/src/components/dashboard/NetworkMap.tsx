@@ -41,6 +41,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     const popupRef = useRef<maplibregl.Popup | null>(null);
     const nodesWithPositionRef = useRef<MapNode[]>([]);
     const [autoZoomEnabled, setAutoZoomEnabled] = useState(true);
+    const [mapLoaded, setMapLoaded] = useState(false);
 
     const { nodes, gateways } = useAppSelector((state) => state.aggregator);
     const topologyLinks = useAppSelector((state) => state.topology.links);
@@ -68,7 +69,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
             name: node.shortName || node.longName || `!${node.id.toString(16)}`,
             fillColor: colors.fill,
             strokeColor: colors.stroke,
-            radius: node.isGateway ? 12 : 8,
+            radius: node.isGateway ? 8 : 5,
           },
         };
       }),
@@ -89,7 +90,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
             return {
               type: "Feature" as const,
               geometry: { type: "LineString" as const, coordinates: [posMap.get(link.nodeA)!, posMap.get(link.nodeB)!] },
-              properties: { color, opacity: link.viaMqtt ? 0.4 : 0.7 },
+              properties: { color, opacity: 0.7, viaMqtt: link.viaMqtt ? 1 : 0 },
             };
           }),
       };
@@ -117,13 +118,23 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       map.addControl(new maplibregl.NavigationControl(), 'top-left');
 
       map.on("load", () => {
+        setMapLoaded(true);
         map.addSource("links", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
         map.addLayer({
           id: "links-line",
           type: "line",
           source: "links",
+          filter: ["==", ["get", "viaMqtt"], 0],
           layout: { "line-join": "round", "line-cap": "round", visibility: "visible" },
           paint: { "line-color": ["get", "color"], "line-width": 2, "line-opacity": ["get", "opacity"] },
+        });
+        map.addLayer({
+          id: "links-mqtt",
+          type: "line",
+          source: "links",
+          filter: ["==", ["get", "viaMqtt"], 1],
+          layout: { "line-join": "round", "line-cap": "butt", visibility: "visible" },
+          paint: { "line-color": "#a855f7", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [2, 3] },
         });
 
         map.addSource("nodes", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -144,7 +155,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
           id: "nodes-labels",
           type: "symbol",
           source: "nodes",
-          layout: { "text-field": ["get", "name"], "text-size": 11, "text-offset": [0, 1.5], "text-anchor": "top", "text-optional": true },
+          layout: { "text-field": ["get", "name"], "text-font": ["Open Sans Regular"], "text-size": 11, "text-offset": [0, 1.5], "text-anchor": "top", "text-optional": true },
           paint: { "text-color": "#e5e7eb", "text-halo-color": "#111827", "text-halo-width": 1.5 },
         });
       });
@@ -155,7 +166,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       map.on("mouseenter", "nodes-circles", () => { map.getCanvas().style.cursor = "pointer"; });
       map.on("mouseleave", "nodes-circles", () => { map.getCanvas().style.cursor = "grab"; });
 
-      map.on("click", "nodes-circles", (e: MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
+      map.on("click", "nodes-circles", (e) => {
         const feature = e.features?.[0];
         if (!feature) return;
         const props = feature.properties as { nodeId: number; name: string; fillColor: string };
@@ -174,16 +185,16 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
         popupRef.current?.remove();
 
         const el = document.createElement("div");
-        el.style.cssText = "font-family:sans-serif;max-width:220px;padding:4px";
+        el.style.cssText = "font-family:sans-serif;max-width:220px;padding:2px 0";
         el.innerHTML = `
           <div style="font-weight:600;font-size:14px;color:${colors.fill};margin-bottom:3px">${nodeName}</div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:6px">${node.isGateway ? "Gateway" : "Node"} · !${node.id.toString(16)}</div>
-          <div style="font-size:11px;color:#374151;margin-bottom:4px">
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:6px">${node.isGateway ? "Gateway" : "Node"} · !${node.id.toString(16)}</div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-bottom:4px">
             <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${colors.fill};margin-right:5px;vertical-align:middle"></span>
             ${statusText} · ${lastSeenText}
           </div>
-          <div style="font-size:11px;color:#6b7280;margin-bottom:8px">Packets: ${node.messageCount} · Text: ${node.textMessageCount}</div>
-          <button id="nav-btn" style="font-size:12px;font-weight:500;color:#3b82f6;background:#f1f5f9;border:none;border-radius:4px;padding:4px 8px;cursor:pointer">View details →</button>
+          <div style="font-size:11px;color:rgba(255,255,255,0.45);margin-bottom:10px">Packets: ${node.messageCount} · Text: ${node.textMessageCount}</div>
+          <button id="nav-btn" style="font-size:12px;font-weight:500;color:rgba(147,197,253,0.9);background:none;border:none;padding:0;cursor:pointer;letter-spacing:0.01em">View details →</button>
         `;
         el.querySelector("#nav-btn")?.addEventListener("click", () => {
           popup.remove();
@@ -197,8 +208,9 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
         popupRef.current = popup;
       });
 
-      map.on("click", (e: MapMouseEvent & { features?: maplibregl.MapGeoJSONFeature[] }) => {
-        if (!e.features?.length) popupRef.current?.remove();
+      map.on("click", (e) => {
+        const features = map.queryRenderedFeatures(e.point, { layers: ["nodes-circles"] });
+        if (!features.length) popupRef.current?.remove();
       });
 
       mapRef.current = map;
@@ -209,22 +221,23 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
     // Update node/link data
     useEffect(() => {
       const map = mapRef.current;
-      if (!map || !map.isStyleLoaded()) return;
+      if (!map || !mapLoaded) return;
       (map.getSource("nodes") as GeoJSONSource)?.setData(nodesGeoJSON);
       (map.getSource("links") as GeoJSONSource)?.setData(linksGeoJSON);
-    }, [nodesGeoJSON, linksGeoJSON]);
+    }, [nodesGeoJSON, linksGeoJSON, mapLoaded]);
 
     // Toggle links visibility
     useEffect(() => {
       const map = mapRef.current;
-      if (!map || !map.isStyleLoaded()) return;
+      if (!map || !mapLoaded) return;
       map.setLayoutProperty("links-line", "visibility", showLinks ? "visible" : "none");
-    }, [showLinks]);
+      map.setLayoutProperty("links-mqtt", "visibility", showLinks ? "visible" : "none");
+    }, [showLinks, mapLoaded]);
 
     // Auto-zoom to fit nodes
     useEffect(() => {
       const map = mapRef.current;
-      if (!autoZoomRef.current || nodesWithPosition.length === 0 || !map) return;
+      if (!autoZoomRef.current || nodesWithPosition.length === 0 || !map || !mapLoaded) return;
       let minLng = Infinity, maxLng = -Infinity, minLat = Infinity, maxLat = -Infinity;
       for (const n of nodesWithPosition) {
         const lng = n.position.longitudeI / 10000000;
@@ -235,7 +248,7 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
         if (lat > maxLat) maxLat = lat;
       }
       map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 60, maxZoom: 15, duration: 500 });
-    }, [nodesWithPosition]);
+    }, [nodesWithPosition, mapLoaded]);
 
     // Notify parent of auto-zoom state
     useEffect(() => {
