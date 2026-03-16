@@ -9,12 +9,13 @@ import { useNavigate } from "@tanstack/react-router";
 import { NodeData, GatewayData } from "../../store/slices/aggregatorSlice";
 import { Position } from "../../lib/types";
 import { getActivityLevel, getNodeColors, getStatusText, formatLastSeen } from "../../lib/activity";
+import type { LinksMode } from "../../routes/map";
 
 interface NetworkMapProps {
   height?: string;
   onAutoZoomChange?: (enabled: boolean) => void;
   fullHeight?: boolean;
-  showLinks?: boolean;
+  linksMode?: LinksMode;
 }
 
 interface MapNode {
@@ -33,7 +34,7 @@ interface MapNode {
 }
 
 export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, NetworkMapProps>(
-  ({ height, fullHeight = false, onAutoZoomChange, showLinks = true }, ref) => {
+  ({ height, fullHeight = false, onAutoZoomChange, linksMode = "links" }, ref) => {
     const navigate = useNavigate();
     const containerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
@@ -96,6 +97,31 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       };
     }, [topologyLinks, nodesWithPosition]);
 
+    // One edge per gateway→observed-node pair. Only drawn when linksMode === "uplinks".
+    const uplinksGeoJSON = useMemo((): FeatureCollection => {
+      const posMap = new Map<number, [number, number]>();
+      for (const node of nodesWithPosition) {
+        posMap.set(node.id, [node.position.longitudeI / 10000000, node.position.latitudeI / 10000000]);
+      }
+      const features: FeatureCollection["features"] = [];
+      for (const [gatewayId, gatewayData] of Object.entries(gateways)) {
+        const gatewayNodeId = parseInt(gatewayId.substring(1), 16);
+        const gatewayPos = posMap.get(gatewayNodeId);
+        if (!gatewayPos) continue;
+        for (const nodeId of gatewayData.observedNodes) {
+          if (nodeId === gatewayNodeId) continue;
+          const nodePos = posMap.get(nodeId);
+          if (!nodePos) continue;
+          features.push({
+            type: "Feature",
+            geometry: { type: "LineString", coordinates: [gatewayPos, nodePos] },
+            properties: {},
+          });
+        }
+      }
+      return { type: "FeatureCollection", features };
+    }, [gateways, nodesWithPosition]);
+
     const disableAutoZoom = useCallback(() => {
       autoZoomRef.current = false;
       setAutoZoomEnabled(false);
@@ -135,6 +161,15 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
           filter: ["==", ["get", "viaMqtt"], 1],
           layout: { "line-join": "round", "line-cap": "butt", visibility: "visible" },
           paint: { "line-color": "#a855f7", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [2, 3] },
+        });
+
+        map.addSource("uplinks", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        map.addLayer({
+          id: "uplinks-line",
+          type: "line",
+          source: "uplinks",
+          layout: { "line-join": "round", "line-cap": "butt", visibility: "none" },
+          paint: { "line-color": "#a855f7", "line-width": 2, "line-opacity": 0.6, "line-dasharray": [1, 3] },
         });
 
         map.addSource("nodes", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
@@ -224,15 +259,19 @@ export const NetworkMap = React.forwardRef<{ resetAutoZoom: () => void }, Networ
       if (!map || !mapLoaded) return;
       (map.getSource("nodes") as GeoJSONSource)?.setData(nodesGeoJSON);
       (map.getSource("links") as GeoJSONSource)?.setData(linksGeoJSON);
-    }, [nodesGeoJSON, linksGeoJSON, mapLoaded]);
+      (map.getSource("uplinks") as GeoJSONSource)?.setData(uplinksGeoJSON);
+    }, [nodesGeoJSON, linksGeoJSON, uplinksGeoJSON, mapLoaded]);
 
-    // Toggle links visibility
+    // Toggle links/uplinks visibility based on mode
     useEffect(() => {
       const map = mapRef.current;
       if (!map || !mapLoaded) return;
-      map.setLayoutProperty("links-line", "visibility", showLinks ? "visible" : "none");
-      map.setLayoutProperty("links-mqtt", "visibility", showLinks ? "visible" : "none");
-    }, [showLinks, mapLoaded]);
+      const topologyVisible = linksMode === "links" ? "visible" : "none";
+      const uplinksVisible = linksMode === "uplinks" ? "visible" : "none";
+      map.setLayoutProperty("links-line", "visibility", topologyVisible);
+      map.setLayoutProperty("links-mqtt", "visibility", topologyVisible);
+      map.setLayoutProperty("uplinks-line", "visibility", uplinksVisible);
+    }, [linksMode, mapLoaded]);
 
     // Auto-zoom to fit nodes
     useEffect(() => {

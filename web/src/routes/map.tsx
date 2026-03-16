@@ -6,6 +6,10 @@ import { Button } from "../components/ui";
 import { Locate, GitBranch } from "lucide-react";
 import { getNodeColors, ActivityLevel } from "../lib/activity";
 
+export type LinksMode = "links" | "uplinks" | "off";
+
+const LINKS_CYCLE: LinksMode[] = ["links", "uplinks", "off"];
+
 export const Route = createFileRoute("/map")({
   component: MapPage,
 });
@@ -13,8 +17,11 @@ export const Route = createFileRoute("/map")({
 function MapPage() {
   // State to track if auto-zoom is enabled (forwarded from the NetworkMap component)
   const [autoZoomEnabled, setAutoZoomEnabled] = React.useState(true);
-  const [showLinks, setShowLinks] = React.useState(true);
+  const [linksMode, setLinksMode] = React.useState<LinksMode>("links");
   const mapRef = React.useRef<{ resetAutoZoom?: () => void }>({});
+
+  const cycleLinksMode = () =>
+    setLinksMode((prev) => LINKS_CYCLE[(LINKS_CYCLE.indexOf(prev) + 1) % LINKS_CYCLE.length]);
 
   // Function to reset auto-zoom, will be called by the button
   const handleResetZoom = () => {
@@ -31,7 +38,7 @@ function MapPage() {
             fullHeight
             ref={mapRef as any}
             onAutoZoomChange={setAutoZoomEnabled}
-            showLinks={showLinks}
+            linksMode={linksMode}
           />
 
           <div className="mt-2 rounded-lg p-2 text-xs flex items-center justify-between effect-inset flex-shrink-0">
@@ -45,36 +52,48 @@ function MapPage() {
                   <span className={`w-2 h-2 ${getNodeColors(ActivityLevel.RECENT, true).statusDot} rounded-full mr-1.5`}></span>
                   Gateways
                 </span>
-                <span className="text-neutral-500">·</span>
-                <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#22c55e]"></span>SNR ≥ 5
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#eab308]"></span>SNR 0–4
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#ef4444]"></span>SNR &lt; 0
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 h-0.5 rounded-full bg-[#6b7280]"></span>Unknown
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-neutral-300">
-                  <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>MQTT
-                </span>
+                {linksMode === "links" && <>
+                  <span className="text-neutral-500">·</span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 h-0.5 rounded-full bg-[#22c55e]"></span>SNR ≥ 5
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 h-0.5 rounded-full bg-[#eab308]"></span>SNR 0–4
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 h-0.5 rounded-full bg-[#ef4444]"></span>SNR &lt; 0
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 h-0.5 rounded-full bg-[#6b7280]"></span>Unknown
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>MQTT
+                  </span>
+                </>}
+                {linksMode === "uplinks" && <>
+                  <span className="text-neutral-500">·</span>
+                  <span className="inline-flex items-center gap-1.5 text-neutral-300">
+                    <span className="inline-block w-5 border-t-2 border-dashed border-[#a855f7] opacity-80"></span>Gateway upload
+                  </span>
+                </>}
               </div>
-              
-             
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Button
                 size="sm"
-                variant={showLinks ? "primary" : "secondary"}
-                onClick={() => setShowLinks((v) => !v)}
+                variant={linksMode !== "off" ? "primary" : "secondary"}
+                onClick={cycleLinksMode}
                 icon={GitBranch}
-                title={showLinks ? "Hide link polylines" : "Show link polylines"}
+                title={
+                  linksMode === "links"
+                    ? "Showing topology links — click for uplinks"
+                    : linksMode === "uplinks"
+                    ? "Showing MQTT uplinks — click to hide"
+                    : "Links hidden — click to show topology"
+                }
               >
-                Links
+                {linksMode === "uplinks" ? "Uplinks" : "Links"}
               </Button>
               {/* Always show the button, but disable it when auto-zoom is enabled */}
               <Button
